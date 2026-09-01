@@ -13,6 +13,7 @@
       rel="stylesheet"
     />
     <link rel="stylesheet" href="./styles.css" />
+    <link rel="stylesheet" href="./src/admin.css" />
   </head>
   <body>
     <a class="skip-link" href="#main-content">跳至主要內容</a>
@@ -35,7 +36,7 @@
           <header class="shelf-intro page-gutter">
             <div class="eyebrow-row">
               <span>01 / DIGITAL PROGRAMMES</span>
-              <span>3 TITLES</span>
+              <span id="shelf-count">1 TITLE</span>
             </div>
             <p class="kicker">OWLDIO PERFORMING ARTS ARCHIVE</p>
             <h1 id="shelf-title">作品索引</h1>
@@ -46,7 +47,7 @@
 
           <div class="shelf-rule" aria-hidden="true"><span></span><i></i></div>
 
-          <div class="programme-shelf page-gutter">
+          <div class="programme-shelf page-gutter" id="programme-shelf">
             <button class="programme-volume programme-volume--featured" type="button" data-route="entrance">
               <span class="volume-cover volume-cover--tide" aria-hidden="true">
                 <span class="cover-series">OWLDIO MENU / 001</span>
@@ -62,31 +63,6 @@
               </span>
             </button>
 
-            <button class="programme-volume" type="button" data-toast="此為書架排版示意；正式版可由後台新增每一場演出。">
-              <span class="volume-cover volume-cover--night" aria-hidden="true">
-                <span class="cover-series">OWLDIO MENU / 002</span>
-                <span class="cover-title">島嶼<br />緩慢<br />發光</span>
-                <span class="cover-date">2026.12</span>
-              </span>
-              <span class="volume-meta">
-                <span class="volume-meta__status volume-meta__status--quiet">尚未公開</span>
-                <strong>島嶼緩慢發光</strong>
-                <small>室內樂計畫 · 預告頁</small>
-              </span>
-            </button>
-
-            <button class="programme-volume" type="button" data-toast="此為封存作品示意；正式版仍可使用獨立網址開啟。">
-              <span class="volume-cover volume-cover--archive" aria-hidden="true">
-                <span class="cover-series">OWLDIO MENU / 000</span>
-                <span class="cover-title cover-title--small">十二月<br />以前</span>
-                <span class="cover-date">ARCHIVE / 2025</span>
-              </span>
-              <span class="volume-meta">
-                <span class="volume-meta__status volume-meta__status--quiet">已封存</span>
-                <strong>十二月以前</strong>
-                <small>舞蹈劇場 · 歷年節目冊</small>
-              </span>
-            </button>
           </div>
 
           <footer class="folio page-gutter">
@@ -106,28 +82,28 @@
               <div class="entrance-cover__spine">OWLDIO MENU / ORIGINAL MUSICAL</div>
               <div class="entrance-cover__field">
                 <span class="entrance-cover__edition">PROGRAMME 001</span>
-                <span class="entrance-cover__title">潮聲<br />未眠</span>
-                <span class="entrance-cover__english">THE TIDE STAYS AWAKE</span>
-                <span class="entrance-cover__date">18—20 SEPTEMBER 2026</span>
+                <span class="entrance-cover__title" id="programme-cover-title">潮聲<br />未眠</span>
+                <span class="entrance-cover__english" id="programme-cover-title-en">THE TIDE STAYS AWAKE</span>
+                <span class="entrance-cover__date" id="programme-cover-date">18—20 SEPTEMBER 2026</span>
               </div>
             </div>
 
             <div class="entrance-copy">
-              <p class="kicker">原創音樂劇 · A NEW CHAMBER MUSICAL</p>
+              <p class="kicker" id="programme-type">原創音樂劇 · A NEW CHAMBER MUSICAL</p>
               <h1 id="entrance-title">潮聲未眠</h1>
-              <p class="entrance-copy__english">THE TIDE STAYS AWAKE</p>
-              <p class="entrance-copy__deck">一座入夜後仍記得潮汐的城市，與三個不願睡去的人。</p>
+              <p class="entrance-copy__english" id="programme-title-en">THE TIDE STAYS AWAKE</p>
+              <p class="entrance-copy__deck" id="programme-summary">一座入夜後仍記得潮汐的城市，與三個不願睡去的人。</p>
 
               <dl class="event-ledger">
-                <div><dt>DATE</dt><dd>2026.09.18—20</dd></div>
-                <div><dt>TIME</dt><dd>今晚 19:30 開演</dd></div>
-                <div><dt>VENUE</dt><dd>北城實驗劇場</dd></div>
-                <div><dt>DURATION</dt><dd>全長約 110 分鐘・無中場</dd></div>
+                <div><dt>DATE</dt><dd id="programme-date">2026.09.18—20</dd></div>
+                <div><dt>TIME</dt><dd id="programme-time">今晚 19:30 開演</dd></div>
+                <div><dt>VENUE</dt><dd id="programme-venue">北城實驗劇場</dd></div>
+                <div><dt>DURATION</dt><dd id="programme-duration">全長約 110 分鐘・無中場</dd></div>
               </dl>
 
               <div class="performance-status">
-                <span><i></i> HOUSE OPEN</span>
-                <strong>觀眾席已開放</strong>
+                <span id="programme-status-label"><i></i> UPCOMING</span>
+                <strong id="programme-status-copy">演出即將到來</strong>
               </div>
 
               <div class="entrance-actions">
@@ -231,6 +207,9 @@
               <img
                 src="./assets/tide-awake-rehearsal-v5.png"
                 alt="黑盒子劇場中，三位表演者與樂手正在排練《潮聲未眠》"
+                loading="lazy"
+                decoding="async"
+                fetchpriority="low"
               />
               <figcaption>
                 <span>排練側記／黑盒子劇場，2026</span>
@@ -291,27 +270,47 @@
               <span id="pdf-page-label">01 / 02</span>
               <strong id="pdf-title">原始 PDF</strong>
             </div>
-            <a href="./assets/rational-sensual-programme-sample-v1.pdf" download>下載</a>
+            <a id="pdf-download" href="./assets/rational-sensual-programme-sample-v1.pdf" download>下載</a>
           </header>
 
           <div class="pdf-stage">
-            <div class="pdf-paper">
-              <img id="pdf-page-image" src="./assets/rational-sensual-page-1-v1.png" alt="使用者提供的《理性與感性》原始節目單第一頁" />
+            <div class="pdf-paper" id="pdf-paper">
+              <img
+                id="pdf-page-image"
+                src="./assets/rational-sensual-page-1-v1.png"
+                alt="使用者提供的《理性與感性》原始節目單第一頁"
+                loading="lazy"
+                decoding="async"
+                fetchpriority="low"
+              />
+              <object id="pdf-document" type="application/pdf" aria-label="原始 PDF 節目冊" hidden></object>
+              <p class="pdf-empty" id="pdf-empty" hidden>這份節目冊尚未上傳原始 PDF。</p>
             </div>
-            <p>原始印刷節目冊 · 422 × 299 mm · 橫式跨頁</p>
+            <p id="pdf-caption">原始印刷節目冊 · 422 × 299 mm · 橫式跨頁</p>
           </div>
 
-          <nav class="pdf-pager" aria-label="PDF 頁面導覽">
+          <nav class="pdf-pager" id="pdf-pager" aria-label="PDF 頁面導覽">
             <button type="button" id="pdf-prev" aria-label="上一頁">←</button>
             <div class="pdf-pager__track"><i id="pdf-progress"></i></div>
             <button type="button" id="pdf-next" aria-label="下一頁">→</button>
           </nav>
+        </section>
+
+        <section class="view view--not-found" id="not-found-view" hidden>
+          <div class="not-found page-gutter">
+            <p class="kicker">404 / PROGRAMME NOT FOUND</p>
+            <h1>找不到這份節目冊</h1>
+            <p>網址可能尚未發布、已封存，或輸入有誤。</p>
+            <a class="button button--primary" href="/">回到作品索引 <span>→</span></a>
+          </div>
         </section>
       </main>
 
       <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
     </div>
 
-    <script src="./app.js"></script>
+    <section class="admin-app" id="admin-app" hidden></section>
+
+    <script type="module" src="./src/main.js"></script>
   </body>
 </html>

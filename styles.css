@@ -371,6 +371,11 @@ a:focus-visible {
   text-align: right;
 }
 
+.programme-volume--featured .cover-title-en {
+  width: 82px;
+  line-height: 1.18;
+}
+
 .volume-meta {
   display: grid;
   gap: 4px;
@@ -1061,6 +1066,82 @@ a:focus-visible {
   aspect-ratio: 1.412;
   object-fit: contain;
   background: white;
+}
+
+.pdf-paper object {
+  display: block;
+  width: 100%;
+  min-height: min(72dvh, 760px);
+  border: 0;
+  background: white;
+}
+
+.pdf-empty {
+  display: grid;
+  min-height: 58dvh;
+  margin: 0;
+  place-items: center;
+  padding: 28px;
+  background: #efefeb;
+  color: var(--charcoal);
+  font-family: var(--font-sans);
+  font-size: 12px;
+  text-align: center;
+}
+
+.shelf-empty {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 8px;
+  min-height: 230px;
+  align-content: center;
+  border-top: 1px solid var(--navy);
+  border-bottom: 1px solid var(--navy);
+  color: var(--sage);
+  text-align: center;
+}
+
+.shelf-empty strong {
+  color: var(--navy);
+  font-size: 24px;
+  font-weight: 500;
+}
+
+.shelf-empty span {
+  font-family: var(--font-sans);
+  font-size: 11px;
+}
+
+.view--not-found {
+  min-height: calc(100dvh - 55px);
+}
+
+.not-found {
+  display: grid;
+  min-height: calc(100dvh - 55px);
+  align-content: center;
+  padding-top: 40px;
+  padding-bottom: 70px;
+}
+
+.not-found h1 {
+  max-width: 320px;
+  margin: 10px 0 0;
+  font-size: 54px;
+  font-weight: 500;
+  line-height: 1.12;
+  letter-spacing: -0.07em;
+}
+
+.not-found > p:not(.kicker) {
+  margin: 18px 0 32px;
+  color: var(--ink-soft);
+  font-size: 13px;
+}
+
+.not-found .button {
+  color: var(--paper-light);
+  text-decoration: none;
 }
 
 .pdf-stage > p {
