@@ -2,13 +2,14 @@
 
 ## Direction
 
-The visual direction is **Theatrical Editorial Modernism（劇場編輯現代主義）**: the disciplined grid and running furniture of an international-typographic programme, softened by Taiwanese independent-arts publishing. It is not a SaaS dashboard, a luxury-commerce layout, or a simulated flipbook.
+The platform uses a two-part visual direction. The public index is **Rotunda Stage Archive（環形劇場書庫）**: programme volumes circulate through a dark auditorium-like space, with the selected edition held in a central stage light and adjacent editions receding along a visible arc. Once a volume is opened, the reader becomes **Theatrical Editorial Modernism（劇場編輯現代主義）**: disciplined grids and running furniture softened by Taiwanese independent-arts publishing.
 
-The identity should remain recognisable after every client image is replaced. Typography, folios, rules, spacing, and reading rhythm carry the design; photography is optional editorial material rather than the background of the interface.
+The identity remains recognisable after every client image is replaced. On the shelf, physical depth, typographic covers, rotation, and light carry the experience. Inside a programme, folios, rules, spacing, and reading rhythm carry the design. Photography is optional editorial material rather than the background of the interface.
 
 ## Visual grammar
 
-- **Paper field:** warm uncoated paper rather than pure white.
+- **Stage field:** near-black auditorium space, oxblood light, and warm metallic annotations on the public index.
+- **Paper field:** warm uncoated paper rather than pure white after a programme is opened.
 - **Primary ink:** deep navy for long-life editorial structure.
 - **Secondary ink:** muted sage for annotations and supporting information.
 - **Signal ink:** vermilion only for status, section numbers, and navigational emphasis.
@@ -19,7 +20,7 @@ The identity should remain recognisable after every client image is replaced. Ty
 
 ## Page archetypes
 
-1. **Public shelf** — published works only; the first volume receives editorial emphasis.
+1. **Public shelf** — published works only; five nearby volumes form a circular carousel, the central volume opens, arrows/keyboard/swipe rotate the selection, and every selected work exposes date, venue, and synopsis.
 2. **Programme entrance** — title, date, time, venue, duration, status, and reading entry appear before secondary material.
 3. **Contents** — every chapter has a number, bilingual title, and folio; each row is a real link.
 4. **Essay / letter** — lede, prose, quote, score note, dateline, and signature blocks.

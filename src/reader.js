@@ -1,8 +1,9 @@
 import { buildProgrammePath, parseReaderHash } from "./domain/routing.js";
-import { samplePdf, sampleProgramme } from "./data/sample-programme.js";
+import { advanceCarouselIndex, relativeCarouselOffset } from "./domain/carousel.js";
+import { samplePdf, sampleProgramme, sampleProgrammes } from "./data/sample-programme.js";
 
 const routeMeta = {
-  shelf: { context: "PUBLIC LIBRARY", title: "作品索引｜OWLDIO MENU" },
+  shelf: { context: "PROGRAMME CIRCULATION", title: "公開節目冊｜OWLDIO MENU" },
   entrance: { context: "PROGRAMME ENTRANCE", title: "電子節目冊｜OWLDIO MENU" },
   contents: { context: "PROGRAMME INDEX", title: "目錄｜OWLDIO MENU" },
   chapter: { context: "WEB EDITION", title: "網頁版｜OWLDIO MENU" },
@@ -54,23 +55,34 @@ function performanceState(programme) {
   return { label: "ARCHIVE", copy: "演出已結束・節目冊持續開放" };
 }
 
-function volumeCard(programme, index) {
+function volumeCard(programme, index, total) {
   const button = document.createElement("button");
   button.type = "button";
-  button.className = `programme-volume${index === 0 ? " programme-volume--featured" : ""}`;
+  button.className = "programme-volume";
+  button.dataset.carouselIndex = String(index);
   button.dataset.programmePath = buildProgrammePath(programme.client_slug, programme.slug);
+  button.setAttribute("aria-roledescription", "slide");
+  button.setAttribute("aria-label", `${index + 1} / ${total}，${programme.title}。按一下選取；已選取時按一下開啟。`);
 
   const cover = document.createElement("span");
-  const coverVariant = index === 0 ? "tide" : index % 2 === 1 ? "night" : "archive";
+  const coverVariant = programme.cover_theme || (index % 2 === 0 ? "sage" : "oxide");
   cover.className = `volume-cover volume-cover--${coverVariant}`;
   cover.setAttribute("aria-hidden", "true");
 
+  const spine = document.createElement("span");
+  spine.className = "cover-spine";
+  spine.textContent = String(index + 1).padStart(2, "0");
+
   const series = document.createElement("span");
   series.className = "cover-series";
-  series.textContent = `OWLDIO MENU / ${String(index + 1).padStart(3, "0")}`;
+  series.textContent = `OWLDIO MENU / EDITION ${String(index + 1).padStart(2, "0")}`;
+
+  const genre = document.createElement("span");
+  genre.className = "cover-genre";
+  genre.textContent = programme.production_type || "PERFORMING ARTS";
 
   const coverTitle = document.createElement("span");
-  coverTitle.className = `cover-title${index === 0 ? " cover-title--vertical" : ""}`;
+  coverTitle.className = "cover-title";
   coverTitle.textContent = programme.title;
 
   const coverEnglish = document.createElement("span");
@@ -81,37 +93,16 @@ function volumeCard(programme, index) {
   coverDate.className = "cover-date";
   coverDate.textContent = formatDate(programme.starts_at, { year: "numeric", month: "2-digit", day: "2-digit" });
 
-  cover.append(series, coverTitle, coverEnglish, coverDate);
-
-  const meta = document.createElement("span");
-  meta.className = "volume-meta";
-
-  const status = document.createElement("span");
-  status.className = "volume-meta__status";
-  const dot = document.createElement("i");
-  status.append(dot, document.createTextNode(" 公開中"));
-
-  const title = document.createElement("strong");
-  title.textContent = programme.title;
-
-  const detail = document.createElement("small");
-  detail.textContent = [programme.production_type, programme.venue].filter(Boolean).join(" · ") || "演出資訊";
-
-  const open = document.createElement("span");
-  open.className = "volume-meta__open";
-  open.textContent = "開啟節目冊 ";
-  const arrow = document.createElement("b");
-  arrow.textContent = "↗";
-  open.append(arrow);
-
-  meta.append(status, title, detail, open);
-  button.append(cover, meta);
+  cover.append(spine, series, genre, coverTitle, coverEnglish, coverDate);
+  button.append(cover);
   return button;
 }
 
 function renderShelf(programmes) {
   const shelf = document.querySelector("#programme-shelf");
+  const track = document.querySelector("#carousel-track");
   shelf.replaceChildren();
+  track.replaceChildren();
   text("shelf-count", `${programmes.length} ${programmes.length === 1 ? "TITLE" : "TITLES"}`);
 
   if (!programmes.length) {
@@ -122,7 +113,14 @@ function renderShelf(programmes) {
     return;
   }
 
-  programmes.forEach((programme, index) => shelf.append(volumeCard(programme, index)));
+  programmes.forEach((programme, index) => {
+    shelf.append(volumeCard(programme, index, programmes.length));
+    const marker = document.createElement("button");
+    marker.type = "button";
+    marker.dataset.carouselIndex = String(index);
+    marker.setAttribute("aria-label", `選擇 ${programme.title}`);
+    track.append(marker);
+  });
 }
 
 function createElement(tagName, className, value) {
@@ -304,7 +302,13 @@ function renderChapterBlocks(chapter) {
 function hydrateProgramme(programme) {
   const state = performanceState(programme);
   const titleEnglish = programme.title_en || "DIGITAL PROGRAMME";
+  const entranceCover = document.querySelector(".entrance-cover");
 
+  entranceCover.dataset.theme = programme.cover_theme || "sage";
+  document.querySelector("#entrance-view").dataset.theme = programme.cover_theme || "sage";
+
+  text("programme-cover-spine", `OWLDIO MENU / ${programme.production_type || "PERFORMING ARTS"}`);
+  text("programme-cover-edition", "DIGITAL PROGRAMME");
   text("programme-cover-title", programme.title);
   text("programme-cover-title-en", titleEnglish);
   text("programme-cover-date", dateLabel(programme));
@@ -349,6 +353,7 @@ export async function mountReader({ root, repository, initialRoute }) {
   root.hidden = false;
   const shell = document.querySelector("#reader-shell");
   const headerContext = document.querySelector("#header-context");
+  const headerIndex = document.querySelector(".site-header__index");
   const toast = document.querySelector("#toast");
   const views = new Map(
     [...document.querySelectorAll(".view")].map((view) => [view.id.replace("-view", ""), view]),
@@ -358,6 +363,9 @@ export async function mountReader({ root, repository, initialRoute }) {
   let pdfPageIndex = 0;
   let pdfPages = [];
   let shelfProgrammes = [];
+  let shelfActiveIndex = 0;
+  let shelfPointerStart = null;
+  let shelfDidSwipe = false;
   let currentProgramme = null;
   let currentChapterIndex = 0;
 
@@ -373,6 +381,67 @@ export async function mountReader({ root, repository, initialRoute }) {
     toastTimer = window.setTimeout(() => {
       toast.hidden = true;
     }, 3600);
+  }
+
+  function activeShelfProgramme() {
+    return shelfProgrammes[shelfActiveIndex] || null;
+  }
+
+  function updateShelfCarousel(nextIndex, { announce = true } = {}) {
+    const total = shelfProgrammes.length;
+    if (!total) return;
+
+    shelfActiveIndex = advanceCarouselIndex(0, nextIndex, total);
+    const selected = activeShelfProgramme();
+    const cards = [...document.querySelectorAll("#programme-shelf [data-carousel-index]")];
+
+    cards.forEach((card) => {
+      const index = Number(card.dataset.carouselIndex);
+      const offset = relativeCarouselOffset(index, shelfActiveIndex, total);
+      const isVisible = Math.abs(offset) <= 2;
+      card.dataset.offset = String(offset);
+      card.classList.toggle("is-active", offset === 0);
+      card.classList.toggle("is-outside", !isVisible);
+      card.tabIndex = isVisible ? 0 : -1;
+      card.setAttribute("aria-hidden", isVisible ? "false" : "true");
+      if (offset === 0) {
+        card.setAttribute("aria-current", "true");
+      } else {
+        card.removeAttribute("aria-current");
+      }
+    });
+
+    text("selected-programme-number", String(shelfActiveIndex + 1).padStart(2, "0"));
+    text("selected-programme-total", `/ ${String(total).padStart(2, "0")}`);
+    text("selected-programme-type", selected.production_type || "PERFORMING ARTS");
+    text("selected-programme-title", selected.title);
+    text("selected-programme-title-en", selected.title_en || "DIGITAL PROGRAMME");
+    text("selected-programme-summary", selected.summary || "演出內容即將公開。 ");
+    text("selected-programme-date", dateLabel(selected));
+    text("selected-programme-venue", selected.venue || "待公告");
+
+    document.querySelectorAll("#carousel-track [data-carousel-index]").forEach((marker) => {
+      const isCurrent = Number(marker.dataset.carouselIndex) === shelfActiveIndex;
+      marker.classList.toggle("is-current", isCurrent);
+      marker.toggleAttribute("aria-current", isCurrent);
+    });
+
+    document.querySelector("#carousel-selection").dataset.theme = selected.cover_theme || "sage";
+    if (announce) {
+      document.querySelector("#carousel-selection").setAttribute(
+        "aria-label",
+        `目前選擇 ${shelfActiveIndex + 1} / ${total}：${selected.title}`,
+      );
+    }
+  }
+
+  function moveShelfCarousel(direction) {
+    updateShelfCarousel(advanceCarouselIndex(shelfActiveIndex, direction, shelfProgrammes.length));
+  }
+
+  function openActiveShelfProgramme() {
+    const selected = activeShelfProgramme();
+    if (selected) window.location.assign(buildProgrammePath(selected.client_slug, selected.slug));
   }
 
   function visibleChapters() {
@@ -447,6 +516,7 @@ export async function mountReader({ root, repository, initialRoute }) {
 
     shell.dataset.view = nextRoute;
     headerContext.textContent = routeMeta[nextRoute]?.context || routeMeta.shelf.context;
+    headerIndex.hidden = nextRoute === "shelf";
     document.title = routeMeta[nextRoute]?.title || routeMeta.shelf.title;
 
     const hashRoute = activeChapter ? `chapter/${encodeURIComponent(activeChapter.slug)}` : nextRoute;
@@ -554,8 +624,60 @@ export async function mountReader({ root, repository, initialRoute }) {
   });
 
   document.querySelector("#programme-shelf").addEventListener("click", (event) => {
+    if (shelfDidSwipe) {
+      shelfDidSwipe = false;
+      return;
+    }
     const card = event.target.closest("[data-programme-path]");
-    if (card) window.location.assign(card.dataset.programmePath);
+    if (!card) return;
+    const selectedIndex = Number(card.dataset.carouselIndex);
+    if (selectedIndex === shelfActiveIndex) {
+      openActiveShelfProgramme();
+    } else {
+      updateShelfCarousel(selectedIndex);
+    }
+  });
+
+  document.querySelector("#carousel-prev").addEventListener("click", () => moveShelfCarousel(-1));
+  document.querySelector("#carousel-next").addEventListener("click", () => moveShelfCarousel(1));
+  document.querySelector("#carousel-open").addEventListener("click", openActiveShelfProgramme);
+
+  document.querySelector("#carousel-track").addEventListener("click", (event) => {
+    const marker = event.target.closest("[data-carousel-index]");
+    if (marker) updateShelfCarousel(Number(marker.dataset.carouselIndex));
+  });
+
+  const carousel = document.querySelector("#programme-carousel");
+  carousel.addEventListener("keydown", (event) => {
+    if (event.key === "ArrowLeft") {
+      event.preventDefault();
+      moveShelfCarousel(-1);
+    }
+    if (event.key === "ArrowRight") {
+      event.preventDefault();
+      moveShelfCarousel(1);
+    }
+    if (event.key === "Enter" && event.target === carousel) {
+      event.preventDefault();
+      openActiveShelfProgramme();
+    }
+  });
+  carousel.addEventListener("pointerdown", (event) => {
+    shelfPointerStart = { x: event.clientX, y: event.clientY, id: event.pointerId };
+    shelfDidSwipe = false;
+  });
+  carousel.addEventListener("pointerup", (event) => {
+    if (!shelfPointerStart || shelfPointerStart.id !== event.pointerId) return;
+    const deltaX = event.clientX - shelfPointerStart.x;
+    const deltaY = event.clientY - shelfPointerStart.y;
+    shelfPointerStart = null;
+    if (Math.abs(deltaX) > 42 && Math.abs(deltaX) > Math.abs(deltaY)) {
+      shelfDidSwipe = true;
+      moveShelfCarousel(deltaX < 0 ? 1 : -1);
+    }
+  });
+  carousel.addEventListener("pointercancel", () => {
+    shelfPointerStart = null;
   });
 
   document.querySelector("#editorial-index").addEventListener("click", (event) => {
@@ -614,13 +736,14 @@ export async function mountReader({ root, repository, initialRoute }) {
 
   if (initialRoute.kind === "shelf") {
     try {
-      shelfProgrammes = repository ? await repository.listPublished() : [sampleProgramme];
+      shelfProgrammes = repository ? await repository.listPublished() : sampleProgrammes;
     } catch (error) {
       console.error("Unable to load published programmes", error);
-      shelfProgrammes = [sampleProgramme];
+      shelfProgrammes = sampleProgrammes;
       showToast("作品索引暫時使用離線版本。");
     }
     renderShelf(shelfProgrammes);
+    updateShelfCarousel(0, { announce: false });
     showRoute("shelf", { updateHash: false });
   } else if (initialRoute.kind === "programme") {
     try {
@@ -631,12 +754,10 @@ export async function mountReader({ root, repository, initialRoute }) {
       console.error("Unable to load programme", error);
     }
 
-    if (
-      !currentProgramme &&
-      initialRoute.clientSlug === sampleProgramme.client_slug &&
-      initialRoute.programmeSlug === sampleProgramme.slug
-    ) {
-      currentProgramme = sampleProgramme;
+    if (!currentProgramme) {
+      currentProgramme = sampleProgrammes.find(
+        (programme) => programme.client_slug === initialRoute.clientSlug && programme.slug === initialRoute.programmeSlug,
+      );
     }
 
     if (!currentProgramme) {

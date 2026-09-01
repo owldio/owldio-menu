@@ -205,6 +205,75 @@ export const sampleProgramme = {
   ],
 };
 
+function demoProgramme(overrides) {
+  return {
+    ...sampleProgramme,
+    ...overrides,
+    pdf_filename: null,
+    chapters: sampleProgramme.chapters,
+  };
+}
+
+export const sampleProgrammes = [
+  sampleProgramme,
+  demoProgramme({
+    id: "sample-before-the-migrating-birds-stall",
+    client_slug: "field-notes",
+    slug: "before-the-migrating-birds-stall",
+    title: "候鳥失速之前",
+    title_en: "BEFORE THE MIGRATING BIRDS STALL",
+    summary: "三名舞者沿著一條不斷偏移的航線，練習離開，也練習折返。",
+    production_type: "當代舞",
+    venue: "水源劇場",
+    starts_at: "2026-10-09T19:30:00+08:00",
+    ends_at: "2026-10-11T21:00:00+08:00",
+    duration_minutes: 75,
+    cover_theme: "cobalt",
+  }),
+  demoProgramme({
+    id: "sample-third-star-in-the-darkroom",
+    client_slug: "room-zero",
+    slug: "third-star-in-the-darkroom",
+    title: "暗房裡的第三顆星",
+    title_en: "THE THIRD STAR IN THE DARKROOM",
+    summary: "一間照相館、一捲沒有主人的底片，以及每晚準時出現的陌生客人。",
+    production_type: "實驗戲劇",
+    venue: "牯嶺街小劇場",
+    starts_at: "2026-11-06T19:30:00+08:00",
+    ends_at: "2026-11-08T21:10:00+08:00",
+    duration_minutes: 95,
+    cover_theme: "oxide",
+  }),
+  demoProgramme({
+    id: "sample-voices-behind-the-wall",
+    client_slug: "north-window",
+    slug: "voices-behind-the-wall",
+    title: "聲音從牆後來",
+    title_en: "VOICES FROM BEHIND THE WALL",
+    summary: "四件樂器與一棟老屋互相聆聽，讓被封住的回聲重新有了出口。",
+    production_type: "室內樂劇場",
+    venue: "國家兩廳院實驗劇場",
+    starts_at: "2026-12-04T19:30:00+08:00",
+    ends_at: "2026-12-05T21:00:00+08:00",
+    duration_minutes: 80,
+    cover_theme: "ultramarine",
+  }),
+  demoProgramme({
+    id: "sample-island-moving-slowly",
+    client_slug: "island-lab",
+    slug: "island-moving-slowly",
+    title: "島嶼緩慢移動",
+    title_en: "AN ISLAND MOVES SLOWLY",
+    summary: "聲音、光與步行組成一場沒有固定座位的島嶼觀測。",
+    production_type: "跨域現場",
+    venue: "臺北表演藝術中心藍盒子",
+    starts_at: "2027-01-15T19:00:00+08:00",
+    ends_at: "2027-01-17T20:30:00+08:00",
+    duration_minutes: 90,
+    cover_theme: "citron",
+  }),
+];
+
 export const samplePdf = {
   downloadUrl: samplePdfUrl,
   pageImages: [

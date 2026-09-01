@@ -2,7 +2,7 @@
 
 表演藝術電子節目冊平台。公開端以手機掃碼後三秒內可讀為目標，提供原生垂直閱讀、章節跳轉與獨立演出網址；原始 PDF 是次要閱讀與下載功能。管理端提供節目冊建立、發布狀態與 PDF 上傳。
 
-視覺採用「Theatrical Editorial Modernism（劇場編輯現代主義）」；完整排版與素材規則見 [`docs/DESIGN_SYSTEM.md`](docs/DESIGN_SYSTEM.md)。框架不依賴示範照片，內建文章、導演信、曲目、人物、團隊與場館資訊等六種可直接套客戶內容的章節版型。
+公開總覽採用「Rotunda Stage Archive（環形劇場書庫）」：中央節目冊聚焦、左右冊沿圓弧後退，可用箭頭、鍵盤或滑動切換；進入作品後轉為「Theatrical Editorial Modernism（劇場編輯現代主義）」閱讀系統。完整排版與素材規則見 [`docs/DESIGN_SYSTEM.md`](docs/DESIGN_SYSTEM.md)。框架不依賴示範照片，內建文章、導演信、曲目、人物、團隊與場館資訊等六種可直接套客戶內容的章節版型。
 
 ## Routes
 

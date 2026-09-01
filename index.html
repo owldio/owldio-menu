@@ -3,13 +3,13 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#f2eee4" />
+    <meta name="theme-color" content="#090a10" />
     <meta name="description" content="OWLDIO MENU 表演藝術電子節目冊平台視覺原型" />
     <title>OWLDIO MENU｜電子節目冊</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Condensed:wght@400;500;600&family=Noto+Sans+TC:wght@400;500;600&family=Noto+Serif+TC:wght@400;500;600;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,500;6..96,600&family=IBM+Plex+Sans+Condensed:wght@400;500;600&family=Noto+Sans+TC:wght@400;500;600&family=Noto+Serif+TC:wght@400;500;600;700&display=swap"
       rel="stylesheet"
     />
     <link rel="stylesheet" href="./styles.css" />
@@ -24,8 +24,8 @@
           <span class="brand__name">OWLDIO</span>
           <span class="brand__division">MENU</span>
         </button>
-        <p class="site-header__context" id="header-context">PUBLIC LIBRARY</p>
-        <button class="site-header__index" type="button" data-route="contents">
+        <p class="site-header__context" id="header-context">PROGRAMME CIRCULATION</p>
+        <button class="site-header__index" type="button" data-route="contents" hidden>
           <span>INDEX</span>
           <span>目錄</span>
         </button>
@@ -33,41 +33,65 @@
 
       <main id="main-content">
         <section class="view view--shelf" id="shelf-view" aria-labelledby="shelf-title">
+          <div class="shelf-ambient" aria-hidden="true">
+            <span></span><span></span><span></span>
+          </div>
+
           <header class="shelf-intro page-gutter">
             <div class="eyebrow-row">
-              <span>01 / DIGITAL PROGRAMMES</span>
-              <span id="shelf-count">1 TITLE</span>
+              <span>CURATED DIGITAL PROGRAMMES</span>
+              <span id="shelf-count">5 TITLES</span>
             </div>
-            <p class="kicker">OWLDIO PERFORMING ARTS ARCHIVE</p>
-            <h1 id="shelf-title">作品索引</h1>
+            <p class="kicker">PERFORMING ARTS IN CIRCULATION</p>
+            <h1 id="shelf-title"><span>OWLDIO</span> <em>MENU</em></h1>
             <p class="shelf-intro__note">
-              一個演出，一冊獨立的數位節目單。<br />公開作品會出現在這裡，未公開作品仍可透過專屬網址閱讀。
+              每一場演出，都留下自己的閱讀方式。<br />轉動書架，選擇今晚要打開的節目冊。
             </p>
           </header>
 
-          <div class="shelf-rule" aria-hidden="true"><span></span><i></i></div>
-
-          <div class="programme-shelf page-gutter" id="programme-shelf">
-            <button class="programme-volume programme-volume--featured" type="button" data-route="entrance">
-              <span class="volume-cover volume-cover--tide" aria-hidden="true">
-                <span class="cover-series">OWLDIO MENU / 001</span>
-                <span class="cover-title cover-title--vertical">潮聲未眠</span>
-                <span class="cover-title-en">THE TIDE<br />STAYS AWAKE</span>
-                <span class="cover-date">2026.09.18—20</span>
-              </span>
-              <span class="volume-meta">
-                <span class="volume-meta__status"><i></i> 公開中</span>
-                <strong>潮聲未眠</strong>
-                <small>原創音樂劇 · 北城實驗劇場</small>
-                <span class="volume-meta__open">開啟節目冊 <b>↗</b></span>
-              </span>
+          <div
+            class="carousel-stage"
+            id="programme-carousel"
+            role="region"
+            aria-roledescription="carousel"
+            aria-label="公開演出節目冊輪播"
+            tabindex="0"
+          >
+            <p class="carousel-stage__label">SELECT A PROGRAMME</p>
+            <button class="carousel-arrow carousel-arrow--prev" id="carousel-prev" type="button" aria-label="上一份節目冊">
+              <span aria-hidden="true">←</span><small>PREV.</small>
             </button>
-
+            <div class="programme-orbit" id="programme-shelf"></div>
+            <button class="carousel-arrow carousel-arrow--next" id="carousel-next" type="button" aria-label="下一份節目冊">
+              <small>NEXT</small><span aria-hidden="true">→</span>
+            </button>
+            <div class="carousel-stage__axis" aria-hidden="true"><span></span></div>
           </div>
+
+          <section class="carousel-selection page-gutter" id="carousel-selection" aria-labelledby="selected-programme-title" aria-live="polite">
+            <div class="carousel-selection__number">
+              <span id="selected-programme-number">01</span>
+              <small id="selected-programme-total">/ 01</small>
+            </div>
+            <div class="carousel-selection__copy">
+              <p class="kicker" id="selected-programme-type">原創音樂劇</p>
+              <h2 id="selected-programme-title">潮聲未眠</h2>
+              <p class="carousel-selection__english" id="selected-programme-title-en">THE TIDE STAYS AWAKE</p>
+              <p class="carousel-selection__summary" id="selected-programme-summary">一座入夜後仍記得潮汐的城市，與三個不願睡去的人。</p>
+            </div>
+            <dl class="carousel-selection__ledger">
+              <div><dt>DATE</dt><dd id="selected-programme-date">2026.09.18</dd></div>
+              <div><dt>VENUE</dt><dd id="selected-programme-venue">北城實驗劇場</dd></div>
+            </dl>
+            <button class="carousel-selection__open" id="carousel-open" type="button">
+              <span>閱讀這本節目冊</span><strong aria-hidden="true">↗</strong>
+            </button>
+            <div class="carousel-track" id="carousel-track" aria-label="選擇節目冊"></div>
+          </section>
 
           <footer class="folio page-gutter">
             <span>MENU.OWLDIO.ART</span>
-            <span>01</span>
+            <span>PUBLIC EDITIONS</span>
           </footer>
         </section>
 
@@ -79,9 +103,9 @@
             </div>
 
             <div class="entrance-cover" aria-hidden="true">
-              <div class="entrance-cover__spine">OWLDIO MENU / ORIGINAL MUSICAL</div>
+              <div class="entrance-cover__spine" id="programme-cover-spine">OWLDIO MENU / PERFORMING ARTS</div>
               <div class="entrance-cover__field">
-                <span class="entrance-cover__edition">PROGRAMME 001</span>
+                <span class="entrance-cover__edition" id="programme-cover-edition">DIGITAL PROGRAMME</span>
                 <span class="entrance-cover__title" id="programme-cover-title">潮聲<br />未眠</span>
                 <span class="entrance-cover__english" id="programme-cover-title-en">THE TIDE STAYS AWAKE</span>
                 <span class="entrance-cover__date" id="programme-cover-date">18—20 SEPTEMBER 2026</span>
