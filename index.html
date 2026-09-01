@@ -1,0 +1,317 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#f2eee4" />
+    <meta name="description" content="OWLDIO MENU 表演藝術電子節目冊平台視覺原型" />
+    <title>OWLDIO MENU｜電子節目冊</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Condensed:wght@400;500;600&family=Noto+Sans+TC:wght@400;500;600&family=Noto+Serif+TC:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <a class="skip-link" href="#main-content">跳至主要內容</a>
+
+    <div class="reader-shell" id="reader-shell" data-view="shelf">
+      <header class="site-header">
+        <button class="brand" type="button" data-route="shelf" aria-label="回到作品索引">
+          <span class="brand__name">OWLDIO</span>
+          <span class="brand__division">MENU</span>
+        </button>
+        <p class="site-header__context" id="header-context">PUBLIC LIBRARY</p>
+        <button class="site-header__index" type="button" data-route="contents">
+          <span>INDEX</span>
+          <span>目錄</span>
+        </button>
+      </header>
+
+      <main id="main-content">
+        <section class="view view--shelf" id="shelf-view" aria-labelledby="shelf-title">
+          <header class="shelf-intro page-gutter">
+            <div class="eyebrow-row">
+              <span>01 / DIGITAL PROGRAMMES</span>
+              <span>3 TITLES</span>
+            </div>
+            <p class="kicker">OWLDIO PERFORMING ARTS ARCHIVE</p>
+            <h1 id="shelf-title">作品索引</h1>
+            <p class="shelf-intro__note">
+              一個演出，一冊獨立的數位節目單。<br />公開作品會出現在這裡，未公開作品仍可透過專屬網址閱讀。
+            </p>
+          </header>
+
+          <div class="shelf-rule" aria-hidden="true"><span></span><i></i></div>
+
+          <div class="programme-shelf page-gutter">
+            <button class="programme-volume programme-volume--featured" type="button" data-route="entrance">
+              <span class="volume-cover volume-cover--tide" aria-hidden="true">
+                <span class="cover-series">OWLDIO MENU / 001</span>
+                <span class="cover-title cover-title--vertical">潮聲未眠</span>
+                <span class="cover-title-en">THE TIDE<br />STAYS AWAKE</span>
+                <span class="cover-date">2026.09.18—20</span>
+              </span>
+              <span class="volume-meta">
+                <span class="volume-meta__status"><i></i> 公開中</span>
+                <strong>潮聲未眠</strong>
+                <small>原創音樂劇 · 北城實驗劇場</small>
+                <span class="volume-meta__open">開啟節目冊 <b>↗</b></span>
+              </span>
+            </button>
+
+            <button class="programme-volume" type="button" data-toast="此為書架排版示意；正式版可由後台新增每一場演出。">
+              <span class="volume-cover volume-cover--night" aria-hidden="true">
+                <span class="cover-series">OWLDIO MENU / 002</span>
+                <span class="cover-title">島嶼<br />緩慢<br />發光</span>
+                <span class="cover-date">2026.12</span>
+              </span>
+              <span class="volume-meta">
+                <span class="volume-meta__status volume-meta__status--quiet">尚未公開</span>
+                <strong>島嶼緩慢發光</strong>
+                <small>室內樂計畫 · 預告頁</small>
+              </span>
+            </button>
+
+            <button class="programme-volume" type="button" data-toast="此為封存作品示意；正式版仍可使用獨立網址開啟。">
+              <span class="volume-cover volume-cover--archive" aria-hidden="true">
+                <span class="cover-series">OWLDIO MENU / 000</span>
+                <span class="cover-title cover-title--small">十二月<br />以前</span>
+                <span class="cover-date">ARCHIVE / 2025</span>
+              </span>
+              <span class="volume-meta">
+                <span class="volume-meta__status volume-meta__status--quiet">已封存</span>
+                <strong>十二月以前</strong>
+                <small>舞蹈劇場 · 歷年節目冊</small>
+              </span>
+            </button>
+          </div>
+
+          <footer class="folio page-gutter">
+            <span>MENU.OWLDIO.ART</span>
+            <span>01</span>
+          </footer>
+        </section>
+
+        <section class="view view--entrance" id="entrance-view" aria-labelledby="entrance-title" hidden>
+          <div class="entrance-edition page-gutter">
+            <div class="eyebrow-row eyebrow-row--navy">
+              <button type="button" data-route="shelf">← 作品索引</button>
+              <span>演出入口 / 01</span>
+            </div>
+
+            <div class="entrance-cover" aria-hidden="true">
+              <div class="entrance-cover__spine">OWLDIO MENU / ORIGINAL MUSICAL</div>
+              <div class="entrance-cover__field">
+                <span class="entrance-cover__edition">PROGRAMME 001</span>
+                <span class="entrance-cover__title">潮聲<br />未眠</span>
+                <span class="entrance-cover__english">THE TIDE STAYS AWAKE</span>
+                <span class="entrance-cover__date">18—20 SEPTEMBER 2026</span>
+              </div>
+            </div>
+
+            <div class="entrance-copy">
+              <p class="kicker">原創音樂劇 · A NEW CHAMBER MUSICAL</p>
+              <h1 id="entrance-title">潮聲未眠</h1>
+              <p class="entrance-copy__english">THE TIDE STAYS AWAKE</p>
+              <p class="entrance-copy__deck">一座入夜後仍記得潮汐的城市，與三個不願睡去的人。</p>
+
+              <dl class="event-ledger">
+                <div><dt>DATE</dt><dd>2026.09.18—20</dd></div>
+                <div><dt>TIME</dt><dd>今晚 19:30 開演</dd></div>
+                <div><dt>VENUE</dt><dd>北城實驗劇場</dd></div>
+                <div><dt>DURATION</dt><dd>全長約 110 分鐘・無中場</dd></div>
+              </dl>
+
+              <div class="performance-status">
+                <span><i></i> HOUSE OPEN</span>
+                <strong>觀眾席已開放</strong>
+              </div>
+
+              <div class="entrance-actions">
+                <button class="button button--primary" type="button" data-route="contents">
+                  開始閱讀 <span>→</span>
+                </button>
+                <button class="button button--text" type="button" data-route="pdf">
+                  查看原始 PDF <span>↗</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <footer class="folio page-gutter">
+            <span>OWLDIO MENU / PROGRAMME 001</span>
+            <span>02</span>
+          </footer>
+        </section>
+
+        <section class="view view--contents" id="contents-view" aria-labelledby="contents-title" hidden>
+          <div class="contents-sheet page-gutter">
+            <div class="eyebrow-row eyebrow-row--navy">
+              <button type="button" data-route="entrance">← 演出入口</button>
+              <span>0 / 7</span>
+            </div>
+
+            <div class="contents-heading">
+              <div>
+                <p class="kicker">CONTENTS / PROGRAMME 001</p>
+                <h1 id="contents-title">目錄</h1>
+              </div>
+              <p>依照現場閱讀順序編排。<br />點選章節，即刻進入網頁版內容。</p>
+            </div>
+
+            <nav class="editorial-index" aria-label="節目冊章節">
+              <button class="index-row" type="button" data-route="chapter">
+                <span class="index-row__no">01</span>
+                <span class="index-row__copy">
+                  <strong>第一場　失眠者的房間</strong>
+                  <small>SCENE I · THE ROOM OF THE WAKEFUL</small>
+                </span>
+                <span class="index-row__folio">05</span>
+              </button>
+              <button class="index-row" type="button" data-toast="下一版會由後台資料自動生成完整章節；本稿先展示第一場的閱讀質感。">
+                <span class="index-row__no">02</span>
+                <span class="index-row__copy"><strong>曲目與場次</strong><small>MUSIC & SCENES</small></span>
+                <span class="index-row__folio">07</span>
+              </button>
+              <button class="index-row" type="button" data-toast="下一版會由後台資料自動生成完整章節；本稿先展示第一場的閱讀質感。">
+                <span class="index-row__no">03</span>
+                <span class="index-row__copy"><strong>導演的話　關於沒有睡著的海</strong><small>DIRECTOR'S NOTE</small></span>
+                <span class="index-row__folio">09</span>
+              </button>
+              <button class="index-row" type="button" data-toast="下一版會由後台資料自動生成完整章節；本稿先展示第一場的閱讀質感。">
+                <span class="index-row__no">04</span>
+                <span class="index-row__copy"><strong>演員與樂手</strong><small>CAST & MUSICIANS</small></span>
+                <span class="index-row__folio">11</span>
+              </button>
+              <button class="index-row" type="button" data-toast="下一版會由後台資料自動生成完整章節；本稿先展示第一場的閱讀質感。">
+                <span class="index-row__no">05</span>
+                <span class="index-row__copy"><strong>幕後製作團隊</strong><small>CREATIVE & PRODUCTION TEAM</small></span>
+                <span class="index-row__folio">13</span>
+              </button>
+              <button class="index-row" type="button" data-toast="下一版會由後台資料自動生成完整章節；本稿先展示第一場的閱讀質感。">
+                <span class="index-row__no">06</span>
+                <span class="index-row__copy"><strong>演出資訊與場館須知</strong><small>VISITOR INFORMATION</small></span>
+                <span class="index-row__folio">15</span>
+              </button>
+              <button class="index-row index-row--pdf" type="button" data-route="pdf">
+                <span class="index-row__no">PDF</span>
+                <span class="index-row__copy"><strong>原始印刷節目冊</strong><small>ORIGINAL PRINT EDITION</small></span>
+                <span class="index-row__folio">↗</span>
+              </button>
+            </nav>
+          </div>
+
+          <footer class="folio page-gutter">
+            <span>THE TIDE STAYS AWAKE</span>
+            <span>03</span>
+          </footer>
+        </section>
+
+        <article class="view view--chapter" id="chapter-view" aria-labelledby="chapter-title" hidden>
+          <div class="chapter-page page-gutter">
+            <div class="chapter-running-head">
+              <button type="button" data-route="contents">← 目錄</button>
+              <span>網頁版</span>
+              <span>2 / 7</span>
+            </div>
+
+            <header class="chapter-heading">
+              <div class="chapter-heading__number">01</div>
+              <div>
+                <p class="kicker">SCENE I · 05 / 16</p>
+                <h1 id="chapter-title">失眠者的房間</h1>
+                <p class="chapter-heading__english">THE ROOM OF THE WAKEFUL</p>
+              </div>
+            </header>
+
+            <figure class="chapter-documentary">
+              <img
+                src="./assets/tide-awake-rehearsal-v5.png"
+                alt="黑盒子劇場中，三位表演者與樂手正在排練《潮聲未眠》"
+              />
+              <figcaption>
+                <span>排練側記／黑盒子劇場，2026</span>
+                <span>PHOTO 01</span>
+              </figcaption>
+            </figure>
+
+            <div class="chapter-prose">
+              <p class="chapter-lede">
+                凌晨兩點十七分，城市的潮聲穿過沒有關緊的窗。黎安坐在地板上，把同一段旋律反覆彈了十九次。
+              </p>
+              <p>
+                《潮聲未眠》從一個很小的問題開始：如果一座城市不再做夢，還有誰會替它記得曾經失去的人？我們把排練場分成三條看不見的岸線，演員每一次跨越，都會讓樂句產生一點偏移。
+              </p>
+              <p>
+                第一場沒有完整的歌。鋼琴、呼吸與鞋底摩擦地板的聲音先建立節奏，直到角色願意說出名字，旋律才第一次被聽見。
+              </p>
+            </div>
+
+            <aside class="score-note" aria-label="第一首曲目資訊">
+              <span class="score-note__number">I.</span>
+              <div>
+                <p>OPENING NUMBER</p>
+                <h2>〈潮線以北〉</h2>
+                <dl>
+                  <div><dt>Tempo</dt><dd>Adagio, ♩ = 54</dd></div>
+                  <div><dt>Players</dt><dd>Piano · Viola · Voice</dd></div>
+                  <div><dt>Duration</dt><dd>06′ 40″</dd></div>
+                </dl>
+              </div>
+            </aside>
+
+            <blockquote>
+              「我們不是為了醒著而醒著。<br />只是海還沒有把最後一句話說完。」
+              <cite>— 黎安，第一場</cite>
+            </blockquote>
+
+            <div class="chapter-prose">
+              <p>
+                這一章的網頁版保留紙本閱讀的停頓：照片不是滿版背景，文字也不急著塞滿螢幕。觀眾在開演前，可以先知道人物、曲目與情緒入口；演出結束後，再回來讀完創作脈絡。
+              </p>
+            </div>
+          </div>
+
+          <nav class="chapter-rail" aria-label="章節導覽">
+            <button type="button" data-route="contents"><span>PREV.</span><strong>目錄</strong></button>
+            <div class="chapter-rail__progress" aria-label="目前章節進度 2/7">
+              <i class="is-complete"></i><i class="is-current"></i><i></i><i></i><i></i><i></i><i></i>
+            </div>
+            <button type="button" data-toast="下一章會由後台內容自動生成。"><span>NEXT</span><strong>曲目</strong></button>
+          </nav>
+        </article>
+
+        <section class="view view--pdf" id="pdf-view" aria-labelledby="pdf-title" hidden>
+          <header class="pdf-toolbar">
+            <button type="button" data-route="contents">← 網頁版</button>
+            <div>
+              <span id="pdf-page-label">01 / 02</span>
+              <strong id="pdf-title">原始 PDF</strong>
+            </div>
+            <a href="./assets/rational-sensual-programme-sample-v1.pdf" download>下載</a>
+          </header>
+
+          <div class="pdf-stage">
+            <div class="pdf-paper">
+              <img id="pdf-page-image" src="./assets/rational-sensual-page-1-v1.png" alt="使用者提供的《理性與感性》原始節目單第一頁" />
+            </div>
+            <p>原始印刷節目冊 · 422 × 299 mm · 橫式跨頁</p>
+          </div>
+
+          <nav class="pdf-pager" aria-label="PDF 頁面導覽">
+            <button type="button" id="pdf-prev" aria-label="上一頁">←</button>
+            <div class="pdf-pager__track"><i id="pdf-progress"></i></div>
+            <button type="button" id="pdf-next" aria-label="下一頁">→</button>
+          </nav>
+        </section>
+      </main>
+
+      <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+    </div>
+
+    <script src="./app.js"></script>
+  </body>
+</html>
