@@ -127,7 +127,7 @@
           <div class="contents-sheet page-gutter">
             <div class="eyebrow-row eyebrow-row--navy">
               <button type="button" data-route="entrance">← 演出入口</button>
-              <span>0 / 7</span>
+              <span id="contents-count">0 / 0</span>
             </div>
 
             <div class="contents-heading">
@@ -138,45 +138,8 @@
               <p>依照現場閱讀順序編排。<br />點選章節，即刻進入網頁版內容。</p>
             </div>
 
-            <nav class="editorial-index" aria-label="節目冊章節">
-              <button class="index-row" type="button" data-route="chapter">
-                <span class="index-row__no">01</span>
-                <span class="index-row__copy">
-                  <strong>第一場　失眠者的房間</strong>
-                  <small>SCENE I · THE ROOM OF THE WAKEFUL</small>
-                </span>
-                <span class="index-row__folio">05</span>
-              </button>
-              <button class="index-row" type="button" data-toast="下一版會由後台資料自動生成完整章節；本稿先展示第一場的閱讀質感。">
-                <span class="index-row__no">02</span>
-                <span class="index-row__copy"><strong>曲目與場次</strong><small>MUSIC & SCENES</small></span>
-                <span class="index-row__folio">07</span>
-              </button>
-              <button class="index-row" type="button" data-toast="下一版會由後台資料自動生成完整章節；本稿先展示第一場的閱讀質感。">
-                <span class="index-row__no">03</span>
-                <span class="index-row__copy"><strong>導演的話　關於沒有睡著的海</strong><small>DIRECTOR'S NOTE</small></span>
-                <span class="index-row__folio">09</span>
-              </button>
-              <button class="index-row" type="button" data-toast="下一版會由後台資料自動生成完整章節；本稿先展示第一場的閱讀質感。">
-                <span class="index-row__no">04</span>
-                <span class="index-row__copy"><strong>演員與樂手</strong><small>CAST & MUSICIANS</small></span>
-                <span class="index-row__folio">11</span>
-              </button>
-              <button class="index-row" type="button" data-toast="下一版會由後台資料自動生成完整章節；本稿先展示第一場的閱讀質感。">
-                <span class="index-row__no">05</span>
-                <span class="index-row__copy"><strong>幕後製作團隊</strong><small>CREATIVE & PRODUCTION TEAM</small></span>
-                <span class="index-row__folio">13</span>
-              </button>
-              <button class="index-row" type="button" data-toast="下一版會由後台資料自動生成完整章節；本稿先展示第一場的閱讀質感。">
-                <span class="index-row__no">06</span>
-                <span class="index-row__copy"><strong>演出資訊與場館須知</strong><small>VISITOR INFORMATION</small></span>
-                <span class="index-row__folio">15</span>
-              </button>
-              <button class="index-row index-row--pdf" type="button" data-route="pdf">
-                <span class="index-row__no">PDF</span>
-                <span class="index-row__copy"><strong>原始印刷節目冊</strong><small>ORIGINAL PRINT EDITION</small></span>
-                <span class="index-row__folio">↗</span>
-              </button>
+            <nav class="editorial-index" id="editorial-index" aria-label="節目冊章節">
+              <p class="contents-loading">正在整理章節…</p>
             </nav>
           </div>
 
@@ -191,75 +154,25 @@
             <div class="chapter-running-head">
               <button type="button" data-route="contents">← 目錄</button>
               <span>網頁版</span>
-              <span>2 / 7</span>
+              <span id="chapter-folio">1 / 1</span>
             </div>
 
             <header class="chapter-heading">
-              <div class="chapter-heading__number">01</div>
+              <div class="chapter-heading__number" id="chapter-number">01</div>
               <div>
-                <p class="kicker">SCENE I · 05 / 16</p>
+                <p class="kicker" id="chapter-kicker">CHAPTER · 01</p>
                 <h1 id="chapter-title">失眠者的房間</h1>
-                <p class="chapter-heading__english">THE ROOM OF THE WAKEFUL</p>
+                <p class="chapter-heading__english" id="chapter-title-en">THE ROOM OF THE WAKEFUL</p>
               </div>
             </header>
 
-            <figure class="chapter-documentary">
-              <img
-                src="./assets/tide-awake-rehearsal-v5.png"
-                alt="黑盒子劇場中，三位表演者與樂手正在排練《潮聲未眠》"
-                loading="lazy"
-                decoding="async"
-                fetchpriority="low"
-              />
-              <figcaption>
-                <span>排練側記／黑盒子劇場，2026</span>
-                <span>PHOTO 01</span>
-              </figcaption>
-            </figure>
-
-            <div class="chapter-prose">
-              <p class="chapter-lede">
-                凌晨兩點十七分，城市的潮聲穿過沒有關緊的窗。黎安坐在地板上，把同一段旋律反覆彈了十九次。
-              </p>
-              <p>
-                《潮聲未眠》從一個很小的問題開始：如果一座城市不再做夢，還有誰會替它記得曾經失去的人？我們把排練場分成三條看不見的岸線，演員每一次跨越，都會讓樂句產生一點偏移。
-              </p>
-              <p>
-                第一場沒有完整的歌。鋼琴、呼吸與鞋底摩擦地板的聲音先建立節奏，直到角色願意說出名字，旋律才第一次被聽見。
-              </p>
-            </div>
-
-            <aside class="score-note" aria-label="第一首曲目資訊">
-              <span class="score-note__number">I.</span>
-              <div>
-                <p>OPENING NUMBER</p>
-                <h2>〈潮線以北〉</h2>
-                <dl>
-                  <div><dt>Tempo</dt><dd>Adagio, ♩ = 54</dd></div>
-                  <div><dt>Players</dt><dd>Piano · Viola · Voice</dd></div>
-                  <div><dt>Duration</dt><dd>06′ 40″</dd></div>
-                </dl>
-              </div>
-            </aside>
-
-            <blockquote>
-              「我們不是為了醒著而醒著。<br />只是海還沒有把最後一句話說完。」
-              <cite>— 黎安，第一場</cite>
-            </blockquote>
-
-            <div class="chapter-prose">
-              <p>
-                這一章的網頁版保留紙本閱讀的停頓：照片不是滿版背景，文字也不急著塞滿螢幕。觀眾在開演前，可以先知道人物、曲目與情緒入口；演出結束後，再回來讀完創作脈絡。
-              </p>
-            </div>
+            <div class="chapter-layout" id="chapter-content"></div>
           </div>
 
           <nav class="chapter-rail" aria-label="章節導覽">
-            <button type="button" data-route="contents"><span>PREV.</span><strong>目錄</strong></button>
-            <div class="chapter-rail__progress" aria-label="目前章節進度 2/7">
-              <i class="is-complete"></i><i class="is-current"></i><i></i><i></i><i></i><i></i><i></i>
-            </div>
-            <button type="button" data-toast="下一章會由後台內容自動生成。"><span>NEXT</span><strong>曲目</strong></button>
+            <button type="button" id="chapter-prev"><span>PREV.</span><strong>目錄</strong></button>
+            <div class="chapter-rail__progress" id="chapter-progress" aria-label="章節進度"></div>
+            <button type="button" id="chapter-next"><span>NEXT</span><strong>下一章</strong></button>
           </nav>
         </article>
 

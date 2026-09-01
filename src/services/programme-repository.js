@@ -26,9 +26,12 @@ const PUBLIC_PROGRAMME_SELECT = `${PROGRAMME_SELECT}, programme_chapters (
   id,
   position,
   slug,
+  kind,
+  eyebrow,
   title,
   title_en,
   body,
+  blocks,
   page_start,
   is_visible
 )`;

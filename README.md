@@ -2,12 +2,14 @@
 
 表演藝術電子節目冊平台。公開端以手機掃碼後三秒內可讀為目標，提供原生垂直閱讀、章節跳轉與獨立演出網址；原始 PDF 是次要閱讀與下載功能。管理端提供節目冊建立、發布狀態與 PDF 上傳。
 
+視覺採用「Theatrical Editorial Modernism（劇場編輯現代主義）」；完整排版與素材規則見 [`docs/DESIGN_SYSTEM.md`](docs/DESIGN_SYSTEM.md)。框架不依賴示範照片，內建文章、導演信、曲目、人物、團隊與場館資訊等六種可直接套客戶內容的章節版型。
+
 ## Routes
 
 - `/`：只顯示 `published` 節目冊的公開作品索引
 - `/:clientSlug/:programmeSlug`：節目冊入口
 - `/:clientSlug/:programmeSlug#contents`：章節目錄
-- `/:clientSlug/:programmeSlug#chapter`：原生網頁章節
+- `/:clientSlug/:programmeSlug#chapter/:chapterSlug`：可直接分享的原生網頁章節
 - `/:clientSlug/:programmeSlug#pdf`：原始 PDF
 - `/admin`：管理後台
 

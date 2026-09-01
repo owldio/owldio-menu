@@ -668,6 +668,15 @@ a:focus-visible {
   border-top: 2px solid var(--navy);
 }
 
+.contents-loading {
+  margin: 0;
+  padding: 28px 0;
+  border-bottom: 1px solid rgb(16 33 61 / 0.35);
+  color: var(--sage);
+  font-family: var(--font-sans);
+  font-size: 11px;
+}
+
 .index-row {
   display: grid;
   grid-template-columns: 31px 1fr 24px;
@@ -836,6 +845,26 @@ a:focus-visible {
   line-height: 1.9;
 }
 
+.chapter-layout {
+  padding-top: 1px;
+  border-top: 2px solid var(--navy);
+}
+
+.chapter-layout > .chapter-prose:first-child .chapter-lede {
+  margin-top: 27px;
+}
+
+.chapter-dateline {
+  margin: 0;
+  padding: 16px 0;
+  border-bottom: 1px solid rgb(16 33 61 / 0.32);
+  color: var(--vermilion);
+  font-family: var(--font-sans);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-align: right;
+}
+
 .score-note {
   display: grid;
   grid-template-columns: 60px 1fr;
@@ -909,6 +938,234 @@ a:focus-visible {
   letter-spacing: 0.08em;
 }
 
+.programme-list {
+  margin-top: 32px;
+  border-top: 2px solid var(--navy);
+}
+
+.programme-item {
+  display: grid;
+  grid-template-columns: 35px minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  min-height: 78px;
+  padding: 12px 0;
+  border-bottom: 1px solid rgb(16 33 61 / 0.34);
+}
+
+.programme-item__number {
+  align-self: start;
+  padding-top: 4px;
+  color: var(--vermilion);
+  font-family: var(--font-latin);
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.programme-item h2 {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -0.04em;
+}
+
+.programme-item p {
+  margin: 4px 0 0;
+  color: var(--sage);
+  font-family: var(--font-sans);
+  font-size: 9px;
+}
+
+.programme-item time {
+  color: var(--navy);
+  font-family: var(--font-latin);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+}
+
+.people-index {
+  border-top: 2px solid var(--navy);
+}
+
+.person-row {
+  display: grid;
+  grid-template-columns: 32px minmax(92px, 0.85fr) 1.35fr;
+  gap: 12px;
+  padding: 18px 0 20px;
+  border-bottom: 1px solid rgb(16 33 61 / 0.34);
+}
+
+.person-row__number {
+  color: var(--vermilion);
+  font-family: var(--font-latin);
+  font-size: 9px;
+  font-weight: 600;
+}
+
+.person-row div span {
+  color: var(--sage);
+  font-family: var(--font-sans);
+  font-size: 9px;
+}
+
+.person-row h2 {
+  margin: 4px 0 0;
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: -0.04em;
+}
+
+.person-row > p {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 11px;
+  line-height: 1.75;
+}
+
+.credit-groups {
+  border-top: 2px solid var(--navy);
+}
+
+.credit-group {
+  display: grid;
+  grid-template-columns: 86px 1fr;
+  gap: 18px;
+  padding: 23px 0 25px;
+  border-bottom: 1px solid var(--navy);
+}
+
+.credit-group header span {
+  color: var(--vermilion);
+  font-family: var(--font-latin);
+  font-size: 9px;
+}
+
+.credit-group h2 {
+  margin: 8px 0 0;
+  font-size: 24px;
+  font-weight: 500;
+}
+
+.credit-group dl {
+  margin: 0;
+}
+
+.credit-group dl div {
+  display: grid;
+  grid-template-columns: minmax(76px, 0.7fr) 1.3fr;
+  gap: 12px;
+  padding: 7px 0;
+  border-bottom: 1px solid rgb(16 33 61 / 0.18);
+}
+
+.credit-group dl div:last-child {
+  border-bottom: 0;
+}
+
+.credit-group dt {
+  color: var(--sage);
+  font-family: var(--font-sans);
+  font-size: 9px;
+}
+
+.credit-group dd {
+  margin: 0;
+  font-size: 12px;
+}
+
+.visitor-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  margin: 0;
+  border-top: 2px solid var(--navy);
+  border-left: 1px solid rgb(16 33 61 / 0.34);
+}
+
+.visitor-grid > div {
+  display: grid;
+  grid-template-columns: 25px 1fr;
+  min-height: 140px;
+  padding: 15px 14px;
+  border-right: 1px solid rgb(16 33 61 / 0.34);
+  border-bottom: 1px solid rgb(16 33 61 / 0.34);
+}
+
+.visitor-grid__number {
+  grid-row: 1 / 3;
+  color: var(--vermilion);
+  font-family: var(--font-latin);
+  font-size: 9px;
+}
+
+.visitor-grid dt {
+  align-self: start;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.visitor-grid dd {
+  align-self: end;
+  margin: 16px 0 0;
+  color: var(--ink-soft);
+  font-family: var(--font-sans);
+  font-size: 10px;
+  line-height: 1.7;
+}
+
+.visitor-notice {
+  display: grid;
+  grid-template-columns: 100px 1fr;
+  gap: 18px;
+  margin-top: 24px;
+  padding: 17px 0;
+  border-top: 1px solid var(--vermilion);
+  border-bottom: 1px solid rgb(16 33 61 / 0.34);
+}
+
+.visitor-notice p {
+  margin: 0;
+  color: var(--vermilion);
+  font-family: var(--font-sans);
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.visitor-notice div {
+  color: var(--ink-soft);
+  font-size: 12px;
+  line-height: 1.8;
+}
+
+.chapter-signature {
+  display: grid;
+  justify-content: end;
+  gap: 5px;
+  margin: 42px 8px 16px;
+  padding-top: 15px;
+  border-top: 1px solid rgb(16 33 61 / 0.34);
+  text-align: right;
+}
+
+.chapter-signature strong {
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.chapter-signature span {
+  color: var(--sage);
+  font-family: var(--font-sans);
+  font-size: 9px;
+}
+
+.view--chapter[data-chapter-kind="letter"] .chapter-heading {
+  padding-bottom: 38px;
+}
+
+.view--chapter[data-chapter-kind="programme"] .chapter-heading__number,
+.view--chapter[data-chapter-kind="visitor"] .chapter-heading__number {
+  color: var(--vermilion);
+}
+
 .chapter-rail {
   position: sticky;
   bottom: 0;
@@ -923,7 +1180,7 @@ a:focus-visible {
   box-shadow: 0 -8px 26px rgb(9 21 42 / 0.1);
 }
 
-.chapter-rail button {
+.chapter-rail > button {
   display: grid;
   gap: 2px;
   align-content: center;
@@ -935,24 +1192,24 @@ a:focus-visible {
   cursor: pointer;
 }
 
-.chapter-rail button:first-child {
+.chapter-rail > button:first-child {
   border-right: 1px solid rgb(16 33 61 / 0.22);
   text-align: left;
 }
 
-.chapter-rail button:last-child {
+.chapter-rail > button:last-child {
   border-left: 1px solid rgb(16 33 61 / 0.22);
   text-align: right;
 }
 
-.chapter-rail button span {
+.chapter-rail > button span {
   color: var(--vermilion);
   font-family: var(--font-latin);
   font-size: 8px;
   letter-spacing: 0.1em;
 }
 
-.chapter-rail button strong {
+.chapter-rail > button strong {
   font-family: var(--font-sans);
   font-size: 10px;
   font-weight: 500;
@@ -960,21 +1217,25 @@ a:focus-visible {
 
 .chapter-rail__progress {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(8px, 1fr));
   gap: 4px;
   padding: 0 16px;
 }
 
-.chapter-rail__progress i {
+.chapter-rail__progress button {
+  min-height: 2px;
   height: 2px;
+  padding: 0;
+  border: 0;
   background: rgb(16 33 61 / 0.22);
+  cursor: pointer;
 }
 
-.chapter-rail__progress i.is-complete {
+.chapter-rail__progress button.is-complete {
   background: var(--sage-light);
 }
 
-.chapter-rail__progress i.is-current {
+.chapter-rail__progress button.is-current {
   background: var(--vermilion);
 }
 
@@ -1227,6 +1488,162 @@ a:focus-visible {
 
   .reader-shell {
     min-height: calc(100vh - 68px);
+  }
+
+  .reader-shell[data-view="shelf"] {
+    --reader-width: 1040px;
+  }
+
+  .reader-shell[data-view="entrance"] {
+    --reader-width: 900px;
+  }
+
+  .reader-shell[data-view="contents"],
+  .reader-shell[data-view="chapter"] {
+    --reader-width: 800px;
+  }
+
+  .reader-shell[data-view="pdf"] {
+    --reader-width: 1080px;
+  }
+
+  .reader-shell[data-view="not-found"] {
+    --reader-width: 720px;
+  }
+
+  .reader-shell[data-view="shelf"] .page-gutter,
+  .reader-shell[data-view="entrance"] .page-gutter,
+  .reader-shell[data-view="contents"] .page-gutter,
+  .reader-shell[data-view="chapter"] .page-gutter {
+    padding-right: 42px;
+    padding-left: 42px;
+  }
+
+  .reader-shell[data-view="shelf"] .shelf-intro {
+    display: grid;
+    grid-template-columns: minmax(0, 1.25fr) minmax(260px, 0.75fr);
+    column-gap: 70px;
+  }
+
+  .reader-shell[data-view="shelf"] .shelf-intro .eyebrow-row {
+    grid-column: 1 / -1;
+  }
+
+  .reader-shell[data-view="shelf"] .shelf-intro .kicker,
+  .reader-shell[data-view="shelf"] .shelf-intro h1 {
+    grid-column: 1;
+  }
+
+  .reader-shell[data-view="shelf"] .shelf-intro__note {
+    grid-column: 2;
+    grid-row: 2 / 4;
+    align-self: end;
+    margin-bottom: 7px;
+    font-size: 14px;
+  }
+
+  .reader-shell[data-view="shelf"] .shelf-intro h1 {
+    font-size: 72px;
+  }
+
+  .reader-shell[data-view="shelf"] .programme-shelf {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 38px 28px;
+  }
+
+  .reader-shell[data-view="shelf"] .programme-volume--featured {
+    grid-column: span 2;
+    grid-template-columns: minmax(210px, 0.84fr) 1.16fr;
+    gap: 31px;
+  }
+
+  .reader-shell[data-view="entrance"] .entrance-edition {
+    display: grid;
+    grid-template-columns: minmax(270px, 0.8fr) minmax(340px, 1.2fr);
+    gap: 44px 58px;
+    align-items: center;
+    padding-top: 28px;
+  }
+
+  .reader-shell[data-view="entrance"] .eyebrow-row {
+    grid-column: 1 / -1;
+  }
+
+  .reader-shell[data-view="entrance"] .entrance-cover {
+    width: 100%;
+    max-width: 340px;
+    margin-top: 0;
+  }
+
+  .reader-shell[data-view="entrance"] .entrance-copy {
+    padding-top: 0;
+  }
+
+  .reader-shell[data-view="entrance"] .entrance-copy h1 {
+    font-size: 53px;
+  }
+
+  .reader-shell[data-view="contents"] .contents-sheet,
+  .reader-shell[data-view="chapter"] .chapter-page {
+    width: min(100%, 720px);
+    margin: 0 auto;
+  }
+
+  .reader-shell[data-view="contents"] .contents-heading {
+    grid-template-columns: 1fr 220px;
+    padding-top: 45px;
+  }
+
+  .reader-shell[data-view="contents"] .contents-heading h1 {
+    font-size: 69px;
+  }
+
+  .reader-shell[data-view="contents"] .index-row {
+    grid-template-columns: 42px 1fr 34px;
+    min-height: 81px;
+  }
+
+  .reader-shell[data-view="chapter"] .chapter-heading {
+    grid-template-columns: 78px 1fr;
+    padding: 43px 0 34px;
+  }
+
+  .reader-shell[data-view="chapter"] .chapter-heading__number {
+    font-size: 54px;
+  }
+
+  .reader-shell[data-view="chapter"] .chapter-heading h1 {
+    font-size: 47px;
+  }
+
+  .reader-shell[data-view="chapter"] .chapter-prose {
+    width: min(100%, 620px);
+    margin-right: auto;
+    margin-left: auto;
+  }
+
+  .reader-shell[data-view="chapter"] .chapter-prose .chapter-lede {
+    font-size: 22px;
+  }
+
+  .reader-shell[data-view="chapter"] .chapter-page blockquote,
+  .reader-shell[data-view="chapter"] .score-note,
+  .reader-shell[data-view="chapter"] .chapter-signature {
+    width: min(100%, 640px);
+    margin-right: auto;
+    margin-left: auto;
+  }
+
+  .reader-shell[data-view="pdf"] .pdf-stage {
+    width: min(100%, 980px);
+    margin: 0 auto;
+    padding-top: 42px;
+  }
+
+  .reader-shell[data-view="pdf"] .pdf-pager {
+    width: min(calc(100% - 36px), 980px);
+    margin-right: auto;
+    margin-left: auto;
   }
 }
 

@@ -73,15 +73,19 @@ create table public.programme_chapters (
   programme_id uuid not null references public.programmes(id) on delete cascade,
   position integer not null,
   slug text not null,
+  kind text not null default 'essay',
+  eyebrow text,
   title text not null,
   title_en text,
   body text,
+  blocks jsonb not null default '[]'::jsonb,
   page_start integer,
   is_visible boolean not null default true,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   constraint programme_chapters_position_positive check (position > 0),
   constraint programme_chapters_page_positive check (page_start is null or page_start > 0),
+  constraint programme_chapters_kind_valid check (kind in ('essay', 'programme', 'letter', 'people', 'credits', 'visitor')),
   constraint programme_chapters_slug_format check (slug ~ '^[a-z0-9]+(?:-[a-z0-9]+)*$'),
   constraint programme_chapters_programme_position_unique unique (programme_id, position),
   constraint programme_chapters_programme_slug_unique unique (programme_id, slug)
@@ -224,21 +228,114 @@ insert into public.programme_chapters (
   programme_id,
   position,
   slug,
+  kind,
+  eyebrow,
   title,
   title_en,
   body,
+  blocks,
   page_start
 )
-values (
-  '00000000-0000-4000-8000-000000000101',
-  '00000000-0000-4000-8000-000000000001',
-  1,
-  'room-of-the-wakeful',
-  '第一場　失眠者的房間',
-  'SCENE I · THE ROOM OF THE WAKEFUL',
-  '凌晨兩點十七分，城市的潮聲穿過沒有關緊的窗。',
-  5
-);
+values
+  (
+    '00000000-0000-4000-8000-000000000101',
+    '00000000-0000-4000-8000-000000000001',
+    1,
+    'room-of-the-wakeful',
+    'essay',
+    'SCENE I',
+    '第一場　失眠者的房間',
+    'SCENE I · THE ROOM OF THE WAKEFUL',
+    '凌晨兩點十七分，城市的潮聲穿過沒有關緊的窗。',
+    $$[
+      {"type":"lede","text":"凌晨兩點十七分，城市的潮聲穿過沒有關緊的窗。黎安坐在地板上，把同一段旋律反覆彈了十九次。"},
+      {"type":"prose","paragraphs":["《潮聲未眠》從一個很小的問題開始：如果一座城市不再做夢，還有誰會替它記得曾經失去的人？","第一場沒有完整的歌。鋼琴、呼吸與鞋底摩擦地板的聲音先建立節奏。"]},
+      {"type":"score","number":"I.","label":"OPENING NUMBER","title":"〈潮線以北〉","details":[["Tempo","Adagio, ♩ = 54"],["Players","Piano · Viola · Voice"],["Duration","06′ 40″"]]},
+      {"type":"quote","text":"我們不是為了醒著而醒著。只是海還沒有把最後一句話說完。","cite":"黎安，第一場"}
+    ]$$::jsonb,
+    5
+  ),
+  (
+    '00000000-0000-4000-8000-000000000102',
+    '00000000-0000-4000-8000-000000000001',
+    2,
+    'music-and-scenes',
+    'programme',
+    'MUSIC & SCENES',
+    '曲目與場次',
+    'MUSIC & SCENES',
+    null,
+    $$[
+      {"type":"lede","text":"七段音樂像七次潮汐：不是把故事切開，而是讓觀眾知道此刻站在哪一條岸線上。"},
+      {"type":"programme-list","items":[["01","潮線以北","鋼琴、低音提琴與人聲","06′40″"],["02","沒有寄出的海圖","黎安／獨唱","08′15″"],["03","第三盞路燈","三重唱","05′30″"],["04","城市睡去以前","器樂間奏","04′20″"],["05","退潮的人","岑雨／獨唱","07′10″"],["06","把名字留在岸上","全體","09′05″"],["07","天亮仍有浪","終曲","06′55″"]]}
+    ]$$::jsonb,
+    7
+  ),
+  (
+    '00000000-0000-4000-8000-000000000103',
+    '00000000-0000-4000-8000-000000000001',
+    3,
+    'directors-note',
+    'letter',
+    'DIRECTOR''S NOTE',
+    '導演的話　關於沒有睡著的海',
+    'A NOTE ON THE SLEEPLESS SEA',
+    null,
+    $$[
+      {"type":"dateline","text":"臺北，2026 年初秋"},
+      {"type":"lede","text":"劇場裡的夜晚很奇怪。燈一暗，我們反而開始看見白天不敢承認的事。"},
+      {"type":"prose","paragraphs":["這齣戲沒有要解釋失眠，也不想把離開說成一件漂亮的事。我們只是陪三個人坐到天亮。","謝謝每一位在排練場裡容許沉默發生的人，也謝謝今晚坐在觀眾席裡的你。"]},
+      {"type":"signature","name":"周棲","role":"導演暨共同編劇"}
+    ]$$::jsonb,
+    9
+  ),
+  (
+    '00000000-0000-4000-8000-000000000104',
+    '00000000-0000-4000-8000-000000000001',
+    4,
+    'cast-and-musicians',
+    'people',
+    'CAST & MUSICIANS',
+    '演員與樂手',
+    'CAST & MUSICIANS',
+    null,
+    $$[
+      {"type":"people-list","items":[["黎安","林以森","在城市檔案室值夜班，把旋律寫在借閱單背面。"],["岑雨","陳穗","聲音採集者，記得每一場雨卻忘了自己的生日。"],["阿默","高未明","末班渡船的駕駛，也是唯一聽得見退潮的人。"],["鋼琴","羅以安","現場演奏／音樂共同創作。"],["中提琴","徐方庭","現場演奏。"],["低音提琴","黃知遠","現場演奏。"]]}
+    ]$$::jsonb,
+    11
+  ),
+  (
+    '00000000-0000-4000-8000-000000000105',
+    '00000000-0000-4000-8000-000000000001',
+    5,
+    'creative-team',
+    'credits',
+    'CREATIVE & PRODUCTION TEAM',
+    '幕後製作團隊',
+    'CREATIVE & PRODUCTION TEAM',
+    null,
+    $$[
+      {"type":"credits","groups":[{"title":"創作","items":[["編劇","周棲、許白"],["導演","周棲"],["作曲","羅以安"],["編舞","夏維"]]},{"title":"舞台","items":[["舞台設計","王重山"],["燈光設計","葉霧"],["服裝設計","杜嘉"],["音響設計","江泊"]]},{"title":"製作","items":[["製作人","溫晴"],["舞台監督","張珞"],["執行製作","陳亭"],["平面設計","OWLDIO"]]}]}
+    ]$$::jsonb,
+    13
+  ),
+  (
+    '00000000-0000-4000-8000-000000000106',
+    '00000000-0000-4000-8000-000000000001',
+    6,
+    'visitor-information',
+    'visitor',
+    'VISITOR INFORMATION',
+    '演出資訊與場館須知',
+    'VISITOR INFORMATION',
+    null,
+    $$[
+      {"type":"info-grid","items":[["演出長度","約 110 分鐘，無中場休息"],["建議年齡","建議 12 歲以上觀眾入場"],["遲到入場","依現場工作人員指示，於適當段落入場"],["字幕","中文演出；部分場次提供英文字幕"]]},
+      {"type":"notice","title":"演出提醒","text":"演出使用煙霧、瞬間強光與較大音量。觀眾席內請關閉會發光或發出聲響的裝置。"},
+      {"type":"notice","title":"節目冊保存","text":"本頁於演後仍會保留。原始 PDF 可下載收藏；最新演出異動以現場公告為準。"}
+    ]$$::jsonb,
+    15
+  );
 
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 values ('programme-pdfs', 'programme-pdfs', false, 26214400, array['application/pdf'])

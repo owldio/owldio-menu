@@ -20,6 +20,16 @@ describe("parseAppLocation", () => {
     });
   });
 
+  it("deep-links to a named chapter without losing the programme path", () => {
+    expect(parseAppLocation("/ours/tide-awake", "#chapter/directors-note")).toEqual({
+      kind: "programme",
+      clientSlug: "ours",
+      programmeSlug: "tide-awake",
+      view: "chapter",
+      chapterSlug: "directors-note",
+    });
+  });
+
   it("supports readable Traditional Chinese path segments", () => {
     expect(parseAppLocation("/%E5%AE%A2%E6%88%B6/%E7%AF%80%E7%9B%AE%E5%90%8D%E7%A8%B1", "")).toMatchObject({
       kind: "programme",

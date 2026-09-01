@@ -8,9 +8,20 @@ function decodeSegment(segment) {
   }
 }
 
-function readerView(hash) {
+export function parseReaderHash(hash) {
   const value = String(hash || "").replace(/^#/, "");
-  return READER_VIEWS.has(value) ? value : "entrance";
+  if (READER_VIEWS.has(value)) {
+    return { view: value };
+  }
+
+  if (value.startsWith("chapter/")) {
+    const chapterSlug = decodeSegment(value.slice("chapter/".length));
+    if (chapterSlug) {
+      return { view: "chapter", chapterSlug };
+    }
+  }
+
+  return { view: "entrance" };
 }
 
 export function parseAppLocation(pathname, hash) {
@@ -38,7 +49,7 @@ export function parseAppLocation(pathname, hash) {
     kind: "programme",
     clientSlug,
     programmeSlug,
-    view: readerView(hash),
+    ...parseReaderHash(hash),
   };
 }
 

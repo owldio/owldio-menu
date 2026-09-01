@@ -1,4 +1,4 @@
-import { buildProgrammePath } from "./domain/routing.js";
+import { buildProgrammePath, parseReaderHash } from "./domain/routing.js";
 import { samplePdf, sampleProgramme } from "./data/sample-programme.js";
 
 const routeMeta = {
@@ -125,6 +125,182 @@ function renderShelf(programmes) {
   programmes.forEach((programme, index) => shelf.append(volumeCard(programme, index)));
 }
 
+function createElement(tagName, className, value) {
+  const node = document.createElement(tagName);
+  if (className) node.className = className;
+  if (value !== undefined && value !== null) node.textContent = value;
+  return node;
+}
+
+function renderContents(programme) {
+  const index = document.querySelector("#editorial-index");
+  const chapters = (programme.chapters || []).filter((chapter) => chapter.is_visible !== false);
+  index.replaceChildren();
+  text("contents-count", `${chapters.length} / ${chapters.length}`);
+
+  chapters.forEach((chapter, chapterIndex) => {
+    const row = createElement("button", "index-row");
+    row.type = "button";
+    row.dataset.chapterSlug = chapter.slug;
+
+    const number = createElement("span", "index-row__no", String(chapterIndex + 1).padStart(2, "0"));
+    const copy = createElement("span", "index-row__copy");
+    copy.append(
+      createElement("strong", "", chapter.title),
+      createElement("small", "", chapter.title_en || chapter.eyebrow || `CHAPTER ${chapterIndex + 1}`),
+    );
+    const folio = createElement("span", "index-row__folio", String(chapter.page_start || chapterIndex + 1).padStart(2, "0"));
+    row.append(number, copy, folio);
+    index.append(row);
+  });
+
+  const pdf = createElement("button", "index-row index-row--pdf");
+  pdf.type = "button";
+  pdf.dataset.readerRoute = "pdf";
+  const pdfCopy = createElement("span", "index-row__copy");
+  pdfCopy.append(
+    createElement("strong", "", "原始印刷節目冊"),
+    createElement("small", "", "ORIGINAL PRINT EDITION"),
+  );
+  pdf.append(
+    createElement("span", "index-row__no", "PDF"),
+    pdfCopy,
+    createElement("span", "index-row__folio", "↗"),
+  );
+  index.append(pdf);
+}
+
+function proseBlock(paragraphs, lede = false) {
+  const wrapper = createElement("div", "chapter-prose");
+  paragraphs.filter(Boolean).forEach((paragraph) => {
+    wrapper.append(createElement("p", lede ? "chapter-lede" : "", paragraph));
+  });
+  return wrapper;
+}
+
+function scoreBlock(block) {
+  const aside = createElement("aside", "score-note");
+  aside.setAttribute("aria-label", block.label || "曲目資訊");
+  const copy = createElement("div");
+  copy.append(
+    createElement("p", "", block.label || "MUSIC NOTE"),
+    createElement("h2", "", block.title || "曲目"),
+  );
+  const details = createElement("dl");
+  (block.details || []).forEach(([label, value]) => {
+    const row = createElement("div");
+    row.append(createElement("dt", "", label), createElement("dd", "", value));
+    details.append(row);
+  });
+  copy.append(details);
+  aside.append(createElement("span", "score-note__number", block.number || "I."), copy);
+  return aside;
+}
+
+function quoteBlock(block) {
+  const quote = createElement("blockquote", "chapter-quote", `「${block.text || ""}」`);
+  if (block.cite) quote.append(createElement("cite", "", `— ${block.cite}`));
+  return quote;
+}
+
+function programmeListBlock(block) {
+  const section = createElement("section", "programme-list");
+  section.setAttribute("aria-label", "曲目與場次");
+  (block.items || []).forEach(([number, title, detail, duration]) => {
+    const item = createElement("article", "programme-item");
+    const copy = createElement("div");
+    copy.append(createElement("h2", "", title), createElement("p", "", detail));
+    item.append(createElement("span", "programme-item__number", number), copy, createElement("time", "", duration));
+    section.append(item);
+  });
+  return section;
+}
+
+function peopleListBlock(block) {
+  const section = createElement("section", "people-index");
+  section.setAttribute("aria-label", "演員與樂手名單");
+  (block.items || []).forEach(([role, name, description], index) => {
+    const item = createElement("article", "person-row");
+    const nameGroup = createElement("div");
+    nameGroup.append(createElement("span", "", role), createElement("h2", "", name));
+    item.append(
+      createElement("span", "person-row__number", String(index + 1).padStart(2, "0")),
+      nameGroup,
+      createElement("p", "", description),
+    );
+    section.append(item);
+  });
+  return section;
+}
+
+function creditsBlock(block) {
+  const section = createElement("section", "credit-groups");
+  section.setAttribute("aria-label", "製作團隊名單");
+  (block.groups || []).forEach((group, groupIndex) => {
+    const groupNode = createElement("section", "credit-group");
+    const heading = createElement("header");
+    heading.append(
+      createElement("span", "", String(groupIndex + 1).padStart(2, "0")),
+      createElement("h2", "", group.title),
+    );
+    const list = createElement("dl");
+    (group.items || []).forEach(([role, name]) => {
+      const row = createElement("div");
+      row.append(createElement("dt", "", role), createElement("dd", "", name));
+      list.append(row);
+    });
+    groupNode.append(heading, list);
+    section.append(groupNode);
+  });
+  return section;
+}
+
+function infoGridBlock(block) {
+  const list = createElement("dl", "visitor-grid");
+  (block.items || []).forEach(([label, value], index) => {
+    const item = createElement("div");
+    item.append(
+      createElement("span", "visitor-grid__number", String(index + 1).padStart(2, "0")),
+      createElement("dt", "", label),
+      createElement("dd", "", value),
+    );
+    list.append(item);
+  });
+  return list;
+}
+
+function noticeBlock(block) {
+  const aside = createElement("aside", "visitor-notice");
+  aside.append(createElement("p", "", block.title || "NOTICE"), createElement("div", "", block.text || ""));
+  return aside;
+}
+
+function renderChapterBlocks(chapter) {
+  const content = document.querySelector("#chapter-content");
+  content.replaceChildren();
+  const blocks = Array.isArray(chapter.blocks) && chapter.blocks.length
+    ? chapter.blocks
+    : [{ type: "prose", paragraphs: [chapter.body || "本章內容即將更新。"] }];
+
+  blocks.forEach((block) => {
+    if (block.type === "lede") content.append(proseBlock([block.text], true));
+    if (block.type === "prose") content.append(proseBlock(block.paragraphs || []));
+    if (block.type === "score") content.append(scoreBlock(block));
+    if (block.type === "quote") content.append(quoteBlock(block));
+    if (block.type === "programme-list") content.append(programmeListBlock(block));
+    if (block.type === "people-list") content.append(peopleListBlock(block));
+    if (block.type === "credits") content.append(creditsBlock(block));
+    if (block.type === "info-grid") content.append(infoGridBlock(block));
+    if (block.type === "notice") content.append(noticeBlock(block));
+    if (block.type === "dateline") content.append(createElement("p", "chapter-dateline", block.text));
+    if (block.type === "signature") {
+      const signature = createElement("footer", "chapter-signature");
+      signature.append(createElement("strong", "", block.name), createElement("span", "", block.role));
+      content.append(signature);
+    }
+  });
+}
+
 function hydrateProgramme(programme) {
   const state = performanceState(programme);
   const titleEnglish = programme.title_en || "DIGITAL PROGRAMME";
@@ -151,16 +327,9 @@ function hydrateProgramme(programme) {
   text("programme-status-copy", state.copy);
   text("pdf-title", `原始 PDF｜${programme.title}`);
 
+  renderContents(programme);
+
   const firstChapter = programme.chapters?.[0];
-  if (firstChapter) {
-    text("chapter-title", firstChapter.title.replace(/^第一場[　\s]*/, ""));
-    const firstIndex = document.querySelector(".editorial-index .index-row");
-    if (firstIndex) {
-      firstIndex.querySelector("strong").textContent = firstChapter.title;
-      firstIndex.querySelector("small").textContent = firstChapter.title_en || "CHAPTER 01";
-      firstIndex.querySelector(".index-row__folio").textContent = String(firstChapter.page_start || 1).padStart(2, "0");
-    }
-  }
 
   routeMeta.entrance = { context: titleEnglish, title: `${programme.title}｜電子節目冊` };
   routeMeta.contents.title = `目錄｜${programme.title}`;
@@ -190,6 +359,7 @@ export async function mountReader({ root, repository, initialRoute }) {
   let pdfPages = [];
   let shelfProgrammes = [];
   let currentProgramme = null;
+  let currentChapterIndex = 0;
 
   function animateView(view) {
     view.classList.remove("view-enter");
@@ -205,11 +375,71 @@ export async function mountReader({ root, repository, initialRoute }) {
     }, 3600);
   }
 
-  function showRoute(route, { updateHash = true } = {}) {
+  function visibleChapters() {
+    return (currentProgramme?.chapters || []).filter((chapter) => chapter.is_visible !== false);
+  }
+
+  function chapterLabel(chapter, fallback) {
+    if (!chapter) return fallback;
+    return chapter.title.replace(/^第[一二三四五六七八九十]+[場章][　\s]*/, "").slice(0, 8);
+  }
+
+  function renderChapter(chapterSlug) {
+    const chapters = visibleChapters();
+    if (!chapters.length) return null;
+
+    const requestedIndex = chapterSlug ? chapters.findIndex((chapter) => chapter.slug === chapterSlug) : -1;
+    currentChapterIndex = requestedIndex >= 0 ? requestedIndex : Math.min(currentChapterIndex, chapters.length - 1);
+    const chapter = chapters[currentChapterIndex];
+    const chapterView = document.querySelector("#chapter-view");
+    const progress = document.querySelector("#chapter-progress");
+    const previous = document.querySelector("#chapter-prev");
+    const next = document.querySelector("#chapter-next");
+
+    chapterView.dataset.chapterKind = chapter.kind || "essay";
+    text("chapter-number", String(currentChapterIndex + 1).padStart(2, "0"));
+    text("chapter-kicker", `${chapter.eyebrow || "CHAPTER"} · ${String(chapter.page_start || currentChapterIndex + 1).padStart(2, "0")}`);
+    text("chapter-title", chapter.title);
+    text("chapter-title-en", chapter.title_en || chapter.eyebrow || "WEB EDITION");
+    text("chapter-folio", `${currentChapterIndex + 1} / ${chapters.length}`);
+    renderChapterBlocks(chapter);
+
+    progress.replaceChildren();
+    progress.setAttribute("aria-label", `目前章節進度 ${currentChapterIndex + 1}/${chapters.length}`);
+    chapters.forEach((item, index) => {
+      const marker = createElement("button", "");
+      marker.type = "button";
+      marker.dataset.chapterSlug = item.slug;
+      marker.setAttribute("aria-label", `前往第 ${index + 1} 章：${item.title}`);
+      if (index < currentChapterIndex) marker.classList.add("is-complete");
+      if (index === currentChapterIndex) {
+        marker.classList.add("is-current");
+        marker.setAttribute("aria-current", "page");
+      }
+      progress.append(marker);
+    });
+
+    previous.querySelector("strong").textContent = currentChapterIndex === 0
+      ? "目錄"
+      : chapterLabel(chapters[currentChapterIndex - 1], "上一章");
+    next.querySelector("strong").textContent = currentChapterIndex === chapters.length - 1
+      ? "原始 PDF"
+      : chapterLabel(chapters[currentChapterIndex + 1], "下一章");
+
+    routeMeta.chapter = {
+      context: chapter.eyebrow || "WEB EDITION",
+      title: `${chapter.title}｜${currentProgramme.title}`,
+    };
+    return chapter;
+  }
+
+  function showRoute(route, { updateHash = true, chapterSlug } = {}) {
     let nextRoute = route;
     if (initialRoute.kind === "shelf") nextRoute = "shelf";
     if (initialRoute.kind === "programme" && !readerViews.has(nextRoute)) nextRoute = "entrance";
     if (initialRoute.kind === "not-found") nextRoute = "not-found";
+
+    const activeChapter = nextRoute === "chapter" ? renderChapter(chapterSlug) : null;
 
     views.forEach((view, key) => {
       view.hidden = key !== nextRoute;
@@ -219,8 +449,9 @@ export async function mountReader({ root, repository, initialRoute }) {
     headerContext.textContent = routeMeta[nextRoute]?.context || routeMeta.shelf.context;
     document.title = routeMeta[nextRoute]?.title || routeMeta.shelf.title;
 
-    if (updateHash && initialRoute.kind === "programme" && location.hash !== `#${nextRoute}`) {
-      history.pushState({ route: nextRoute }, "", `${location.pathname}#${nextRoute}`);
+    const hashRoute = activeChapter ? `chapter/${encodeURIComponent(activeChapter.slug)}` : nextRoute;
+    if (updateHash && initialRoute.kind === "programme" && location.hash !== `#${hashRoute}`) {
+      history.pushState({ route: nextRoute, chapterSlug: activeChapter?.slug }, "", `${location.pathname}#${hashRoute}`);
     }
 
     window.scrollTo({ top: 0, behavior: "auto" });
@@ -327,6 +558,36 @@ export async function mountReader({ root, repository, initialRoute }) {
     if (card) window.location.assign(card.dataset.programmePath);
   });
 
+  document.querySelector("#editorial-index").addEventListener("click", (event) => {
+    const chapter = event.target.closest("[data-chapter-slug]");
+    const route = event.target.closest("[data-reader-route]");
+    if (chapter) showRoute("chapter", { chapterSlug: chapter.dataset.chapterSlug });
+    if (route) showRoute(route.dataset.readerRoute);
+  });
+
+  document.querySelector("#chapter-progress").addEventListener("click", (event) => {
+    const marker = event.target.closest("[data-chapter-slug]");
+    if (marker) showRoute("chapter", { chapterSlug: marker.dataset.chapterSlug });
+  });
+
+  document.querySelector("#chapter-prev").addEventListener("click", () => {
+    const chapters = visibleChapters();
+    if (currentChapterIndex === 0) {
+      showRoute("contents");
+    } else {
+      showRoute("chapter", { chapterSlug: chapters[currentChapterIndex - 1].slug });
+    }
+  });
+
+  document.querySelector("#chapter-next").addEventListener("click", () => {
+    const chapters = visibleChapters();
+    if (currentChapterIndex >= chapters.length - 1) {
+      showRoute("pdf");
+    } else {
+      showRoute("chapter", { chapterSlug: chapters[currentChapterIndex + 1].slug });
+    }
+  });
+
   document.querySelector("#pdf-prev").addEventListener("click", () => {
     pdfPageIndex = Math.max(0, pdfPageIndex - 1);
     updatePdfPage();
@@ -338,11 +599,17 @@ export async function mountReader({ root, repository, initialRoute }) {
   });
 
   window.addEventListener("popstate", () => {
-    if (initialRoute.kind === "programme") showRoute(location.hash.replace(/^#/, "") || "entrance", { updateHash: false });
+    if (initialRoute.kind === "programme") {
+      const readerRoute = parseReaderHash(location.hash);
+      showRoute(readerRoute.view, { chapterSlug: readerRoute.chapterSlug, updateHash: false });
+    }
   });
 
   window.addEventListener("hashchange", () => {
-    if (initialRoute.kind === "programme") showRoute(location.hash.replace(/^#/, "") || "entrance", { updateHash: false });
+    if (initialRoute.kind === "programme") {
+      const readerRoute = parseReaderHash(location.hash);
+      showRoute(readerRoute.view, { chapterSlug: readerRoute.chapterSlug, updateHash: false });
+    }
   });
 
   if (initialRoute.kind === "shelf") {
@@ -378,7 +645,7 @@ export async function mountReader({ root, repository, initialRoute }) {
     } else {
       hydrateProgramme(currentProgramme);
       await configurePdf(currentProgramme);
-      showRoute(initialRoute.view, { updateHash: false });
+      showRoute(initialRoute.view, { chapterSlug: initialRoute.chapterSlug, updateHash: false });
     }
   } else {
     showRoute("not-found", { updateHash: false });
