@@ -37,6 +37,12 @@ export function resolveMarqueeOffset({
   return normalizeMarqueeOffset(currentOffset - distance, cycleWidth);
 }
 
+export function isIntentionalCarouselDrag({ deltaX, deltaY, threshold = 10 }) {
+  const horizontalDistance = Math.abs(Number(deltaX) || 0);
+  const verticalDistance = Math.abs(Number(deltaY) || 0);
+  return horizontalDistance > threshold && horizontalDistance > verticalDistance;
+}
+
 function rounded(value) {
   const result = Math.round(value * 1_000) / 1_000;
   return Object.is(result, -0) ? 0 : result;

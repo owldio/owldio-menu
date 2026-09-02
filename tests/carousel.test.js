@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   advanceCarouselIndex,
   frontmostOrbitIndex,
+  isIntentionalCarouselDrag,
   relativeCarouselOffset,
   resolveMarqueeOffset,
   resolveOrbitTransition,
@@ -26,6 +27,13 @@ describe("programme carousel", () => {
 });
 
 describe("programme marquee motion", () => {
+  it("keeps a tap available for opening a programme and captures only a horizontal drag", () => {
+    expect(isIntentionalCarouselDrag({ deltaX: 0, deltaY: 0 })).toBe(false);
+    expect(isIntentionalCarouselDrag({ deltaX: 8, deltaY: 1 })).toBe(false);
+    expect(isIntentionalCarouselDrag({ deltaX: 18, deltaY: 3 })).toBe(true);
+    expect(isIntentionalCarouselDrag({ deltaX: 12, deltaY: 20 })).toBe(false);
+  });
+
   it("advances slowly while idle and wraps into the same continuous cycle", () => {
     expect(
       resolveMarqueeOffset({

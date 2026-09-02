@@ -1535,7 +1535,9 @@ a:focus-visible {
   border: 0;
   outline: none;
   background: transparent;
+  color: inherit;
   cursor: pointer;
+  text-decoration: none;
   transform-origin: 50% 88%;
   transform-style: preserve-3d;
   transition:

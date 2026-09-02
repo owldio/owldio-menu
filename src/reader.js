@@ -6,6 +6,7 @@ import {
 import {
   advanceCarouselIndex,
   frontmostOrbitIndex,
+  isIntentionalCarouselDrag,
   normalizeMarqueeOffset,
   resolveMarqueeOffset,
   resolveOrbitPose,
@@ -68,14 +69,15 @@ function performanceState(programme) {
 }
 
 function volumeCard(programme, index, total) {
-  const button = document.createElement("button");
-  button.type = "button";
-  button.className = "programme-volume";
-  button.dataset.carouselIndex = String(index);
-  button.dataset.programmePath = buildProgrammePath(programme.client_slug, programme.slug);
-  button.dataset.lane = String(index % 5);
-  button.setAttribute("aria-roledescription", "slide");
-  button.setAttribute("aria-label", `${index + 1} / ${total}，${programme.title}。按一下開啟節目冊。`);
+  const link = document.createElement("a");
+  const readerPath = buildProgrammeReaderPath(programme.client_slug, programme.slug);
+  link.href = readerPath;
+  link.className = "programme-volume";
+  link.dataset.carouselIndex = String(index);
+  link.dataset.programmePath = readerPath;
+  link.dataset.lane = String(index % 5);
+  link.setAttribute("aria-roledescription", "slide");
+  link.setAttribute("aria-label", `${index + 1} / ${total}，${programme.title}。按一下開啟節目冊。`);
 
   const cover = document.createElement("span");
   const coverVariant = programme.cover_theme || (index % 2 === 0 ? "sage" : "oxide");
@@ -84,7 +86,7 @@ function volumeCard(programme, index, total) {
   const coverShape = programme.cover_format || (index === total - 1 ? "square" : "portrait");
   const coverRatio = Number(programme.cover_aspect_ratio)
     || ({ spread: 1.411, square: 1, portrait: 0.72 }[coverShape] ?? 0.72);
-  button.dataset.shape = coverShape;
+  link.dataset.shape = coverShape;
   cover.style.setProperty("--cover-ratio", String(coverRatio));
 
   const spine = document.createElement("span");
@@ -115,7 +117,7 @@ function volumeCard(programme, index, total) {
   hoverCue.className = "programme-volume__cue";
   hoverCue.setAttribute("aria-hidden", "true");
   const hoverCueLabel = document.createElement("small");
-  hoverCueLabel.textContent = "選擇這本節目冊";
+  hoverCueLabel.textContent = "閱讀這本節目冊";
   const hoverCueTitle = document.createElement("strong");
   hoverCueTitle.textContent = programme.title;
   const hoverCueArrow = document.createElement("i");
@@ -139,8 +141,8 @@ function volumeCard(programme, index, total) {
   } else {
     cover.append(spine, series, genre, coverTitle, coverEnglish, coverDate, focusMarker);
   }
-  button.append(cover, hoverCue);
-  return button;
+  link.append(cover, hoverCue);
+  return link;
 }
 
 function renderShelf(programmes) {
@@ -854,16 +856,12 @@ export async function mountReader({ root, repository, initialRoute }) {
   document.querySelector("#programme-shelf").addEventListener("click", (event) => {
     if (shelfDidSwipe) {
       shelfDidSwipe = false;
+      event.preventDefault();
       return;
     }
     const card = event.target.closest("[data-programme-path]");
     if (!card) return;
-    const selectedIndex = Number(card.dataset.carouselIndex);
-    if (selectedIndex === shelfActiveIndex) {
-      openActiveShelfProgramme();
-    } else {
-      updateShelfCarousel(selectedIndex);
-    }
+    updateShelfCarousel(Number(card.dataset.carouselIndex), { announce: false });
   });
 
   document.querySelector("#carousel-prev").addEventListener("click", () => moveShelfCarousel(-1));
@@ -906,6 +904,17 @@ export async function mountReader({ root, repository, initialRoute }) {
 
     shelfPointerX = event.clientX;
     if (shelfInteraction === "dragging") {
+      if (
+        shelfPointerStart
+        && shelfPointerStart.id === event.pointerId
+        && !carousel.hasPointerCapture(event.pointerId)
+        && isIntentionalCarouselDrag({
+          deltaX: event.clientX - shelfPointerStart.x,
+          deltaY: event.clientY - shelfPointerStart.y,
+        })
+      ) {
+        carousel.setPointerCapture(event.pointerId);
+      }
       shelfMarqueeOffset = resolveMarqueeOffset({
         offset: shelfMarqueeOffset,
         elapsedMs: 0,
@@ -932,7 +941,6 @@ export async function mountReader({ root, repository, initialRoute }) {
     shelfPointerX = event.clientX;
     shelfDragStartOffset = shelfMarqueeOffset;
     shelfDidSwipe = false;
-    carousel.setPointerCapture(event.pointerId);
     setShelfInteraction("dragging");
   });
 
@@ -953,7 +961,7 @@ export async function mountReader({ root, repository, initialRoute }) {
     });
     if (carousel.hasPointerCapture(event.pointerId)) carousel.releasePointerCapture(event.pointerId);
     shelfPointerStart = null;
-    if (Math.abs(deltaX) > 10 && Math.abs(deltaX) > Math.abs(deltaY)) {
+    if (isIntentionalCarouselDrag({ deltaX, deltaY })) {
       shelfDidSwipe = true;
     }
     const pointerStillInside = event.pointerType === "mouse" && pointerIsInsideCarousel(event);
