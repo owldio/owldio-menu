@@ -2,9 +2,11 @@ import samplePdfUrl from "../../assets/rational-sensual-programme-sample-v1.pdf?
 import sampleCoverUrl from "../../assets/rational-sensual-page-1-v1.png?url";
 
 export const sampleProgramme = {
-  id: "sample-tide-awake",
-  client_slug: "ours",
-  slug: "tide-awake",
+  id: "sample-sense-and-sensibility",
+  client_slug: "yuan-chamber",
+  legacy_client_slugs: ["ours"],
+  slug: "sense-and-sensibility",
+  legacy_slugs: ["tide-awake"],
   title: "理性與感性",
   title_en: "SENSE AND SENSIBILITY",
   summary: "布魯赫與德弗札克的鋼琴五重奏，在室內樂編制裡展開浪漫、張力與細密的聲部對話。",

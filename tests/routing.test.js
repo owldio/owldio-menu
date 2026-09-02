@@ -24,6 +24,15 @@ describe("parseAppLocation", () => {
     });
   });
 
+  it("opens a clean programme URL directly in the reader", () => {
+    expect(parseAppLocation("/yuan-chamber/sense-and-sensibility", "")).toEqual({
+      kind: "programme",
+      clientSlug: "yuan-chamber",
+      programmeSlug: "sense-and-sensibility",
+      view: "pdf",
+    });
+  });
+
   it("deep-links to a named chapter without losing the programme path", () => {
     expect(parseAppLocation("/ours/tide-awake", "#chapter/directors-note")).toEqual({
       kind: "programme",
@@ -55,6 +64,8 @@ describe("buildProgrammePath", () => {
   });
 
   it("builds the direct reading destination used by programme covers", () => {
-    expect(buildProgrammeReaderPath("ours", "tide-awake")).toBe("/ours/tide-awake#pdf");
+    expect(buildProgrammeReaderPath("yuan-chamber", "sense-and-sensibility")).toBe(
+      "/yuan-chamber/sense-and-sensibility",
+    );
   });
 });

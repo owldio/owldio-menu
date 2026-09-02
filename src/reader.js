@@ -392,7 +392,11 @@ function configureSamplePdf() {
     downloadUrl: samplePdf.downloadUrl,
     previewUrl: samplePdf.previewUrl,
     previewAlt: "《理性與感性》節目冊第一頁預覽",
-    caption: "原始印刷節目冊 · 422 × 299 mm · 橫式跨頁",
+    previewPanelIndex: 2,
+    previewPanelAspectRatio: 0.4704,
+    foldMode: "tri-fold",
+    panelLabels: ["封面", "曲目", "演出者（一）", "演出者（二）", "樂曲解說（一）", "樂曲解說（二）"],
+    caption: "原始印刷節目冊 · 422 × 299 mm · 三折頁",
     filename: "rational-sensual-programme-sample-v1.pdf",
     forceDownload: true,
   };
@@ -782,8 +786,11 @@ export async function mountReader({ root, repository, initialRoute }) {
     }
 
     const hashRoute = activeChapter ? `chapter/${encodeURIComponent(activeChapter.slug)}` : nextRoute;
-    if (updateHash && initialRoute.kind === "programme" && location.hash !== `#${hashRoute}`) {
-      history.pushState({ route: nextRoute, chapterSlug: activeChapter?.slug }, "", `${location.pathname}#${hashRoute}`);
+    const nextUrl = nextRoute === "pdf" ? location.pathname : `${location.pathname}#${hashRoute}`;
+    if (initialRoute.kind === "programme" && nextRoute === "pdf" && location.hash) {
+      history.replaceState({ route: nextRoute }, "", location.pathname);
+    } else if (updateHash && initialRoute.kind === "programme" && `${location.pathname}${location.hash}` !== nextUrl) {
+      history.pushState({ route: nextRoute, chapterSlug: activeChapter?.slug }, "", nextUrl);
     }
 
     window.scrollTo({ top: 0, behavior: "auto" });
@@ -1059,7 +1066,10 @@ export async function mountReader({ root, repository, initialRoute }) {
 
     if (!currentProgramme) {
       currentProgramme = sampleProgrammes.find(
-        (programme) => programme.client_slug === initialRoute.clientSlug && programme.slug === initialRoute.programmeSlug,
+        (programme) => (programme.client_slug === initialRoute.clientSlug
+          || programme.legacy_client_slugs?.includes(initialRoute.clientSlug))
+          && (programme.slug === initialRoute.programmeSlug
+            || programme.legacy_slugs?.includes(initialRoute.programmeSlug)),
       );
     }
 
@@ -1067,6 +1077,14 @@ export async function mountReader({ root, repository, initialRoute }) {
       initialRoute.kind = "not-found";
       showRoute("not-found", { updateHash: false });
     } else {
+      if (currentProgramme.slug !== initialRoute.programmeSlug || (initialRoute.view === "pdf" && location.hash)) {
+        const canonicalHash = initialRoute.view === "pdf" ? "" : location.hash;
+        history.replaceState(
+          { route: initialRoute.view, chapterSlug: initialRoute.chapterSlug },
+          "",
+          `${buildProgrammePath(currentProgramme.client_slug, currentProgramme.slug)}${canonicalHash}`,
+        );
+      }
       hydrateProgramme(currentProgramme);
       await configurePdf(currentProgramme);
       showRoute(initialRoute.view, { chapterSlug: initialRoute.chapterSlug, updateHash: false });

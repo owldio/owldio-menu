@@ -10,6 +10,10 @@ function decodeSegment(segment) {
 
 export function parseReaderHash(hash) {
   const value = String(hash || "").replace(/^#/, "");
+  if (!value) {
+    return { view: "pdf" };
+  }
+
   if (READER_VIEWS.has(value)) {
     return { view: value };
   }
@@ -58,5 +62,5 @@ export function buildProgrammePath(clientSlug, programmeSlug) {
 }
 
 export function buildProgrammeReaderPath(clientSlug, programmeSlug) {
-  return `${buildProgrammePath(clientSlug, programmeSlug)}#pdf`;
+  return buildProgrammePath(clientSlug, programmeSlug);
 }

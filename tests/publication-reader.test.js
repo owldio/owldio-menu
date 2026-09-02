@@ -4,6 +4,7 @@ import {
   choosePageMode,
   movePublicationPage,
   publicationSpread,
+  triFoldReadingOrder,
 } from "../src/domain/publication-reader.js";
 
 describe("choosePageMode", () => {
@@ -17,6 +18,28 @@ describe("choosePageMode", () => {
 
   it("keeps landscape artwork as one complete sheet", () => {
     expect(choosePageMode({ viewportWidth: 1280, pageWidth: 842, pageHeight: 595 })).toBe("single");
+  });
+
+  it("turns a tri-fold sheet into readable panels on a phone", () => {
+    expect(choosePageMode({
+      viewportWidth: 390,
+      pageWidth: 842,
+      pageHeight: 595,
+      foldMode: "tri-fold",
+    })).toBe("panel");
+  });
+});
+
+describe("triFoldReadingOrder", () => {
+  it("starts at the cover, opens the inside spread, then finishes the reverse side", () => {
+    expect(triFoldReadingOrder(2)).toEqual([
+      { pageNumber: 1, panelIndex: 2 },
+      { pageNumber: 2, panelIndex: 0 },
+      { pageNumber: 2, panelIndex: 1 },
+      { pageNumber: 2, panelIndex: 2 },
+      { pageNumber: 1, panelIndex: 0 },
+      { pageNumber: 1, panelIndex: 1 },
+    ]);
   });
 });
 

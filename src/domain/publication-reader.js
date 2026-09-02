@@ -3,12 +3,24 @@ function clampPage(pageNumber, pageCount) {
   return Math.min(total, Math.max(1, Number(pageNumber) || 1));
 }
 
-export function choosePageMode({ viewportWidth, pageWidth, pageHeight }) {
+export function triFoldReadingOrder(pageCount) {
+  const total = Math.max(1, Number(pageCount) || 1);
+  const sequence = total === 1
+    ? [[1, 2], [1, 0], [1, 1]]
+    : [[1, 2], [2, 0], [2, 1], [2, 2], [1, 0], [1, 1]];
+
+  return sequence
+    .filter(([pageNumber]) => pageNumber <= total)
+    .map(([pageNumber, panelIndex]) => ({ pageNumber, panelIndex }));
+}
+
+export function choosePageMode({ viewportWidth, pageWidth, pageHeight, foldMode }) {
   const viewport = Number(viewportWidth) || 0;
   const width = Number(pageWidth) || 1;
   const height = Number(pageHeight) || 1;
   const isLandscape = width / height >= 1.08;
 
+  if (foldMode === "tri-fold" && viewport < 900) return "panel";
   return viewport >= 800 && !isLandscape ? "spread" : "single";
 }
 

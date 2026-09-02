@@ -2,6 +2,7 @@ import {
   choosePageMode,
   movePublicationPage,
   publicationSpread,
+  triFoldReadingOrder,
 } from "./domain/publication-reader.js";
 
 let pdfEnginePromise;
@@ -33,6 +34,7 @@ function nextFrame() {
 
 export function createPublicationViewer(root, { onError } = {}) {
   const reader = root.querySelector("#pdf-reader");
+  const hint = root.querySelector(".publication-reader__hint");
   const stage = root.querySelector("#pdf-stage");
   const pages = root.querySelector("#pdf-pages");
   const loading = root.querySelector("#pdf-loading");
@@ -60,6 +62,7 @@ export function createPublicationViewer(root, { onError } = {}) {
   let currentPage = 1;
   let pageCount = 0;
   let pageMode = "single";
+  let panelOrder = [];
   let pageSize = { width: 1, height: 1 };
   let zoom = 1;
   let renderRevision = 0;
@@ -68,21 +71,39 @@ export function createPublicationViewer(root, { onError } = {}) {
   let pointerStart = null;
   let active = false;
 
-  function currentSpread() {
-    return publicationSpread(currentPage, pageCount, pageMode);
+  function readingPositionCount() {
+    return pageMode === "panel" ? panelOrder.length : pageCount;
   }
 
-  function showPreview(previewUrl, previewAlt) {
-    if (!previewUrl) return;
+  function currentSpread() {
+    const total = readingPositionCount();
+    return pageMode === "panel"
+      ? [clamp(currentPage, 1, Math.max(1, total))]
+      : publicationSpread(currentPage, pageCount, pageMode);
+  }
+
+  function showPreview(previewSource) {
+    if (!previewSource?.previewUrl) return;
     const frame = document.createElement("figure");
     frame.className = "publication-page publication-page--preview";
     const image = document.createElement("img");
-    image.src = previewUrl;
-    image.alt = previewAlt || "節目冊第一頁預覽";
+    image.src = previewSource.previewUrl;
+    image.alt = previewSource.previewAlt || "節目冊第一頁預覽";
     image.decoding = "async";
+
+    if (previewSource.foldMode === "tri-fold" && window.innerWidth < 900) {
+      const panelIndex = clamp(Number(previewSource.previewPanelIndex) || 0, 0, 2);
+      frame.classList.add("publication-page--preview-panel");
+      frame.style.setProperty("--preview-panel-index", String(panelIndex));
+      frame.style.setProperty("--preview-panel-offset", `${panelIndex * -100}%`);
+      frame.style.setProperty("--preview-panel-ratio", String(previewSource.previewPanelAspectRatio || 0.4704));
+      pages.dataset.mode = "panel";
+    } else {
+      pages.dataset.mode = "single";
+    }
+
     frame.append(image);
     pages.replaceChildren(frame);
-    pages.dataset.mode = "single";
   }
 
   function setBusy(isBusy, message = "正在展開節目冊…") {
@@ -105,21 +126,29 @@ export function createPublicationViewer(root, { onError } = {}) {
 
   function updateChrome() {
     if (!pageCount) return;
+    const total = readingPositionCount();
     const spread = currentSpread();
     const first = spread[0];
     const last = spread.at(-1);
     pageLabel.textContent = spread.length > 1
-      ? `${padPage(first)}–${padPage(last)} / ${padPage(pageCount)}`
-      : `${padPage(first)} / ${padPage(pageCount)}`;
-    scrubber.max = String(pageCount);
+      ? `${padPage(first)}–${padPage(last)} / ${padPage(total)}`
+      : `${padPage(first)} / ${padPage(total)}`;
+    caption.textContent = pageMode === "panel"
+      ? `${source?.panelLabels?.[first - 1] || `第 ${first} 欄`} · 三折頁行動閱讀`
+      : source?.caption || "原始印刷節目冊";
+    hint.textContent = pageMode === "panel"
+      ? "左右滑動 · 逐欄閱讀 · 點擊放大"
+      : "左右滑動 · 方向鍵翻頁 · 點擊放大";
+    scrubber.max = String(total);
     scrubber.value = String(first);
-    progress.style.width = `${(last / pageCount) * 100}%`;
+    progress.style.width = `${(last / total) * 100}%`;
     previous.disabled = first === 1;
-    next.disabled = spread.includes(pageCount);
+    next.disabled = spread.includes(total);
     zoomOut.disabled = zoom <= 0.8;
     zoomIn.disabled = zoom >= 2.2;
     zoomLabel.value = `${Math.round(zoom * 100)}%`;
     reader.dataset.zoomed = zoom > 1.01 ? "true" : "false";
+    reader.dataset.fold = source?.foldMode || "none";
     updateThumbnailSelection();
   }
 
@@ -134,49 +163,84 @@ export function createPublicationViewer(root, { onError } = {}) {
     updateChrome();
 
     const records = await Promise.all(
-      spread.map(async (pageNumber) => {
+      spread.map(async (position) => {
+        const panel = pageMode === "panel" ? panelOrder[position - 1] : null;
+        const pageNumber = panel?.pageNumber || position;
         const page = await pdfDocument.getPage(pageNumber);
-        return { page, pageNumber, viewport: page.getViewport({ scale: 1 }) };
+        const viewport = page.getViewport({ scale: 1 });
+        return {
+          page,
+          pageNumber,
+          panelIndex: panel?.panelIndex ?? null,
+          position,
+          viewport,
+          displayWidth: panel ? viewport.width / 3 : viewport.width,
+        };
       }),
     );
 
     if (revision !== renderRevision) return;
 
     const gap = spread.length > 1 ? 3 : 0;
-    const baseWidth = records.reduce((sum, record) => sum + record.viewport.width, 0);
+    const baseWidth = records.reduce((sum, record) => sum + record.displayWidth, 0);
     const baseHeight = Math.max(...records.map((record) => record.viewport.height));
     const stageMargin = window.innerWidth < 620 ? 16 : 48;
-    const availableWidth = Math.max(260, stage.clientWidth - stageMargin - gap);
+    const availableWidth = Math.max(pageMode === "panel" ? 220 : 260, stage.clientWidth - stageMargin - gap);
     const availableHeight = Math.max(280, stage.clientHeight - 44);
-    const fitScale = Math.min(availableWidth / baseWidth, availableHeight / baseHeight);
+    const fitScale = pageMode === "panel" && currentPage !== 1
+      ? availableWidth / baseWidth
+      : Math.min(availableWidth / baseWidth, availableHeight / baseHeight);
     const cssScale = Math.max(0.12, fitScale * zoom);
     const pixelRatio = clamp(window.devicePixelRatio || 1, 1, 2);
 
     const fragment = document.createDocumentFragment();
-    const renderJobs = records.map(({ page, pageNumber, viewport }, index) => {
+    const renderJobs = records.map(({ page, pageNumber, panelIndex, position, viewport, displayWidth }, index) => {
       const frame = document.createElement("figure");
       frame.className = "publication-page";
-      frame.dataset.pageNumber = String(pageNumber);
+      frame.dataset.pageNumber = String(position);
+      frame.dataset.sourcePage = String(pageNumber);
+      if (panelIndex !== null) {
+        frame.dataset.panelIndex = String(panelIndex);
+        frame.classList.add("publication-page--panel");
+      }
       if (spread.length > 1 && index === 0) frame.classList.add("publication-page--left");
       if (spread.length > 1 && index === 1) frame.classList.add("publication-page--right");
 
       const canvas = document.createElement("canvas");
       const renderViewport = page.getViewport({ scale: cssScale * pixelRatio });
-      canvas.width = Math.ceil(renderViewport.width);
+      const panelPixelWidth = renderViewport.width / 3;
+      canvas.width = Math.ceil(panelIndex === null ? renderViewport.width : panelPixelWidth);
       canvas.height = Math.ceil(renderViewport.height);
-      canvas.style.width = `${Math.round(viewport.width * cssScale)}px`;
+      canvas.style.width = `${Math.round(displayWidth * cssScale)}px`;
       canvas.style.height = `${Math.round(viewport.height * cssScale)}px`;
       canvas.setAttribute("role", "img");
-      canvas.setAttribute("aria-label", `節目冊第 ${pageNumber} 頁`);
+      canvas.setAttribute(
+        "aria-label",
+        pageMode === "panel"
+          ? source?.panelLabels?.[position - 1] || `節目冊第 ${position} 欄`
+          : `節目冊第 ${pageNumber} 頁`,
+      );
       frame.append(canvas);
       fragment.append(frame);
 
-      return page.render({ canvasContext: canvas.getContext("2d", { alpha: false }), viewport: renderViewport }).promise
+      const renderOptions = {
+        canvasContext: canvas.getContext("2d", { alpha: false }),
+        viewport: renderViewport,
+      };
+      if (panelIndex !== null) {
+        renderOptions.transform = [1, 0, 0, 1, -panelIndex * panelPixelWidth, 0];
+      }
+
+      return page.render(renderOptions).promise
         .then(() => frame.classList.add("is-rendered"));
     });
 
     pages.replaceChildren(fragment);
     pages.dataset.mode = pageMode;
+    if (direction !== 0) {
+      stage.scrollTop = 0;
+      stage.scrollLeft = 0;
+    }
 
     try {
       await Promise.all(renderJobs);
@@ -195,8 +259,9 @@ export function createPublicationViewer(root, { onError } = {}) {
   }
 
   function normalizePage(pageNumber) {
-    const page = clamp(Number(pageNumber) || 1, 1, Math.max(1, pageCount));
-    return publicationSpread(page, pageCount, pageMode)[0];
+    const total = readingPositionCount();
+    const page = clamp(Number(pageNumber) || 1, 1, Math.max(1, total));
+    return pageMode === "panel" ? page : publicationSpread(page, pageCount, pageMode)[0];
   }
 
   function goTo(pageNumber, direction = 0) {
@@ -209,7 +274,7 @@ export function createPublicationViewer(root, { onError } = {}) {
 
   function move(direction) {
     if (!pdfDocument) return;
-    const nextPage = movePublicationPage(currentPage, direction, pageCount, pageMode);
+    const nextPage = movePublicationPage(currentPage, direction, readingPositionCount(), pageMode);
     goTo(nextPage, direction);
   }
 
@@ -223,31 +288,48 @@ export function createPublicationViewer(root, { onError } = {}) {
   async function buildThumbnails() {
     if (!pdfDocument || thumbnailRail.childElementCount) return;
     const revision = ++thumbnailRevision;
+    const total = readingPositionCount();
 
-    for (let pageNumber = 1; pageNumber <= pageCount; pageNumber += 1) {
+    for (let position = 1; position <= total; position += 1) {
       if (revision !== thumbnailRevision) return;
+      const panel = pageMode === "panel" ? panelOrder[position - 1] : null;
+      const pageNumber = panel?.pageNumber || position;
       const button = document.createElement("button");
       button.type = "button";
       button.className = "publication-thumbnail";
-      button.dataset.pageNumber = String(pageNumber);
-      button.setAttribute("aria-label", `前往第 ${pageNumber} 頁`);
+      button.dataset.pageNumber = String(position);
+      button.setAttribute(
+        "aria-label",
+        pageMode === "panel"
+          ? `前往${source?.panelLabels?.[position - 1] || `第 ${position} 欄`}`
+          : `前往第 ${pageNumber} 頁`,
+      );
 
       const canvas = document.createElement("canvas");
       const number = document.createElement("span");
-      number.textContent = padPage(pageNumber);
+      number.textContent = padPage(position);
       button.append(canvas, number);
       thumbnailRail.append(button);
 
       const page = await pdfDocument.getPage(pageNumber);
       const viewport = page.getViewport({ scale: 1 });
-      const thumbScale = Math.min(104 / viewport.width, 78 / viewport.height);
+      const displayWidth = panel ? viewport.width / 3 : viewport.width;
+      const thumbScale = Math.min(104 / displayWidth, 78 / viewport.height);
       const thumbViewport = page.getViewport({ scale: thumbScale * 1.4 });
-      canvas.width = Math.ceil(thumbViewport.width);
+      const panelPixelWidth = thumbViewport.width / 3;
+      canvas.width = Math.ceil(panel ? panelPixelWidth : thumbViewport.width);
       canvas.height = Math.ceil(thumbViewport.height);
-      canvas.style.width = `${Math.round(viewport.width * thumbScale)}px`;
+      canvas.style.width = `${Math.round(displayWidth * thumbScale)}px`;
       canvas.style.height = `${Math.round(viewport.height * thumbScale)}px`;
-      await page.render({ canvasContext: canvas.getContext("2d", { alpha: false }), viewport: thumbViewport }).promise;
-      if (pageNumber % 4 === 0) await nextFrame();
+      const renderOptions = {
+        canvasContext: canvas.getContext("2d", { alpha: false }),
+        viewport: thumbViewport,
+      };
+      if (panel) {
+        renderOptions.transform = [1, 0, 0, 1, -panel.panelIndex * panelPixelWidth, 0];
+      }
+      await page.render(renderOptions).promise;
+      if (position % 4 === 0) await nextFrame();
     }
 
     updateThumbnailSelection();
@@ -271,10 +353,16 @@ export function createPublicationViewer(root, { onError } = {}) {
       loadingTask = pdfjs.getDocument({ url: source.url });
       pdfDocument = await loadingTask.promise;
       pageCount = pdfDocument.numPages;
+      panelOrder = source.foldMode === "tri-fold" ? triFoldReadingOrder(pageCount) : [];
       const firstPage = await pdfDocument.getPage(1);
       const viewport = firstPage.getViewport({ scale: 1 });
       pageSize = { width: viewport.width, height: viewport.height };
-      pageMode = choosePageMode({ viewportWidth: window.innerWidth, pageWidth: pageSize.width, pageHeight: pageSize.height });
+      pageMode = choosePageMode({
+        viewportWidth: window.innerWidth,
+        pageWidth: pageSize.width,
+        pageHeight: pageSize.height,
+        foldMode: source.foldMode,
+      });
       currentPage = 1;
       loadingTask = null;
       await renderCurrent(0);
@@ -310,8 +398,9 @@ export function createPublicationViewer(root, { onError } = {}) {
     currentPage = 1;
     pageCount = 0;
     pageMode = "single";
+    panelOrder = [];
     zoom = 1;
-    showPreview(source?.previewUrl, source?.previewAlt);
+    showPreview(source);
     caption.textContent = source?.caption || "原始印刷節目冊";
     download.hidden = !source?.url;
 
@@ -408,7 +497,7 @@ export function createPublicationViewer(root, { onError } = {}) {
       move(deltaX < 0 ? 1 : -1);
       return;
     }
-    if (window.innerWidth < 700 && Math.abs(deltaX) < 9 && Math.abs(deltaY) < 9 && event.target.closest("canvas")) {
+    if (window.innerWidth < 900 && Math.abs(deltaX) < 9 && Math.abs(deltaY) < 9 && event.target.closest("canvas")) {
       setZoom(zoom > 1.01 ? 1 : 1.8);
     }
   });
@@ -420,9 +509,29 @@ export function createPublicationViewer(root, { onError } = {}) {
     window.clearTimeout(resizeTimer);
     resizeTimer = window.setTimeout(() => {
       if (!active || !pdfDocument) return;
-      const nextMode = choosePageMode({ viewportWidth: window.innerWidth, pageWidth: pageSize.width, pageHeight: pageSize.height });
+      const previousMode = pageMode;
+      const visibleSourcePage = previousMode === "panel"
+        ? panelOrder[currentPage - 1]?.pageNumber || 1
+        : currentPage;
+      const nextMode = choosePageMode({
+        viewportWidth: window.innerWidth,
+        pageWidth: pageSize.width,
+        pageHeight: pageSize.height,
+        foldMode: source?.foldMode,
+      });
+      if (nextMode === previousMode) {
+        renderCurrent(0);
+        return;
+      }
+
       pageMode = nextMode;
-      currentPage = normalizePage(currentPage);
+      currentPage = nextMode === "panel"
+        ? Math.max(1, panelOrder.findIndex((panel) => panel.pageNumber === visibleSourcePage) + 1)
+        : clamp(visibleSourcePage, 1, pageCount);
+      thumbnailRevision += 1;
+      thumbnailRail.replaceChildren();
+      setThumbnails(false);
+      zoom = 1;
       renderCurrent(0);
     }, 180);
   });

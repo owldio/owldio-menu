@@ -7,13 +7,13 @@
 ## Routes
 
 - `/`：只顯示 `published` 節目冊的公開作品索引
-- `/:clientSlug/:programmeSlug`：節目冊入口
+- `/:clientSlug/:programmeSlug`：直接開啟節目冊閱讀器
+- `/:clientSlug/:programmeSlug#entrance`：演出資訊入口
 - `/:clientSlug/:programmeSlug#contents`：章節目錄
 - `/:clientSlug/:programmeSlug#chapter/:chapterSlug`：可直接分享的原生網頁章節
-- `/:clientSlug/:programmeSlug#pdf`：沉浸式節目冊翻閱器（原始 PDF）
 - `/admin`：管理後台
 
-示範作品位於 `/ours/tide-awake`。
+示範作品位於 `/yuan-chamber/sense-and-sensibility`；舊的 `/ours/tide-awake` 會自動轉址。
 
 ## Local development
 
