@@ -65,7 +65,7 @@ VITE_SUPABASE_PUBLISHABLE_KEY=sb_publishable_REPLACE_ME
 
 ## Cloudflare Pages and domain
 
-正式站使用 Cloudflare Pages，Production branch 為 `main`，建置指令為 `npm run build`，輸出目錄為 `dist`。`public/_redirects` 讓 `/admin` 與節目冊獨立網址在重新整理時仍由 SPA 接手；`public/_headers` 則為 Vite 的指紋化 assets 設定長效快取。
+正式站使用 Cloudflare Pages，Production branch 為 `main`，建置指令為 `npm run build`，輸出目錄為 `dist`。專案不產生頂層 `404.html`，因此 Pages 會以原生 SPA fallback 讓 `/admin` 與節目冊獨立網址在重新整理時仍由應用程式接手；`public/_headers` 則為 Vite 的指紋化 assets 設定長效快取。
 
 在 Pages 專案設定與 `.env.local` 相同的兩個公開環境變數後部署，再將 `menu.owldio.art` 加到 Custom domains。`owldio.art` 由同一個 Cloudflare 帳號管理時，Pages 會建立所需 DNS 紀錄並配置 SSL。
 
