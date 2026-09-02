@@ -72,6 +72,19 @@ export function createPublicationViewer(root, { onError } = {}) {
     return publicationSpread(currentPage, pageCount, pageMode);
   }
 
+  function showPreview(previewUrl, previewAlt) {
+    if (!previewUrl) return;
+    const frame = document.createElement("figure");
+    frame.className = "publication-page publication-page--preview";
+    const image = document.createElement("img");
+    image.src = previewUrl;
+    image.alt = previewAlt || "節目冊第一頁預覽";
+    image.decoding = "async";
+    frame.append(image);
+    pages.replaceChildren(frame);
+    pages.dataset.mode = "single";
+  }
+
   function setBusy(isBusy, message = "正在展開節目冊…") {
     root.setAttribute("aria-busy", String(isBusy));
     loading.textContent = message;
@@ -298,6 +311,7 @@ export function createPublicationViewer(root, { onError } = {}) {
     pageCount = 0;
     pageMode = "single";
     zoom = 1;
+    showPreview(source?.previewUrl, source?.previewAlt);
     caption.textContent = source?.caption || "原始印刷節目冊";
     download.hidden = !source?.url;
 

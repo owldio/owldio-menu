@@ -284,4 +284,5 @@ export const sampleProgrammes = [
 
 export const samplePdf = {
   downloadUrl: samplePdfUrl,
+  previewUrl: sampleCoverUrl,
 };

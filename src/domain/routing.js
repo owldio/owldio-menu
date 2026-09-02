@@ -56,3 +56,7 @@ export function parseAppLocation(pathname, hash) {
 export function buildProgrammePath(clientSlug, programmeSlug) {
   return `/${encodeURIComponent(clientSlug)}/${encodeURIComponent(programmeSlug)}`;
 }
+
+export function buildProgrammeReaderPath(clientSlug, programmeSlug) {
+  return `${buildProgrammePath(clientSlug, programmeSlug)}#pdf`;
+}

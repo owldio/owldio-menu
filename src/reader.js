@@ -1,4 +1,8 @@
-import { buildProgrammePath, parseReaderHash } from "./domain/routing.js";
+import {
+  buildProgrammePath,
+  buildProgrammeReaderPath,
+  parseReaderHash,
+} from "./domain/routing.js";
 import {
   advanceCarouselIndex,
   frontmostOrbitIndex,
@@ -386,6 +390,8 @@ function configureSamplePdf() {
   return {
     url: samplePdf.downloadUrl,
     downloadUrl: samplePdf.downloadUrl,
+    previewUrl: samplePdf.previewUrl,
+    previewAlt: "《理性與感性》節目冊第一頁預覽",
     caption: "原始印刷節目冊 · 422 × 299 mm · 橫式跨頁",
     filename: "rational-sensual-programme-sample-v1.pdf",
     forceDownload: true,
@@ -689,7 +695,9 @@ export async function mountReader({ root, repository, initialRoute }) {
 
   function openActiveShelfProgramme() {
     const selected = activeShelfProgramme();
-    if (selected) window.location.assign(buildProgrammePath(selected.client_slug, selected.slug));
+    if (selected) {
+      window.location.assign(buildProgrammeReaderPath(selected.client_slug, selected.slug));
+    }
   }
 
   function visibleChapters() {

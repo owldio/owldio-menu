@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { buildProgrammePath, parseAppLocation } from "../src/domain/routing.js";
+import {
+  buildProgrammePath,
+  buildProgrammeReaderPath,
+  parseAppLocation,
+} from "../src/domain/routing.js";
 
 describe("parseAppLocation", () => {
   it("maps the root URL to the public shelf", () => {
@@ -48,5 +52,9 @@ describe("buildProgrammePath", () => {
     expect(buildProgrammePath("故事 工廠", "潮聲/未眠")).toBe(
       "/%E6%95%85%E4%BA%8B%20%E5%B7%A5%E5%BB%A0/%E6%BD%AE%E8%81%B2%2F%E6%9C%AA%E7%9C%A0",
     );
+  });
+
+  it("builds the direct reading destination used by programme covers", () => {
+    expect(buildProgrammeReaderPath("ours", "tide-awake")).toBe("/ours/tide-awake#pdf");
   });
 });
