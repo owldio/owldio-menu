@@ -1,8 +1,8 @@
 # OWLDIO MENU
 
-表演藝術電子節目冊平台。公開端以手機掃碼後三秒內可讀為目標，提供原生垂直閱讀、章節跳轉與獨立演出網址；原始 PDF 是次要閱讀與下載功能。管理端提供節目冊建立、發布狀態與 PDF 上傳。
+音樂會、合唱、歌劇與表演藝術電子節目冊平台。公開端以手機掃碼後三秒內可讀為目標，提供滿版作品索引、沉浸式 PDF 翻閱、原生網頁章節與獨立演出網址。管理端提供節目冊建立、發布狀態與 PDF 上傳。
 
-公開總覽採用「Rotunda Stage Archive（環形劇場書庫）」：中央節目冊聚焦、左右冊沿圓弧後退，可用箭頭、鍵盤或滑動切換；進入作品後轉為「Theatrical Editorial Modernism（劇場編輯現代主義）」閱讀系統。完整排版與素材規則見 [`docs/DESIGN_SYSTEM.md`](docs/DESIGN_SYSTEM.md)。框架不依賴示範照片，內建文章、導演信、曲目、人物、團隊與場館資訊等六種可直接套客戶內容的章節版型。
+公開總覽採用「B3-A Oxidised-Copper Editorial Spread（氧化銅出版跨頁）」：深氧化銅綠、紙本白與一條銅色細線構成滿版頁面，讓客戶節目冊以真實直式、方形或橫式跨頁比例成為主角。輪播保留前後景深，但不畫出軌道、圓盤或舞台拱門；滑鼠移入或鍵盤聚焦會暫停，按住拖曳會直接旋轉，箭頭切換會走完一格動畫。選定作品的標題、日期、場地與閱讀入口收在橫向出版頁腳。進入作品後，PDF 由 OWLDIO 自己渲染頁面、跨頁、縮圖、進度、縮放與全螢幕。完整規則見 [`docs/DESIGN_SYSTEM.md`](docs/DESIGN_SYSTEM.md)。
 
 ## Routes
 
@@ -10,7 +10,7 @@
 - `/:clientSlug/:programmeSlug`：節目冊入口
 - `/:clientSlug/:programmeSlug#contents`：章節目錄
 - `/:clientSlug/:programmeSlug#chapter/:chapterSlug`：可直接分享的原生網頁章節
-- `/:clientSlug/:programmeSlug#pdf`：原始 PDF
+- `/:clientSlug/:programmeSlug#pdf`：沉浸式節目冊翻閱器（原始 PDF）
 - `/admin`：管理後台
 
 示範作品位於 `/ours/tide-awake`。
@@ -63,8 +63,10 @@ VITE_SUPABASE_PUBLISHABLE_KEY=sb_publishable_REPLACE_ME
 | `published` | 顯示 | 可讀 | 可見 |
 | `archived` | 不顯示 | 不可讀 | 可見 |
 
-## Vercel and domain
+## Cloudflare Pages and domain
 
-專案使用 Vite，Vercel 建置指令與 SPA rewrites 已寫入 `vercel.json`。在 Vercel 設定與 `.env.local` 相同的兩個公開環境變數後部署，接著把 `menu.owldio.art` 加到專案。若 DNS 不由 Vercel 管理，依 Vercel 顯示的值在目前 DNS 供應商新增 subdomain CNAME，再等待憑證完成。
+正式站使用 Cloudflare Pages，Production branch 為 `main`，建置指令為 `npm run build`，輸出目錄為 `dist`。`public/_redirects` 讓 `/admin` 與節目冊獨立網址在重新整理時仍由 SPA 接手；`public/_headers` 則為 Vite 的指紋化 assets 設定長效快取。
+
+在 Pages 專案設定與 `.env.local` 相同的兩個公開環境變數後部署，再將 `menu.owldio.art` 加到 Custom domains。`owldio.art` 由同一個 Cloudflare 帳號管理時，Pages 會建立所需 DNS 紀錄並配置 SSL。
 
 Architecture decisions are recorded in [`docs/adr`](docs/adr).

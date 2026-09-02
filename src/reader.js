@@ -1,13 +1,21 @@
 import { buildProgrammePath, parseReaderHash } from "./domain/routing.js";
-import { advanceCarouselIndex, relativeCarouselOffset } from "./domain/carousel.js";
+import {
+  advanceCarouselIndex,
+  frontmostOrbitIndex,
+  normalizeMarqueeOffset,
+  resolveMarqueeOffset,
+  resolveOrbitPose,
+  resolveOrbitTransition,
+} from "./domain/carousel.js";
 import { samplePdf, sampleProgramme, sampleProgrammes } from "./data/sample-programme.js";
+import { createPublicationViewer } from "./publication-pdf.js";
 
 const routeMeta = {
-  shelf: { context: "PROGRAMME CIRCULATION", title: "公開節目冊｜OWLDIO MENU" },
+  shelf: { context: "公開節目冊", title: "公開節目冊｜OWLDIO MENU" },
   entrance: { context: "PROGRAMME ENTRANCE", title: "電子節目冊｜OWLDIO MENU" },
   contents: { context: "PROGRAMME INDEX", title: "目錄｜OWLDIO MENU" },
   chapter: { context: "WEB EDITION", title: "網頁版｜OWLDIO MENU" },
-  pdf: { context: "ORIGINAL PDF EDITION", title: "原始 PDF｜OWLDIO MENU" },
+  pdf: { context: "IMMERSIVE PUBLICATION", title: "翻閱節目冊｜OWLDIO MENU" },
   "not-found": { context: "NOT FOUND", title: "找不到節目冊｜OWLDIO MENU" },
 };
 
@@ -61,13 +69,19 @@ function volumeCard(programme, index, total) {
   button.className = "programme-volume";
   button.dataset.carouselIndex = String(index);
   button.dataset.programmePath = buildProgrammePath(programme.client_slug, programme.slug);
+  button.dataset.lane = String(index % 5);
   button.setAttribute("aria-roledescription", "slide");
-  button.setAttribute("aria-label", `${index + 1} / ${total}，${programme.title}。按一下選取；已選取時按一下開啟。`);
+  button.setAttribute("aria-label", `${index + 1} / ${total}，${programme.title}。按一下開啟節目冊。`);
 
   const cover = document.createElement("span");
   const coverVariant = programme.cover_theme || (index % 2 === 0 ? "sage" : "oxide");
   cover.className = `volume-cover volume-cover--${coverVariant}`;
   cover.setAttribute("aria-hidden", "true");
+  const coverShape = programme.cover_format || (index === total - 1 ? "square" : "portrait");
+  const coverRatio = Number(programme.cover_aspect_ratio)
+    || ({ spread: 1.411, square: 1, portrait: 0.72 }[coverShape] ?? 0.72);
+  button.dataset.shape = coverShape;
+  cover.style.setProperty("--cover-ratio", String(coverRatio));
 
   const spine = document.createElement("span");
   spine.className = "cover-spine";
@@ -75,7 +89,7 @@ function volumeCard(programme, index, total) {
 
   const series = document.createElement("span");
   series.className = "cover-series";
-  series.textContent = `OWLDIO MENU / EDITION ${String(index + 1).padStart(2, "0")}`;
+  series.textContent = programme.client_name || "OWLDIO MENU";
 
   const genre = document.createElement("span");
   genre.className = "cover-genre";
@@ -93,8 +107,35 @@ function volumeCard(programme, index, total) {
   coverDate.className = "cover-date";
   coverDate.textContent = formatDate(programme.starts_at, { year: "numeric", month: "2-digit", day: "2-digit" });
 
-  cover.append(spine, series, genre, coverTitle, coverEnglish, coverDate);
-  button.append(cover);
+  const hoverCue = document.createElement("span");
+  hoverCue.className = "programme-volume__cue";
+  hoverCue.setAttribute("aria-hidden", "true");
+  const hoverCueLabel = document.createElement("small");
+  hoverCueLabel.textContent = "選擇這本節目冊";
+  const hoverCueTitle = document.createElement("strong");
+  hoverCueTitle.textContent = programme.title;
+  const hoverCueArrow = document.createElement("i");
+  hoverCueArrow.textContent = "↗";
+  hoverCue.append(hoverCueLabel, hoverCueTitle, hoverCueArrow);
+
+  const focusMarker = document.createElement("span");
+  focusMarker.className = "programme-volume__marker";
+  focusMarker.setAttribute("aria-hidden", "true");
+  focusMarker.textContent = "↗";
+
+  if (programme.cover_image_url) {
+    const image = document.createElement("img");
+    image.className = "volume-cover__image";
+    image.src = programme.cover_image_url;
+    image.alt = "";
+    image.loading = index === 0 ? "eager" : "lazy";
+    image.decoding = "async";
+    cover.classList.add("volume-cover--image");
+    cover.append(image, focusMarker);
+  } else {
+    cover.append(spine, series, genre, coverTitle, coverEnglish, coverDate, focusMarker);
+  }
+  button.append(cover, hoverCue);
   return button;
 }
 
@@ -103,7 +144,7 @@ function renderShelf(programmes) {
   const track = document.querySelector("#carousel-track");
   shelf.replaceChildren();
   track.replaceChildren();
-  text("shelf-count", `${programmes.length} ${programmes.length === 1 ? "TITLE" : "TITLES"}`);
+  text("shelf-count", `${programmes.length} 本節目冊`);
 
   if (!programmes.length) {
     const empty = document.createElement("div");
@@ -157,8 +198,8 @@ function renderContents(programme) {
   pdf.dataset.readerRoute = "pdf";
   const pdfCopy = createElement("span", "index-row__copy");
   pdfCopy.append(
-    createElement("strong", "", "原始印刷節目冊"),
-    createElement("small", "", "ORIGINAL PRINT EDITION"),
+    createElement("strong", "", "翻閱印刷節目冊"),
+    createElement("small", "", "IMMERSIVE PRINT EDITION"),
   );
   pdf.append(
     createElement("span", "index-row__no", "PDF"),
@@ -329,7 +370,7 @@ function hydrateProgramme(programme) {
     statusLabel.replaceChildren(dot, document.createTextNode(` ${state.label}`));
   }
   text("programme-status-copy", state.copy);
-  text("pdf-title", `原始 PDF｜${programme.title}`);
+  text("pdf-title", programme.title);
 
   renderContents(programme);
 
@@ -338,14 +379,16 @@ function hydrateProgramme(programme) {
   routeMeta.entrance = { context: titleEnglish, title: `${programme.title}｜電子節目冊` };
   routeMeta.contents.title = `目錄｜${programme.title}`;
   routeMeta.chapter.title = `${firstChapter?.title || "網頁版"}｜${programme.title}`;
-  routeMeta.pdf.title = `原始 PDF｜${programme.title}`;
+  routeMeta.pdf.title = `翻閱節目冊｜${programme.title}`;
 }
 
 function configureSamplePdf() {
   return {
-    pages: samplePdf.pageImages,
+    url: samplePdf.downloadUrl,
     downloadUrl: samplePdf.downloadUrl,
     caption: "原始印刷節目冊 · 422 × 299 mm · 橫式跨頁",
+    filename: "rational-sensual-programme-sample-v1.pdf",
+    forceDownload: true,
   };
 }
 
@@ -355,17 +398,36 @@ export async function mountReader({ root, repository, initialRoute }) {
   const headerContext = document.querySelector("#header-context");
   const headerIndex = document.querySelector(".site-header__index");
   const toast = document.querySelector("#toast");
+  const carousel = document.querySelector("#programme-carousel");
+  const carouselMotionLabel = document.querySelector("#carousel-motion-label");
+  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
   const views = new Map(
     [...document.querySelectorAll(".view")].map((view) => [view.id.replace("-view", ""), view]),
   );
+  const publicationViewer = createPublicationViewer(document.querySelector("#pdf-view"), {
+    onError(error) {
+      console.error("Unable to render publication PDF", error);
+      showToast("節目冊暫時無法展開，可先下載原始 PDF。");
+    },
+  });
 
   let toastTimer;
-  let pdfPageIndex = 0;
-  let pdfPages = [];
   let shelfProgrammes = [];
   let shelfActiveIndex = 0;
   let shelfPointerStart = null;
   let shelfDidSwipe = false;
+  let shelfInteraction = "idle";
+  let shelfMarqueeOffset = 0;
+  let shelfMarqueeStride = 1;
+  let shelfMarqueeCycleWidth = 1;
+  let shelfLastFrame = 0;
+  let shelfAnimationFrame = 0;
+  let shelfDragStartX = 0;
+  let shelfDragStartOffset = 0;
+  let shelfPointerX = 0;
+  let shelfPointerCard = null;
+  let shelfOrbitTransition = null;
+  let shelfQueuedOrbitSteps = 0;
   let currentProgramme = null;
   let currentChapterIndex = 0;
 
@@ -387,6 +449,187 @@ export async function mountReader({ root, repository, initialRoute }) {
     return shelfProgrammes[shelfActiveIndex] || null;
   }
 
+  function shelfCards() {
+    return [...document.querySelectorAll("#programme-shelf [data-carousel-index]")];
+  }
+
+  function renderShelfMarquee() {
+    const cards = shelfCards();
+    const stageWidth = Math.max(1, carousel.clientWidth);
+    const orbitProgress = shelfMarqueeCycleWidth
+      ? shelfMarqueeOffset / shelfMarqueeCycleWidth
+      : 0;
+    const compactViewport = stageWidth < 620;
+    const radiusX = Math.min(460, Math.max(compactViewport ? 138 : 260, stageWidth * 0.3));
+    const radiusY = compactViewport ? 38 : 56;
+    const radiusZ = compactViewport ? 104 : 150;
+
+    cards.forEach((card, index) => {
+      const pose = resolveOrbitPose({
+        itemIndex: index,
+        itemCount: cards.length,
+        orbitProgress,
+        radiusX,
+        radiusY,
+        radiusZ,
+      });
+      card.style.setProperty("--orbit-x", `${pose.x}px`);
+      card.style.setProperty("--orbit-y", `${pose.y}px`);
+      card.style.setProperty("--orbit-z", `${pose.z}px`);
+      card.style.setProperty("--orbit-rotate", `${pose.rotationY}deg`);
+      card.style.setProperty("--orbit-scale", pose.scale);
+      card.style.setProperty("--orbit-opacity", pose.opacity);
+      card.style.setProperty("--orbit-brightness", pose.brightness);
+      card.style.zIndex = String(pose.zIndex);
+      card.dataset.side = pose.x < -10 ? "left" : pose.x > 10 ? "right" : "center";
+      card.dataset.depth = pose.depth > 0.48 ? "front" : pose.depth < -0.48 ? "back" : "side";
+    });
+
+    if (!shelfPointerCard && (shelfInteraction === "idle" || shelfInteraction === "dragging")) {
+      const frontIndex = frontmostOrbitIndex({ itemCount: cards.length, orbitProgress });
+      if (frontIndex !== shelfActiveIndex) updateShelfCarousel(frontIndex, { announce: false });
+    }
+  }
+
+  function measureShelfMarquee() {
+    const cards = shelfCards();
+    if (!cards.length) return;
+    const stageWidth = Math.max(320, carousel.clientWidth);
+    shelfMarqueeCycleWidth = Math.min(1_680, Math.max(760, stageWidth * 0.9));
+    shelfMarqueeStride = shelfMarqueeCycleWidth / cards.length;
+    shelfMarqueeOffset = normalizeMarqueeOffset(shelfMarqueeOffset, shelfMarqueeCycleWidth);
+    renderShelfMarquee();
+  }
+
+  function setShelfInteraction(nextInteraction) {
+    shelfInteraction = nextInteraction;
+    carousel.dataset.interaction = nextInteraction;
+    carouselMotionLabel.textContent = {
+      idle: reduceMotion.matches ? "輪播已暫停" : "自動輪播",
+      hovered: "停留選冊",
+      dragging: "拖曳輪播",
+      transitioning: "切換節目冊",
+    }[nextInteraction] || "自動輪播";
+  }
+
+  function setShelfPointerCard(card) {
+    if (shelfPointerCard === card) return;
+    shelfPointerCard?.classList.remove("is-pointer-focus");
+    shelfPointerCard = card;
+    shelfPointerCard?.classList.add("is-pointer-focus");
+
+    if (card) {
+      updateShelfCarousel(Number(card.dataset.carouselIndex), { announce: false });
+    }
+  }
+
+  function pointerIsInsideCarousel(event) {
+    const bounds = carousel.getBoundingClientRect();
+    return event.clientX >= bounds.left
+      && event.clientX <= bounds.right
+      && event.clientY >= bounds.top
+      && event.clientY <= bounds.bottom;
+  }
+
+  function interactionAfterOrbitTurn() {
+    return carousel.matches(":hover") || carousel.contains(document.activeElement)
+      ? "hovered"
+      : "idle";
+  }
+
+  function beginShelfOrbitTurn(direction, startedAt = performance.now()) {
+    const step = direction < 0 ? -1 : 1;
+    if (reduceMotion.matches) {
+      shelfMarqueeOffset = normalizeMarqueeOffset(
+        shelfMarqueeOffset - step * shelfMarqueeStride,
+        shelfMarqueeCycleWidth,
+      );
+      updateShelfCarousel(advanceCarouselIndex(shelfActiveIndex, step, shelfProgrammes.length));
+      setShelfInteraction(interactionAfterOrbitTurn());
+      renderShelfMarquee();
+      return;
+    }
+
+    setShelfPointerCard(null);
+    shelfOrbitTransition = {
+      fromOffset: shelfMarqueeOffset,
+      toOffset: shelfMarqueeOffset - step * shelfMarqueeStride,
+      startedAt,
+      durationMs: 900,
+      targetIndex: advanceCarouselIndex(shelfActiveIndex, step, shelfProgrammes.length),
+    };
+    carousel.classList.add("is-turning");
+    setShelfInteraction("transitioning");
+  }
+
+  function finishShelfOrbitTurn(timestamp) {
+    const completedTurn = shelfOrbitTransition;
+    if (!completedTurn) return;
+
+    shelfMarqueeOffset = normalizeMarqueeOffset(
+      completedTurn.toOffset,
+      shelfMarqueeCycleWidth,
+    );
+    shelfOrbitTransition = null;
+    updateShelfCarousel(completedTurn.targetIndex);
+
+    if (shelfQueuedOrbitSteps !== 0) {
+      const nextDirection = Math.sign(shelfQueuedOrbitSteps);
+      shelfQueuedOrbitSteps -= nextDirection;
+      beginShelfOrbitTurn(nextDirection, timestamp);
+      return;
+    }
+
+    carousel.classList.remove("is-turning");
+    setShelfInteraction(interactionAfterOrbitTurn());
+    renderShelfMarquee();
+  }
+
+  function animateShelfMarquee(timestamp) {
+    const elapsedMs = shelfLastFrame ? Math.min(64, timestamp - shelfLastFrame) : 0;
+    shelfLastFrame = timestamp;
+
+    if (shelfProgrammes.length && initialRoute.kind === "shelf") {
+      if (shelfOrbitTransition) {
+        const transition = resolveOrbitTransition({
+          fromOffset: shelfOrbitTransition.fromOffset,
+          toOffset: shelfOrbitTransition.toOffset,
+          elapsedMs: timestamp - shelfOrbitTransition.startedAt,
+          durationMs: reduceMotion.matches ? 0 : shelfOrbitTransition.durationMs,
+        });
+        shelfMarqueeOffset = normalizeMarqueeOffset(
+          transition.offset,
+          shelfMarqueeCycleWidth,
+        );
+        renderShelfMarquee();
+        if (transition.complete) finishShelfOrbitTurn(timestamp);
+      } else {
+        const interaction = reduceMotion.matches && shelfInteraction === "idle" ? "hovered" : shelfInteraction;
+        shelfMarqueeOffset = resolveMarqueeOffset({
+          offset: shelfMarqueeOffset,
+          elapsedMs,
+          pixelsPerSecond: 20,
+          cycleWidth: shelfMarqueeCycleWidth,
+          interaction,
+          dragStartOffset: shelfDragStartOffset,
+          dragStartX: shelfDragStartX,
+          pointerX: shelfPointerX,
+        });
+        renderShelfMarquee();
+      }
+    }
+
+    shelfAnimationFrame = window.requestAnimationFrame(animateShelfMarquee);
+  }
+
+  function startShelfMarquee() {
+    window.cancelAnimationFrame(shelfAnimationFrame);
+    shelfLastFrame = 0;
+    setShelfInteraction("idle");
+    measureShelfMarquee();
+    shelfAnimationFrame = window.requestAnimationFrame(animateShelfMarquee);
+  }
+
   function updateShelfCarousel(nextIndex, { announce = true } = {}) {
     const total = shelfProgrammes.length;
     if (!total) return;
@@ -397,14 +640,13 @@ export async function mountReader({ root, repository, initialRoute }) {
 
     cards.forEach((card) => {
       const index = Number(card.dataset.carouselIndex);
-      const offset = relativeCarouselOffset(index, shelfActiveIndex, total);
-      const isVisible = Math.abs(offset) <= 2;
-      card.dataset.offset = String(offset);
-      card.classList.toggle("is-active", offset === 0);
-      card.classList.toggle("is-outside", !isVisible);
-      card.tabIndex = isVisible ? 0 : -1;
-      card.setAttribute("aria-hidden", isVisible ? "false" : "true");
-      if (offset === 0) {
+      const isSelected = index === shelfActiveIndex;
+      card.classList.toggle("is-active", isSelected);
+      card.classList.remove("is-outside");
+      card.removeAttribute("data-offset");
+      card.tabIndex = 0;
+      card.setAttribute("aria-hidden", "false");
+      if (isSelected) {
         card.setAttribute("aria-current", "true");
       } else {
         card.removeAttribute("aria-current");
@@ -436,7 +678,13 @@ export async function mountReader({ root, repository, initialRoute }) {
   }
 
   function moveShelfCarousel(direction) {
-    updateShelfCarousel(advanceCarouselIndex(shelfActiveIndex, direction, shelfProgrammes.length));
+    if (!shelfProgrammes.length) return;
+    const step = direction < 0 ? -1 : 1;
+    if (shelfOrbitTransition) {
+      shelfQueuedOrbitSteps = Math.max(-4, Math.min(4, shelfQueuedOrbitSteps + step));
+      return;
+    }
+    beginShelfOrbitTurn(step);
   }
 
   function openActiveShelfProgramme() {
@@ -492,7 +740,7 @@ export async function mountReader({ root, repository, initialRoute }) {
       ? "目錄"
       : chapterLabel(chapters[currentChapterIndex - 1], "上一章");
     next.querySelector("strong").textContent = currentChapterIndex === chapters.length - 1
-      ? "原始 PDF"
+      ? "翻閱節目冊"
       : chapterLabel(chapters[currentChapterIndex + 1], "下一章");
 
     routeMeta.chapter = {
@@ -519,6 +767,12 @@ export async function mountReader({ root, repository, initialRoute }) {
     headerIndex.hidden = nextRoute === "shelf";
     document.title = routeMeta[nextRoute]?.title || routeMeta.shelf.title;
 
+    if (nextRoute === "pdf") {
+      window.requestAnimationFrame(() => publicationViewer.activate());
+    } else {
+      publicationViewer.deactivate();
+    }
+
     const hashRoute = activeChapter ? `chapter/${encodeURIComponent(activeChapter.slug)}` : nextRoute;
     if (updateHash && initialRoute.kind === "programme" && location.hash !== `#${hashRoute}`) {
       history.pushState({ route: nextRoute, chapterSlug: activeChapter?.slug }, "", `${location.pathname}#${hashRoute}`);
@@ -528,71 +782,30 @@ export async function mountReader({ root, repository, initialRoute }) {
     animateView(views.get(nextRoute));
   }
 
-  function updatePdfPage() {
-    if (!pdfPages.length) return;
-    const page = pdfPages[pdfPageIndex];
-    const image = document.querySelector("#pdf-page-image");
-    const label = document.querySelector("#pdf-page-label");
-    const progress = document.querySelector("#pdf-progress");
-    const previous = document.querySelector("#pdf-prev");
-    const next = document.querySelector("#pdf-next");
-
-    image.src = page.src;
-    image.alt = page.alt;
-    label.textContent = `${String(pdfPageIndex + 1).padStart(2, "0")} / ${String(pdfPages.length).padStart(2, "0")}`;
-    progress.style.width = `${100 / pdfPages.length}%`;
-    progress.style.transform = `translateX(${pdfPageIndex * 100}%)`;
-    previous.disabled = pdfPageIndex === 0;
-    next.disabled = pdfPageIndex === pdfPages.length - 1;
-  }
-
   async function configurePdf(programme) {
-    const image = document.querySelector("#pdf-page-image");
-    const object = document.querySelector("#pdf-document");
-    const empty = document.querySelector("#pdf-empty");
-    const pager = document.querySelector("#pdf-pager");
-    const download = document.querySelector("#pdf-download");
-
-    image.hidden = true;
-    object.hidden = true;
-    empty.hidden = true;
-    pager.hidden = true;
-    download.hidden = true;
-
     if (programme.pdf_path && repository) {
       const signedUrl = await repository.createPdfUrl(programme.pdf_path);
       if (signedUrl) {
-        object.data = signedUrl;
-        object.hidden = false;
-        download.href = signedUrl;
-        download.removeAttribute("download");
-        download.target = "_blank";
-        download.rel = "noreferrer";
-        download.hidden = false;
-        text("pdf-page-label", "PDF");
-        text("pdf-caption", `${programme.pdf_filename || "原始節目冊"} · 安全連結 15 分鐘內有效`);
+        await publicationViewer.prepare({
+          url: signedUrl,
+          downloadUrl: signedUrl,
+          filename: programme.pdf_filename || "programme.pdf",
+          caption: `${programme.pdf_filename || "原始節目冊"} · 安全連結 15 分鐘內有效`,
+          forceDownload: false,
+        });
         return;
       }
     }
 
     if (programme.client_slug === sampleProgramme.client_slug && programme.slug === sampleProgramme.slug) {
-      const sample = configureSamplePdf();
-      pdfPages = sample.pages;
-      pdfPageIndex = 0;
-      image.hidden = false;
-      pager.hidden = false;
-      download.href = sample.downloadUrl;
-      download.setAttribute("download", "");
-      download.removeAttribute("target");
-      download.hidden = false;
-      text("pdf-caption", sample.caption);
-      updatePdfPage();
+      await publicationViewer.prepare(configureSamplePdf());
       return;
     }
 
-    empty.hidden = false;
-    text("pdf-page-label", "NO PDF");
-    text("pdf-caption", "後台上傳後，原始印刷版會顯示在這裡。 ");
+    await publicationViewer.prepare({
+      url: null,
+      caption: "後台上傳後，原始印刷版會顯示在這裡。",
+    });
   }
 
   document.querySelectorAll("[data-route]").forEach((control) => {
@@ -647,7 +860,6 @@ export async function mountReader({ root, repository, initialRoute }) {
     if (marker) updateShelfCarousel(Number(marker.dataset.carouselIndex));
   });
 
-  const carousel = document.querySelector("#programme-carousel");
   carousel.addEventListener("keydown", (event) => {
     if (event.key === "ArrowLeft") {
       event.preventDefault();
@@ -662,23 +874,115 @@ export async function mountReader({ root, repository, initialRoute }) {
       openActiveShelfProgramme();
     }
   });
-  carousel.addEventListener("pointerdown", (event) => {
-    shelfPointerStart = { x: event.clientX, y: event.clientY, id: event.pointerId };
-    shelfDidSwipe = false;
+
+  carousel.addEventListener("pointerenter", (event) => {
+    if (event.pointerType === "mouse" && !shelfOrbitTransition) setShelfInteraction("hovered");
   });
+
+  carousel.addEventListener("pointermove", (event) => {
+    const bounds = carousel.getBoundingClientRect();
+    carousel.style.setProperty("--pointer-x", `${event.clientX - bounds.left}px`);
+    carousel.style.setProperty("--pointer-y", `${event.clientY - bounds.top}px`);
+    carousel.dataset.pointer = "visible";
+
+    const hit = document.elementFromPoint(event.clientX, event.clientY);
+    const card = hit?.closest?.(".programme-volume") || null;
+    setShelfPointerCard(card);
+
+    shelfPointerX = event.clientX;
+    if (shelfInteraction === "dragging") {
+      shelfMarqueeOffset = resolveMarqueeOffset({
+        offset: shelfMarqueeOffset,
+        elapsedMs: 0,
+        pixelsPerSecond: 0,
+        cycleWidth: shelfMarqueeCycleWidth,
+        interaction: "dragging",
+        dragStartOffset: shelfDragStartOffset,
+        dragStartX: shelfDragStartX,
+        pointerX: shelfPointerX,
+      });
+      renderShelfMarquee();
+    } else if (event.pointerType === "mouse" && !shelfOrbitTransition) {
+      setShelfInteraction("hovered");
+    }
+  });
+
+  carousel.addEventListener("pointerdown", (event) => {
+    if (event.button !== 0 || event.target.closest(".carousel-arrow")) return;
+    shelfOrbitTransition = null;
+    shelfQueuedOrbitSteps = 0;
+    carousel.classList.remove("is-turning");
+    shelfPointerStart = { x: event.clientX, y: event.clientY, id: event.pointerId };
+    shelfDragStartX = event.clientX;
+    shelfPointerX = event.clientX;
+    shelfDragStartOffset = shelfMarqueeOffset;
+    shelfDidSwipe = false;
+    carousel.setPointerCapture(event.pointerId);
+    setShelfInteraction("dragging");
+  });
+
   carousel.addEventListener("pointerup", (event) => {
     if (!shelfPointerStart || shelfPointerStart.id !== event.pointerId) return;
     const deltaX = event.clientX - shelfPointerStart.x;
     const deltaY = event.clientY - shelfPointerStart.y;
+    shelfPointerX = event.clientX;
+    shelfMarqueeOffset = resolveMarqueeOffset({
+      offset: shelfMarqueeOffset,
+      elapsedMs: 0,
+      pixelsPerSecond: 0,
+      cycleWidth: shelfMarqueeCycleWidth,
+      interaction: "dragging",
+      dragStartOffset: shelfDragStartOffset,
+      dragStartX: shelfDragStartX,
+      pointerX: shelfPointerX,
+    });
+    if (carousel.hasPointerCapture(event.pointerId)) carousel.releasePointerCapture(event.pointerId);
     shelfPointerStart = null;
-    if (Math.abs(deltaX) > 42 && Math.abs(deltaX) > Math.abs(deltaY)) {
+    if (Math.abs(deltaX) > 10 && Math.abs(deltaX) > Math.abs(deltaY)) {
       shelfDidSwipe = true;
-      moveShelfCarousel(deltaX < 0 ? 1 : -1);
     }
+    const pointerStillInside = event.pointerType === "mouse" && pointerIsInsideCarousel(event);
+    if (!pointerStillInside) {
+      carousel.dataset.pointer = "hidden";
+      setShelfPointerCard(null);
+    }
+    setShelfInteraction(pointerStillInside ? "hovered" : "idle");
+    renderShelfMarquee();
   });
-  carousel.addEventListener("pointercancel", () => {
+
+  carousel.addEventListener("pointercancel", (event) => {
+    if (carousel.hasPointerCapture(event.pointerId)) carousel.releasePointerCapture(event.pointerId);
     shelfPointerStart = null;
+    carousel.dataset.pointer = "hidden";
+    setShelfPointerCard(null);
+    setShelfInteraction("idle");
   });
+
+  carousel.addEventListener("pointerleave", (event) => {
+    if (event.pointerType !== "mouse" || shelfInteraction === "dragging") return;
+    carousel.dataset.pointer = "hidden";
+    setShelfPointerCard(null);
+    if (!shelfOrbitTransition) setShelfInteraction("idle");
+    shelfLastFrame = performance.now();
+  });
+
+  carousel.addEventListener("focusin", (event) => {
+    const card = event.target.closest(".programme-volume");
+    if (!card) return;
+    setShelfPointerCard(card);
+    if (!shelfOrbitTransition) setShelfInteraction("hovered");
+  });
+
+  carousel.addEventListener("focusout", () => {
+    window.setTimeout(() => {
+      if (carousel.contains(document.activeElement)) return;
+      setShelfPointerCard(null);
+      if (!shelfOrbitTransition) setShelfInteraction("idle");
+    }, 0);
+  });
+
+  window.addEventListener("resize", measureShelfMarquee);
+  reduceMotion.addEventListener("change", () => setShelfInteraction(shelfInteraction));
 
   document.querySelector("#editorial-index").addEventListener("click", (event) => {
     const chapter = event.target.closest("[data-chapter-slug]");
@@ -710,16 +1014,6 @@ export async function mountReader({ root, repository, initialRoute }) {
     }
   });
 
-  document.querySelector("#pdf-prev").addEventListener("click", () => {
-    pdfPageIndex = Math.max(0, pdfPageIndex - 1);
-    updatePdfPage();
-  });
-
-  document.querySelector("#pdf-next").addEventListener("click", () => {
-    pdfPageIndex = Math.min(pdfPages.length - 1, pdfPageIndex + 1);
-    updatePdfPage();
-  });
-
   window.addEventListener("popstate", () => {
     if (initialRoute.kind === "programme") {
       const readerRoute = parseReaderHash(location.hash);
@@ -745,6 +1039,7 @@ export async function mountReader({ root, repository, initialRoute }) {
     renderShelf(shelfProgrammes);
     updateShelfCarousel(0, { announce: false });
     showRoute("shelf", { updateHash: false });
+    startShelfMarquee();
   } else if (initialRoute.kind === "programme") {
     try {
       currentProgramme = repository

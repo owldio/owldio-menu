@@ -3,9 +3,10 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#090a10" />
-    <meta name="description" content="OWLDIO MENU 表演藝術電子節目冊平台視覺原型" />
+    <meta name="theme-color" content="#102422" />
+    <meta name="description" content="OWLDIO MENU 音樂會、合唱與表演藝術電子節目冊平台" />
     <title>OWLDIO MENU｜電子節目冊</title>
+    <link rel="icon" href="./assets/owldio-owl-reader-mark-v1.svg" type="image/svg+xml" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -21,10 +22,14 @@
     <div class="reader-shell" id="reader-shell" data-view="shelf">
       <header class="site-header">
         <button class="brand" type="button" data-route="shelf" aria-label="回到作品索引">
-          <span class="brand__name">OWLDIO</span>
-          <span class="brand__division">MENU</span>
+          <span class="brand__mark" aria-hidden="true"></span>
+          <span class="brand__wordmark" aria-hidden="true">
+            <span class="brand__name">OWLDIO</span>
+            <span class="brand__division">MENU</span>
+          </span>
         </button>
-        <p class="site-header__context" id="header-context">PROGRAMME CIRCULATION</p>
+        <p class="site-header__context" id="header-context">公開節目冊</p>
+        <p class="site-header__count" id="shelf-count">5 本節目冊</p>
         <button class="site-header__index" type="button" data-route="contents" hidden>
           <span>INDEX</span>
           <span>目錄</span>
@@ -33,21 +38,7 @@
 
       <main id="main-content">
         <section class="view view--shelf" id="shelf-view" aria-labelledby="shelf-title">
-          <div class="shelf-ambient" aria-hidden="true">
-            <span></span><span></span><span></span>
-          </div>
-
-          <header class="shelf-intro page-gutter">
-            <div class="eyebrow-row">
-              <span>CURATED DIGITAL PROGRAMMES</span>
-              <span id="shelf-count">5 TITLES</span>
-            </div>
-            <p class="kicker">PERFORMING ARTS IN CIRCULATION</p>
-            <h1 id="shelf-title"><span>OWLDIO</span> <em>MENU</em></h1>
-            <p class="shelf-intro__note">
-              每一場演出，都留下自己的閱讀方式。<br />轉動書架，選擇今晚要打開的節目冊。
-            </p>
-          </header>
+          <h1 class="sr-only" id="shelf-title">OWLDIO MENU 公開節目冊</h1>
 
           <div
             class="carousel-stage"
@@ -57,7 +48,10 @@
             aria-label="公開演出節目冊輪播"
             tabindex="0"
           >
-            <p class="carousel-stage__label">SELECT A PROGRAMME</p>
+            <div class="carousel-stage__status" aria-hidden="true">
+              <span><i></i><strong id="carousel-motion-label">自動輪播</strong></span>
+              <span>拖曳或使用方向鍵切換</span>
+            </div>
             <button class="carousel-arrow carousel-arrow--prev" id="carousel-prev" type="button" aria-label="上一份節目冊">
               <span aria-hidden="true">←</span><small>PREV.</small>
             </button>
@@ -74,14 +68,14 @@
               <small id="selected-programme-total">/ 01</small>
             </div>
             <div class="carousel-selection__copy">
-              <p class="kicker" id="selected-programme-type">原創音樂劇</p>
-              <h2 id="selected-programme-title">潮聲未眠</h2>
-              <p class="carousel-selection__english" id="selected-programme-title-en">THE TIDE STAYS AWAKE</p>
-              <p class="carousel-selection__summary" id="selected-programme-summary">一座入夜後仍記得潮汐的城市，與三個不願睡去的人。</p>
+              <p class="kicker" id="selected-programme-type">鋼琴五重奏音樂會</p>
+              <h2 id="selected-programme-title">理性與感性</h2>
+              <p class="carousel-selection__english" id="selected-programme-title-en">SENSE AND SENSIBILITY</p>
+              <p class="carousel-selection__summary" id="selected-programme-summary">布魯赫與德弗札克的鋼琴五重奏，在室內樂編制裡展開浪漫、張力與細密的聲部對話。</p>
             </div>
             <dl class="carousel-selection__ledger">
-              <div><dt>DATE</dt><dd id="selected-programme-date">2026.09.18</dd></div>
-              <div><dt>VENUE</dt><dd id="selected-programme-venue">北城實驗劇場</dd></div>
+              <div><dt>日期</dt><dd id="selected-programme-date">2022.08.10</dd></div>
+              <div><dt>場地</dt><dd id="selected-programme-venue">國家兩廳院演奏廳</dd></div>
             </dl>
             <button class="carousel-selection__open" id="carousel-open" type="button">
               <span>閱讀這本節目冊</span><strong aria-hidden="true">↗</strong>
@@ -91,7 +85,7 @@
 
           <footer class="folio page-gutter">
             <span>MENU.OWLDIO.ART</span>
-            <span>PUBLIC EDITIONS</span>
+            <span>音樂會、合唱與歌劇</span>
           </footer>
         </section>
 
@@ -103,26 +97,26 @@
             </div>
 
             <div class="entrance-cover" aria-hidden="true">
-              <div class="entrance-cover__spine" id="programme-cover-spine">OWLDIO MENU / PERFORMING ARTS</div>
+              <div class="entrance-cover__spine" id="programme-cover-spine">OWLDIO MENU / MUSIC & PERFORMANCE</div>
               <div class="entrance-cover__field">
                 <span class="entrance-cover__edition" id="programme-cover-edition">DIGITAL PROGRAMME</span>
-                <span class="entrance-cover__title" id="programme-cover-title">潮聲<br />未眠</span>
-                <span class="entrance-cover__english" id="programme-cover-title-en">THE TIDE STAYS AWAKE</span>
-                <span class="entrance-cover__date" id="programme-cover-date">18—20 SEPTEMBER 2026</span>
+                <span class="entrance-cover__title" id="programme-cover-title">理性<br />與感性</span>
+                <span class="entrance-cover__english" id="programme-cover-title-en">SENSE AND SENSIBILITY</span>
+                <span class="entrance-cover__date" id="programme-cover-date">10 AUGUST 2022</span>
               </div>
             </div>
 
             <div class="entrance-copy">
-              <p class="kicker" id="programme-type">原創音樂劇 · A NEW CHAMBER MUSICAL</p>
-              <h1 id="entrance-title">潮聲未眠</h1>
-              <p class="entrance-copy__english" id="programme-title-en">THE TIDE STAYS AWAKE</p>
-              <p class="entrance-copy__deck" id="programme-summary">一座入夜後仍記得潮汐的城市，與三個不願睡去的人。</p>
+              <p class="kicker" id="programme-type">鋼琴五重奏音樂會</p>
+              <h1 id="entrance-title">理性與感性</h1>
+              <p class="entrance-copy__english" id="programme-title-en">SENSE AND SENSIBILITY</p>
+              <p class="entrance-copy__deck" id="programme-summary">布魯赫與德弗札克的鋼琴五重奏，在室內樂編制裡展開浪漫、張力與細密的聲部對話。</p>
 
               <dl class="event-ledger">
-                <div><dt>DATE</dt><dd id="programme-date">2026.09.18—20</dd></div>
-                <div><dt>TIME</dt><dd id="programme-time">今晚 19:30 開演</dd></div>
-                <div><dt>VENUE</dt><dd id="programme-venue">北城實驗劇場</dd></div>
-                <div><dt>DURATION</dt><dd id="programme-duration">全長約 110 分鐘・無中場</dd></div>
+                <div><dt>DATE</dt><dd id="programme-date">2022.08.10</dd></div>
+                <div><dt>TIME</dt><dd id="programme-time">週三 19:30</dd></div>
+                <div><dt>VENUE</dt><dd id="programme-venue">國家兩廳院演奏廳</dd></div>
+                <div><dt>DURATION</dt><dd id="programme-duration">全長約 120 分鐘</dd></div>
               </dl>
 
               <div class="performance-status">
@@ -131,11 +125,11 @@
               </div>
 
               <div class="entrance-actions">
-                <button class="button button--primary" type="button" data-route="contents">
-                  開始閱讀 <span>→</span>
+                <button class="button button--primary" type="button" data-route="pdf">
+                  翻閱節目冊 <span>→</span>
                 </button>
-                <button class="button button--text" type="button" data-route="pdf">
-                  查看原始 PDF <span>↗</span>
+                <button class="button button--text" type="button" data-route="contents">
+                  開啟網頁版目錄 <span>↗</span>
                 </button>
               </div>
             </div>
@@ -201,35 +195,63 @@
         </article>
 
         <section class="view view--pdf" id="pdf-view" aria-labelledby="pdf-title" hidden>
-          <header class="pdf-toolbar">
-            <button type="button" data-route="contents">← 網頁版</button>
-            <div>
-              <span id="pdf-page-label">01 / 02</span>
-              <strong id="pdf-title">原始 PDF</strong>
+          <header class="publication-toolbar">
+            <button class="publication-toolbar__back" type="button" data-route="entrance">
+              <span aria-hidden="true">←</span><span>返回節目</span>
+            </button>
+            <div class="publication-toolbar__identity">
+              <span>OWLDIO MENU / READER</span>
+              <strong id="pdf-title">理性與感性</strong>
             </div>
-            <a id="pdf-download" href="./assets/rational-sensual-programme-sample-v1.pdf" download>下載</a>
+            <div class="publication-toolbar__tools">
+              <button type="button" data-route="contents"><span>網頁版</span></button>
+              <button type="button" id="pdf-thumbnails-toggle" aria-expanded="false" aria-controls="pdf-thumbnails">
+                <span>縮圖</span>
+              </button>
+              <span class="publication-toolbar__zoom" aria-label="縮放控制">
+                <button type="button" id="pdf-zoom-out" aria-label="縮小">−</button>
+                <output id="pdf-zoom-label" aria-live="polite">100%</output>
+                <button type="button" id="pdf-zoom-in" aria-label="放大">＋</button>
+              </span>
+              <button type="button" id="pdf-fullscreen" aria-label="進入全螢幕"><span>全螢幕</span></button>
+              <a id="pdf-download" href="./assets/rational-sensual-programme-sample-v1.pdf" download>下載</a>
+            </div>
           </header>
 
-          <div class="pdf-stage">
-            <div class="pdf-paper" id="pdf-paper">
-              <img
-                id="pdf-page-image"
-                src="./assets/rational-sensual-page-1-v1.png"
-                alt="使用者提供的《理性與感性》原始節目單第一頁"
-                loading="lazy"
-                decoding="async"
-                fetchpriority="low"
-              />
-              <object id="pdf-document" type="application/pdf" aria-label="原始 PDF 節目冊" hidden></object>
-              <p class="pdf-empty" id="pdf-empty" hidden>這份節目冊尚未上傳原始 PDF。</p>
+          <div class="publication-reader" id="pdf-reader">
+            <p class="publication-reader__hint">TAP TO ZOOM / SWIPE / ARROW KEYS</p>
+            <button class="publication-turn publication-turn--prev" type="button" id="pdf-prev" aria-label="上一頁">
+              <span aria-hidden="true">←</span><small>PREV.</small>
+            </button>
+
+            <div class="publication-stage" id="pdf-stage" tabindex="0" aria-label="節目冊閱讀舞台">
+              <div class="publication-pages" id="pdf-pages" aria-live="polite"></div>
+              <p class="publication-loading" id="pdf-loading">正在展開節目冊…</p>
+              <p class="pdf-empty" id="pdf-empty" hidden>這份節目冊尚未上傳 PDF。</p>
             </div>
-            <p id="pdf-caption">原始印刷節目冊 · 422 × 299 mm · 橫式跨頁</p>
+
+            <button class="publication-turn publication-turn--next" type="button" id="pdf-next" aria-label="下一頁">
+              <small>NEXT</small><span aria-hidden="true">→</span>
+            </button>
           </div>
 
-          <nav class="pdf-pager" id="pdf-pager" aria-label="PDF 頁面導覽">
-            <button type="button" id="pdf-prev" aria-label="上一頁">←</button>
-            <div class="pdf-pager__track"><i id="pdf-progress"></i></div>
-            <button type="button" id="pdf-next" aria-label="下一頁">→</button>
+          <aside class="publication-thumbnails" id="pdf-thumbnails" aria-label="頁面縮圖" hidden>
+            <header>
+              <span>ALL PAGES</span>
+              <button type="button" id="pdf-thumbnails-close" aria-label="關閉縮圖">關閉 ×</button>
+            </header>
+            <div class="publication-thumbnails__rail" id="pdf-thumbnail-rail"></div>
+          </aside>
+
+          <nav class="publication-rail" id="pdf-pager" aria-label="節目冊頁面導覽">
+            <button type="button" class="publication-rail__thumbs" id="pdf-thumbnails-mobile" aria-label="開啟頁面縮圖">▦</button>
+            <span class="publication-rail__page" id="pdf-page-label">01 / 02</span>
+            <label class="publication-rail__scrubber">
+              <span class="sr-only">前往頁面</span>
+              <input id="pdf-scrubber" type="range" min="1" max="2" value="1" step="1" />
+              <i id="pdf-progress"></i>
+            </label>
+            <p id="pdf-caption">原始印刷節目冊 · 422 × 299 mm · 橫式跨頁</p>
           </nav>
         </section>
 

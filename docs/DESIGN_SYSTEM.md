@@ -2,25 +2,28 @@
 
 ## Direction
 
-The platform uses a two-part visual direction. The public index is **Rotunda Stage Archive（環形劇場書庫）**: programme volumes circulate through a dark auditorium-like space, with the selected edition held in a central stage light and adjacent editions receding along a visible arc. Once a volume is opened, the reader becomes **Theatrical Editorial Modernism（劇場編輯現代主義）**: disciplined grids and running furniture softened by Taiwanese independent-arts publishing.
+The platform uses a three-part visual direction. The public index is **B3-A Oxidised-Copper Editorial Spread（氧化銅出版跨頁）**: a deep patina field, parchment text, and one copper rule leave the client publication in control of the page. The header is quiet, the carousel occupies the full horizontal field, and the selected title, date, venue, and reading action close the page as a single editorial footer. Volumes keep front/back depth without drawing a visible orbit, platform, arch, or centre axis. Pointer presence holds the orbit, direct dragging rotates it, and arrow input completes a timed one-publication turn before the next selection is announced. The uploaded publication opens in an **Immersive Publication Reader**: a full-bleed, low-distraction environment for the printed artefact. The optional native web edition uses a restrained concert-editorial system with measured reading rhythm.
 
 The identity remains recognisable after every client image is replaced. On the shelf, physical depth, typographic covers, rotation, and light carry the experience. Inside a programme, folios, rules, spacing, and reading rhythm carry the design. Photography is optional editorial material rather than the background of the interface.
 
+## Brand mark
+
+The primary OWLDIO mark is the single-colour **Owl Reader** in `assets/owldio-owl-reader-mark-v1.svg`. Two eye rings form a pair of O shapes while the open-book valley suggests a W. Use it without shadows, gradients, or illustrative fills; the minimum interface size is 28 px. The compact header lockup pairs the mark with a restrained `OWLDIO / MENU` wordmark so the symbol can gain recognition without competing with programme titles.
+
 ## Visual grammar
 
-- **Stage field:** near-black auditorium space, oxblood light, and warm metallic annotations on the public index.
-- **Paper field:** warm uncoated paper rather than pure white after a programme is opened.
-- **Primary ink:** deep navy for long-life editorial structure.
-- **Secondary ink:** muted sage for annotations and supporting information.
-- **Signal ink:** vermilion only for status, section numbers, and navigational emphasis.
+- **Patina field:** `#102422` is the public-index ground. It reads as oxidised copper and publishing ink rather than a theatre-black stage.
+- **Editorial paper:** `#eee9db` carries the wordmark, selected title, and primary information.
+- **Copper rule:** `#cf965b` identifies focus, the selected-publication footer, and timed arrow turns.
+- **Supporting green:** `#31544e` may appear on publication placeholders and restrained depth lighting.
+- **Cover colour:** sage, cobalt, softened terracotta, ultramarine, and citron belong to individual publications rather than the site chrome.
 - **Display type:** `Noto Serif TC`, used for performance titles, chapter openers, quotes, and names.
 - **Information type:** `Noto Sans TC`, used for labels, metadata, and controls.
-- **Running furniture:** `IBM Plex Sans Condensed`, used for folios, English labels, dates, and archival notation.
-- **Geometry:** square corners, hairline rules, visible folios, deliberate asymmetry, and no floating rounded cards.
+- **Geometry:** square corners, one-pixel rules, deliberate asymmetry, and no floating rounded cards, arches, visible turntables, or ornamental taxonomies.
 
 ## Page archetypes
 
-1. **Public shelf** — published works only; five nearby volumes form a circular carousel, the central volume opens, arrows/keyboard/swipe rotate the selection, and every selected work exposes date, venue, and synopsis.
+1. **Public shelf** — published works only; the carousel and content both use the full viewport. Volumes circulate with front/back depth, pause on pointer/focus, rotate under direct dragging, and preserve each supplied cover's real portrait, square, or spread ratio. The selected title, date, venue, and reading action form one horizontal footer instead of a side information panel. When no cover preview exists, a quiet typographic placeholder keeps the same publication shape.
 2. **Programme entrance** — title, date, time, venue, duration, status, and reading entry appear before secondary material.
 3. **Contents** — every chapter has a number, bilingual title, and folio; each row is a real link.
 4. **Essay / letter** — lede, prose, quote, score note, dateline, and signature blocks.
@@ -28,7 +31,7 @@ The identity remains recognisable after every client image is replaced. On the s
 6. **People index** — role, name, and biography; portraits may be added but are not required.
 7. **Credits** — grouped role/name ledger for creative and production teams.
 8. **Visitor information** — high-scan factual grid plus accessibility or content notices.
-9. **Original PDF** — a dark, neutral inspection surface kept separate from the native web edition.
+9. **Immersive publication** — the primary reading action. Uploaded PDFs are rendered into an OWLDIO-controlled neutral reading field with side turns, keyboard/swipe input, page progress, thumbnails, zoom, fullscreen, and download. Browser PDF chrome is never the intended public experience.
 
 ## Image contract
 
@@ -43,4 +46,6 @@ The identity remains recognisable after every client image is replaced. On the s
 - Mobile is the primary performance-night surface.
 - The entrance remains a single reading column on phones and becomes a cover/details spread on desktop.
 - Contents and chapters widen into a restrained reading sheet rather than stretching body copy edge to edge.
-- The public shelf becomes a wider archive on desktop, while each programme keeps a publication-like maximum width.
+- Every public background is full-bleed; restrained maximum widths belong to editorial content, never to an app-like outer shell.
+- Portrait PDFs use a single cover followed by facing-page spreads on wide screens. Phones and landscape artwork stay single-sheet so no page is split accidentally.
+- On phones, the complete sheet first fits the stage; tapping the artwork enlarges it for panning and close reading.
