@@ -27,6 +27,11 @@ describe("sample programme catalogue", () => {
       panelBoundaries: {
         1: [0, 0.337383, 0.676974, 1],
       },
+      foldLayout: {
+        insidePanelOrder: [2, 1, 0],
+        closingPanelIndex: 2,
+        backCoverPanelIndex: 1,
+      },
     });
   });
 });

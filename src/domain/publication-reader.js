@@ -27,7 +27,7 @@ export function triFoldReadingOrder(pageCount, configuredOrder) {
     .map(([pageNumber, panelIndex]) => ({ pageNumber, panelIndex }));
 }
 
-export function triFoldDesktopSteps(pageCount) {
+export function triFoldDesktopSteps(pageCount, { backCoverPanelIndex = null } = {}) {
   const steps = [
     { id: "closed", label: "封面" },
     { id: "first-open", label: "打開第一折" },
@@ -35,10 +35,30 @@ export function triFoldDesktopSteps(pageCount) {
   ];
 
   if ((Number(pageCount) || 0) > 1) {
-    steps.push({ id: "outside-open", label: "翻至背面" });
+    const hasBackCover = backCoverPanelIndex !== null
+      && backCoverPanelIndex !== ""
+      && Number.isInteger(Number(backCoverPanelIndex))
+      && Number(backCoverPanelIndex) >= 0
+      && Number(backCoverPanelIndex) <= 2;
+    if (hasBackCover) {
+      steps.push(
+        { id: "refold", label: "折回右頁" },
+        { id: "back-cover", label: "封底" },
+      );
+    } else {
+      steps.push({ id: "outside-open", label: "翻至背面" });
+    }
   }
 
   return steps;
+}
+
+export function resolveTriFoldInsideOrder(configuredOrder) {
+  const order = Array.isArray(configuredOrder) ? configuredOrder.map(Number) : [];
+  const isPermutation = order.length === 3
+    && order.every((panelIndex) => Number.isInteger(panelIndex) && panelIndex >= 0 && panelIndex <= 2)
+    && new Set(order).size === 3;
+  return isPermutation ? order : [0, 1, 2];
 }
 
 export function resolveTriFoldCoverPanel(panelIndex) {

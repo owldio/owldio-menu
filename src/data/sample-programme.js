@@ -273,6 +273,11 @@ export const moonlightPromiseProgramme = {
     panelBoundaries: {
       1: [0, 0.337383, 0.676974, 1],
     },
+    foldLayout: {
+      insidePanelOrder: [2, 1, 0],
+      closingPanelIndex: 2,
+      backCoverPanelIndex: 1,
+    },
     caption: "原始印刷節目冊 · A3 橫式 · 三折頁",
     filename: "月光下的約定-節目單.pdf",
     forceDownload: true,

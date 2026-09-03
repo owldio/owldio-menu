@@ -75,6 +75,26 @@ describe("triFoldDesktopSteps", () => {
       { id: "outside-open", label: "翻至背面" },
     ]);
   });
+
+  it("returns through the two-panel view before closing onto a configured back cover", () => {
+    expect(publicationReader.triFoldDesktopSteps(2, { backCoverPanelIndex: 1 })).toEqual([
+      { id: "closed", label: "封面" },
+      { id: "first-open", label: "打開第一折" },
+      { id: "inside-open", label: "完整展開" },
+      { id: "refold", label: "折回右頁" },
+      { id: "back-cover", label: "封底" },
+    ]);
+  });
+});
+
+describe("resolveTriFoldInsideOrder", () => {
+  it("maps the imposed PDF panels into their physical left-to-right order", () => {
+    expect(publicationReader.resolveTriFoldInsideOrder([2, 1, 0])).toEqual([2, 1, 0]);
+  });
+
+  it("falls back when the configured order is not a complete panel permutation", () => {
+    expect(publicationReader.resolveTriFoldInsideOrder([2, 2, 0])).toEqual([0, 1, 2]);
+  });
 });
 
 describe("resolveTriFoldCoverPanel", () => {

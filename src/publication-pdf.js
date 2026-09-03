@@ -6,6 +6,7 @@ import {
   movePublicationPage,
   publicationSpread,
   resolveTriFoldCoverPanel,
+  resolveTriFoldInsideOrder,
   resolveTriFoldPanelCrop,
   triFoldDesktopSteps,
   triFoldReadingOrder,
@@ -32,6 +33,14 @@ function clamp(value, minimum, maximum) {
 
 function padPage(value) {
   return String(value).padStart(2, "0");
+}
+
+function optionalPanelIndex(value) {
+  if (value === null || value === "") return null;
+  const panelIndex = Number(value);
+  return Number.isInteger(panelIndex) && panelIndex >= 0 && panelIndex <= 2
+    ? panelIndex
+    : null;
 }
 
 function nextFrame() {
@@ -261,6 +270,10 @@ export function createPublicationViewer(root, { onError } = {}) {
   async function renderTriFoldCurrent(revision) {
     const step = foldSteps[currentPage - 1] || foldSteps[0];
     const coverPanel = resolveTriFoldCoverPanel(source?.previewPanelIndex);
+    const insidePanelOrder = resolveTriFoldInsideOrder(source?.foldLayout?.insidePanelOrder);
+    const closingPanelIndex = optionalPanelIndex(source?.foldLayout?.closingPanelIndex)
+      ?? (coverPanel === 0 ? 2 : 0);
+    const backCoverPanelIndex = optionalPanelIndex(source?.foldLayout?.backCoverPanelIndex);
     const renderKey = `${stage.clientWidth}x${stage.clientHeight}@${zoom}`;
     const existingBook = pages.querySelector(".tri-fold-book");
     if (existingBook && pages.dataset.renderKey === renderKey) {
@@ -314,7 +327,7 @@ export function createPublicationViewer(root, { onError } = {}) {
       const frontRender = createRenderedCanvas({
         page: insidePage,
         pageNumber: insidePageNumber,
-        panelIndex,
+        panelIndex: insidePanelOrder[panelIndex],
         cssScale,
         pixelRatio,
         displayWidth: panelWidth,
@@ -343,22 +356,63 @@ export function createPublicationViewer(root, { onError } = {}) {
       assembly.append(panel);
     }
 
-    const reverse = document.createElement("div");
-    reverse.className = "tri-fold-book__reverse";
-    reverse.setAttribute("aria-hidden", "true");
-    const reverseRender = createRenderedCanvas({
-      page: outsidePage,
-      pageNumber: outsidePageNumber,
-      cssScale,
-      pixelRatio,
-      displayWidth: panelWidth * 3,
-      displayHeight,
-      label: "節目冊完整外側",
-    });
-    reverse.append(reverseRender.canvas);
-    renderJobs.push(reverseRender.renderPromise);
+    if (backCoverPanelIndex !== null) {
+      const closingLeaf = document.createElement("div");
+      closingLeaf.className = "tri-fold-book__closing-leaf";
+      closingLeaf.setAttribute("aria-hidden", "true");
 
-    book.append(assembly, reverse);
+      const closingFront = document.createElement("div");
+      closingFront.className = "tri-fold-closing-face tri-fold-closing-face--front";
+      const closingFrontRender = createRenderedCanvas({
+        page: outsidePage,
+        pageNumber: outsidePageNumber,
+        panelIndex: closingPanelIndex,
+        cssScale,
+        pixelRatio,
+        displayWidth: panelWidth,
+        displayHeight,
+        label: "折回後的右頁",
+      });
+      closingFront.append(closingFrontRender.canvas);
+      renderJobs.push(closingFrontRender.renderPromise);
+
+      const closingBack = document.createElement("div");
+      closingBack.className = "tri-fold-closing-face tri-fold-closing-face--back";
+      const closingBackRender = createRenderedCanvas({
+        page: outsidePage,
+        pageNumber: outsidePageNumber,
+        panelIndex: backCoverPanelIndex,
+        cssScale,
+        pixelRatio,
+        displayWidth: panelWidth,
+        displayHeight,
+        label: "節目冊封底",
+      });
+      closingBack.append(closingBackRender.canvas);
+      renderJobs.push(closingBackRender.renderPromise);
+
+      closingLeaf.append(closingFront, closingBack);
+      assembly.append(closingLeaf);
+    }
+
+    book.append(assembly);
+    if (foldSteps.some(({ id }) => id === "outside-open")) {
+      const reverse = document.createElement("div");
+      reverse.className = "tri-fold-book__reverse";
+      reverse.setAttribute("aria-hidden", "true");
+      const reverseRender = createRenderedCanvas({
+        page: outsidePage,
+        pageNumber: outsidePageNumber,
+        cssScale,
+        pixelRatio,
+        displayWidth: panelWidth * 3,
+        displayHeight,
+        label: "節目冊完整外側",
+      });
+      reverse.append(reverseRender.canvas);
+      renderJobs.push(reverseRender.renderPromise);
+      book.append(reverse);
+    }
     pages.replaceChildren(book);
     pages.dataset.mode = "fold";
     pages.dataset.foldStage = step.id;
@@ -572,12 +626,24 @@ export function createPublicationViewer(root, { onError } = {}) {
       if (revision !== thumbnailRevision) return;
       const panel = pageMode === "panel" ? panelOrder[position - 1] : null;
       const foldStep = pageMode === "fold" ? foldSteps[position - 1] : null;
+      const foldCoverPanel = resolveTriFoldCoverPanel(source?.previewPanelIndex);
+      const foldClosingPanel = optionalPanelIndex(source?.foldLayout?.closingPanelIndex)
+        ?? (foldCoverPanel === 0 ? 2 : 0);
+      const foldBackCoverPanel = optionalPanelIndex(source?.foldLayout?.backCoverPanelIndex);
       const foldPageNumber = foldStep
-        ? (foldStep.id === "outside-open" || foldStep.id === "closed" ? 1 : Math.min(2, pageCount))
+        ? (["closed", "first-open", "refold", "back-cover", "outside-open"].includes(foldStep.id)
+            ? 1
+            : Math.min(2, pageCount))
         : null;
       const pageNumber = panel?.pageNumber || foldPageNumber || position;
       const panelIndex = panel?.panelIndex
-        ?? (foldStep?.id === "closed" ? resolveTriFoldCoverPanel(source?.previewPanelIndex) : null);
+        ?? (foldStep?.id === "closed"
+          ? resolveTriFoldCoverPanel(source?.previewPanelIndex)
+          : ["first-open", "refold"].includes(foldStep?.id)
+            ? foldClosingPanel
+            : foldStep?.id === "back-cover" && foldBackCoverPanel !== null
+              ? foldBackCoverPanel
+              : null);
       const button = document.createElement("button");
       button.type = "button";
       button.className = "publication-thumbnail";
@@ -656,7 +722,9 @@ export function createPublicationViewer(root, { onError } = {}) {
         ? triFoldReadingOrder(pageCount, source.readingOrder)
         : [];
       foldSteps = source.foldMode === "tri-fold"
-        ? triFoldDesktopSteps(pageCount)
+        ? triFoldDesktopSteps(pageCount, {
+            backCoverPanelIndex: source?.foldLayout?.backCoverPanelIndex,
+          })
         : [];
       const firstPage = await pdfDocument.getPage(1);
       const viewport = firstPage.getViewport({ scale: 1 });
@@ -883,10 +951,24 @@ export function createPublicationViewer(root, { onError } = {}) {
       if (!active || !pdfDocument) return;
       const previousMode = pageMode;
       const visiblePanel = previousMode === "panel" ? panelOrder[currentPage - 1] : null;
-      const visibleSourcePage = visiblePanel?.pageNumber
-        ?? (previousMode === "fold"
-          ? (currentPage > 1 && currentPage < 4 ? Math.min(2, pageCount) : 1)
-          : currentPage);
+      const activeFoldStep = previousMode === "fold" ? foldSteps[currentPage - 1] : null;
+      const coverPanel = resolveTriFoldCoverPanel(source?.previewPanelIndex);
+      const insideOrder = resolveTriFoldInsideOrder(source?.foldLayout?.insidePanelOrder);
+      const closingPanel = optionalPanelIndex(source?.foldLayout?.closingPanelIndex)
+        ?? (coverPanel === 0 ? 2 : 0);
+      const backCoverPanel = optionalPanelIndex(source?.foldLayout?.backCoverPanelIndex);
+      const preferredFoldPanel = activeFoldStep?.id === "closed"
+        ? { pageNumber: 1, panelIndex: coverPanel }
+        : ["first-open", "refold"].includes(activeFoldStep?.id)
+          ? { pageNumber: 1, panelIndex: closingPanel }
+          : activeFoldStep?.id === "inside-open"
+            ? { pageNumber: Math.min(2, pageCount), panelIndex: insideOrder[0] }
+            : activeFoldStep?.id === "back-cover" && backCoverPanel !== null
+              ? { pageNumber: 1, panelIndex: backCoverPanel }
+              : activeFoldStep
+                ? { pageNumber: 1, panelIndex: null }
+                : null;
+      const visibleSourcePage = visiblePanel?.pageNumber ?? preferredFoldPanel?.pageNumber ?? currentPage;
       const nextMode = choosePageMode({
         viewportWidth: window.innerWidth,
         pageWidth: pageSize.width,
@@ -901,18 +983,24 @@ export function createPublicationViewer(root, { onError } = {}) {
 
       pageMode = nextMode;
       if (nextMode === "panel") {
-        const preferredPanel = previousMode === "fold" && currentPage === 2
-          ? { pageNumber: 1, panelIndex: 2 }
-          : { pageNumber: visibleSourcePage, panelIndex: null };
+        const preferredPanel = preferredFoldPanel || { pageNumber: visibleSourcePage, panelIndex: null };
         const panelIndex = panelOrder.findIndex((panel) => (
           panel.pageNumber === preferredPanel.pageNumber
           && (preferredPanel.panelIndex === null || panel.panelIndex === preferredPanel.panelIndex)
         ));
         currentPage = Math.max(1, panelIndex + 1);
       } else if (nextMode === "fold") {
-        currentPage = visiblePanel?.pageNumber === 1
-          ? (visiblePanel.panelIndex === resolveTriFoldCoverPanel(source?.previewPanelIndex) ? 1 : foldSteps.length)
-          : Math.min(3, foldSteps.length);
+        const preferredStepId = visiblePanel?.pageNumber === 1 && visiblePanel.panelIndex === coverPanel
+          ? "closed"
+          : visiblePanel?.pageNumber === 1 && visiblePanel.panelIndex === backCoverPanel
+            ? "back-cover"
+            : visiblePanel?.pageNumber === 1 && visiblePanel.panelIndex === closingPanel
+              ? "first-open"
+              : visiblePanel?.pageNumber === Math.min(2, pageCount)
+                ? "inside-open"
+                : "outside-open";
+        const stepIndex = foldSteps.findIndex(({ id }) => id === preferredStepId);
+        currentPage = stepIndex >= 0 ? stepIndex + 1 : 1;
       } else {
         currentPage = clamp(visibleSourcePage, 1, pageCount);
       }
