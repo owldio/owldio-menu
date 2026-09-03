@@ -107,6 +107,32 @@ describe("resolveTriFoldCoverPanel", () => {
   });
 });
 
+describe("resolveTriFoldOpeningLeaf", () => {
+  it("opens the visible artist panel from the inner crease toward the right", () => {
+    expect(publicationReader.resolveTriFoldOpeningLeaf({
+      coverPanelIndex: 0,
+      insidePanelOrder: [2, 1, 0],
+      closingPanelIndex: 2,
+      backCoverPanelIndex: 1,
+    })).toEqual({
+      positionPanelIndex: 1,
+      hinge: "right",
+      openRotation: 180,
+      outsidePanelIndex: 2,
+      insidePanelIndex: 0,
+    });
+  });
+
+  it("keeps the standard tri-fold construction for other fold sequences", () => {
+    expect(publicationReader.resolveTriFoldOpeningLeaf({
+      coverPanelIndex: 2,
+      insidePanelOrder: [0, 1, 2],
+      closingPanelIndex: 0,
+      backCoverPanelIndex: null,
+    })).toBeNull();
+  });
+});
+
 describe("resolveTriFoldPanelCrop", () => {
   it("uses the calibrated fold lines instead of leaking the neighbouring panel", () => {
     const crop = publicationReader.resolveTriFoldPanelCrop({
@@ -235,6 +261,37 @@ describe("resolvePublicationDoubleTapZoom", () => {
 
   it("enlarges only when the reader is at one hundred percent", () => {
     expect(publicationReader.resolvePublicationDoubleTapZoom(1)).toBe(2.2);
+  });
+});
+
+describe("resolvePublicationFocusAnchor", () => {
+  it("remembers the exact content point under the fingers before zooming", () => {
+    expect(publicationReader.resolvePublicationFocusAnchor({
+      point: { x: 110, y: 220 },
+      rect: { left: 10, top: 20, width: 200, height: 400 },
+    })).toEqual({ x: 0.5, y: 0.5 });
+  });
+});
+
+describe("resolvePublicationPinchTranslation", () => {
+  it("moves the zoomed content with the centre point between both fingers", () => {
+    expect(publicationReader.resolvePublicationPinchTranslation({
+      startPoint: { x: 195, y: 420 },
+      currentPoint: { x: 235, y: 450 },
+    })).toEqual({ x: 40, y: 30 });
+  });
+});
+
+describe("resolvePublicationFocusScroll", () => {
+  it("keeps the remembered content point under the fingers after the preview ends", () => {
+    expect(publicationReader.resolvePublicationFocusScroll({
+      stageRect: { left: 10, top: 20 },
+      canvasRect: { left: -40, top: -80, width: 400, height: 600 },
+      scrollLeft: 60,
+      scrollTop: 120,
+      focusAnchor: { x: 0.5, y: 0.5 },
+      focalPoint: { x: 160, y: 250 },
+    })).toEqual({ left: 60, top: 90 });
   });
 });
 

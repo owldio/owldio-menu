@@ -8,9 +8,13 @@ import {
   normalizePublicationZoom,
   publicationSpread,
   resolvePublicationDoubleTapZoom,
+  resolvePublicationFocusAnchor,
+  resolvePublicationFocusScroll,
   resolvePublicationPinchZoom,
+  resolvePublicationPinchTranslation,
   resolveTriFoldCoverPanel,
   resolveTriFoldInsideOrder,
+  resolveTriFoldOpeningLeaf,
   resolveTriFoldPanelCrop,
   triFoldDesktopSteps,
   triFoldReadingOrder,
@@ -280,6 +284,12 @@ export function createPublicationViewer(root, { onError } = {}) {
     const closingPanelIndex = optionalPanelIndex(source?.foldLayout?.closingPanelIndex)
       ?? (coverPanel === 0 ? 2 : 0);
     const backCoverPanelIndex = optionalPanelIndex(source?.foldLayout?.backCoverPanelIndex);
+    const openingLeafLayout = resolveTriFoldOpeningLeaf({
+      coverPanelIndex: coverPanel,
+      insidePanelOrder,
+      closingPanelIndex,
+      backCoverPanelIndex,
+    });
     const renderKey = `${stage.clientWidth}x${stage.clientHeight}@${zoom}`;
     const existingBook = pages.querySelector(".tri-fold-book");
     if (existingBook && pages.dataset.renderKey === renderKey) {
@@ -362,6 +372,49 @@ export function createPublicationViewer(root, { onError } = {}) {
       assembly.append(panel);
     }
 
+    if (openingLeafLayout) {
+      const openingLeaf = document.createElement("div");
+      openingLeaf.className = "tri-fold-book__opening-leaf";
+      openingLeaf.setAttribute("aria-hidden", "true");
+      openingLeaf.dataset.hinge = openingLeafLayout.hinge;
+      openingLeaf.style.setProperty("--fold-opening-position", String(openingLeafLayout.positionPanelIndex));
+      openingLeaf.style.setProperty("--fold-opening-rotation", `${openingLeafLayout.openRotation}deg`);
+      openingLeaf.style.setProperty("--fold-opening-hinge", openingLeafLayout.hinge);
+
+      const openingFront = document.createElement("div");
+      openingFront.className = "tri-fold-opening-face tri-fold-opening-face--front";
+      const openingFrontRender = createRenderedCanvas({
+        page: outsidePage,
+        pageNumber: outsidePageNumber,
+        panelIndex: openingLeafLayout.outsidePanelIndex,
+        cssScale,
+        pixelRatio,
+        displayWidth: panelWidth,
+        displayHeight,
+        label: "向右展開的表演者頁",
+      });
+      openingFront.append(openingFrontRender.canvas);
+      renderJobs.push(openingFrontRender.renderPromise);
+
+      const openingBack = document.createElement("div");
+      openingBack.className = "tri-fold-opening-face tri-fold-opening-face--back";
+      const openingBackRender = createRenderedCanvas({
+        page: insidePage,
+        pageNumber: insidePageNumber,
+        panelIndex: openingLeafLayout.insidePanelIndex,
+        cssScale,
+        pixelRatio,
+        displayWidth: panelWidth,
+        displayHeight,
+        label: "展開後的大提琴與鋼琴頁",
+      });
+      openingBack.append(openingBackRender.canvas);
+      renderJobs.push(openingBackRender.renderPromise);
+
+      openingLeaf.append(openingFront, openingBack);
+      assembly.append(openingLeaf);
+    }
+
     if (backCoverPanelIndex !== null) {
       const closingLeaf = document.createElement("div");
       closingLeaf.className = "tri-fold-book__closing-leaf";
@@ -423,6 +476,7 @@ export function createPublicationViewer(root, { onError } = {}) {
     pages.dataset.mode = "fold";
     pages.dataset.foldStage = step.id;
     pages.dataset.coverPanel = String(coverPanel);
+    pages.dataset.openingLeaf = openingLeafLayout ? "true" : "false";
     pages.dataset.renderKey = renderKey;
 
     try {
@@ -589,9 +643,8 @@ export function createPublicationViewer(root, { onError } = {}) {
     goTo(nextPage, direction);
   }
 
-  async function setZoom(nextZoom, focalPoint = null) {
+  async function setZoom(nextZoom, focalPoint = null, { focusAnchor = null } = {}) {
     const normalized = normalizePublicationZoom(nextZoom);
-    if (normalized === zoom) return;
     const stageRect = stage.getBoundingClientRect();
     const activeCanvas = pages.querySelector(".publication-page canvas");
     const canvasRect = activeCanvas?.getBoundingClientRect();
@@ -599,12 +652,25 @@ export function createPublicationViewer(root, { onError } = {}) {
       x: stageRect.left + stageRect.width / 2,
       y: stageRect.top + stageRect.height / 2,
     };
-    const anchor = canvasRect
-      ? {
-          x: clamp((point.x - canvasRect.left) / Math.max(1, canvasRect.width), 0, 1),
-          y: clamp((point.y - canvasRect.top) / Math.max(1, canvasRect.height), 0, 1),
-        }
-      : { x: 0.5, y: 0.5 };
+    const anchor = focusAnchor || (canvasRect
+      ? resolvePublicationFocusAnchor({ point, rect: canvasRect })
+      : { x: 0.5, y: 0.5 });
+
+    if (normalized === zoom) {
+      if (zoom > 1 && activeCanvas && focusAnchor) {
+        const target = resolvePublicationFocusScroll({
+          stageRect,
+          canvasRect,
+          scrollLeft: stage.scrollLeft,
+          scrollTop: stage.scrollTop,
+          focusAnchor: anchor,
+          focalPoint: point,
+        });
+        stage.scrollTo({ ...target, behavior: "auto" });
+      }
+      return;
+    }
+
     zoom = normalized;
     await renderCurrent(0);
     await nextFrame();
@@ -617,13 +683,15 @@ export function createPublicationViewer(root, { onError } = {}) {
     const nextCanvas = pages.querySelector(".publication-page canvas");
     if (!nextCanvas) return;
     const nextRect = nextCanvas.getBoundingClientRect();
-    const contentLeft = nextRect.left + stage.scrollLeft - stageRect.left;
-    const contentTop = nextRect.top + stage.scrollTop - stageRect.top;
-    stage.scrollTo({
-      left: contentLeft + anchor.x * nextRect.width - (point.x - stageRect.left),
-      top: contentTop + anchor.y * nextRect.height - (point.y - stageRect.top),
-      behavior: "auto",
+    const target = resolvePublicationFocusScroll({
+      stageRect,
+      canvasRect: nextRect,
+      scrollLeft: stage.scrollLeft,
+      scrollTop: stage.scrollTop,
+      focusAnchor: anchor,
+      focalPoint: point,
     });
+    stage.scrollTo({ ...target, behavior: "auto" });
   }
 
   async function buildThumbnails() {
@@ -982,12 +1050,17 @@ export function createPublicationViewer(root, { onError } = {}) {
 
     const focalPoint = pointerMidpoint(first, second);
     const pagesRect = pages.getBoundingClientRect();
+    const activeCanvas = pages.querySelector(".publication-page canvas");
     pinchState = {
       ids: [firstId, secondId],
       startDistance,
       startZoom: zoom,
       zoom,
+      startFocalPoint: focalPoint,
       focalPoint,
+      focusAnchor: activeCanvas
+        ? resolvePublicationFocusAnchor({ point: focalPoint, rect: activeCanvas.getBoundingClientRect() })
+        : { x: 0.5, y: 0.5 },
       origin: {
         x: focalPoint.x - pagesRect.left,
         y: focalPoint.y - pagesRect.top,
@@ -1015,7 +1088,11 @@ export function createPublicationViewer(root, { onError } = {}) {
       currentDistance: pointerDistance(first, second),
     });
     pinchState.focalPoint = pointerMidpoint(first, second);
-    pages.style.transform = `scale(${pinchState.zoom / pinchState.startZoom})`;
+    const translation = resolvePublicationPinchTranslation({
+      startPoint: pinchState.startFocalPoint,
+      currentPoint: pinchState.focalPoint,
+    });
+    pages.style.transform = `translate3d(${translation.x}px, ${translation.y}px, 0) scale(${pinchState.zoom / pinchState.startZoom})`;
   }
 
   function finishPinch({ commit = true } = {}) {
@@ -1027,7 +1104,11 @@ export function createPublicationViewer(root, { onError } = {}) {
     pages.style.removeProperty("transform");
     pages.style.removeProperty("transform-origin");
     pages.style.removeProperty("will-change");
-    if (commit) void setZoom(completedPinch.zoom, completedPinch.focalPoint);
+    if (commit) {
+      void setZoom(completedPinch.zoom, completedPinch.focalPoint, {
+        focusAnchor: completedPinch.focusAnchor,
+      });
+    }
   }
 
   stage.addEventListener("dblclick", (event) => {

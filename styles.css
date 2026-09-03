@@ -428,10 +428,51 @@
 
 .tri-fold-panel canvas,
 .tri-fold-book__reverse canvas,
+.tri-fold-book__opening-leaf canvas,
 .tri-fold-book__closing-leaf canvas {
   display: block;
   width: 100%;
   height: 100%;
+}
+
+.tri-fold-book__opening-leaf {
+  position: absolute;
+  top: 0;
+  left: calc(var(--fold-panel-width) * var(--fold-opening-position, 1));
+  z-index: 5;
+  width: var(--fold-panel-width);
+  height: var(--fold-sheet-height);
+  opacity: 1;
+  transform: rotateY(0deg);
+  transform-origin: var(--fold-opening-hinge, right) center;
+  transform-style: preserve-3d;
+  transition:
+    transform 760ms cubic-bezier(0.2, 0.72, 0.18, 1),
+    opacity 0ms linear;
+  will-change: transform;
+}
+
+.tri-fold-opening-face {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: #f1eed8;
+  backface-visibility: hidden;
+  box-shadow: 0 0 0 1px rgb(240 236 216 / 0.18);
+}
+
+.tri-fold-opening-face--back {
+  transform: rotateY(180deg) translateZ(0.5px);
+}
+
+.tri-fold-opening-face::after {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(90deg, rgb(0 0 0 / 0.1), transparent 2.4%, transparent 97.6%, rgb(0 0 0 / 0.13)),
+    linear-gradient(115deg, transparent 42%, rgb(255 255 255 / 0.055) 49%, transparent 56%);
+  content: "";
+  pointer-events: none;
 }
 
 .tri-fold-book__closing-leaf {
@@ -467,6 +508,36 @@
 .publication-pages[data-mode="fold"][data-cover-panel="0"][data-fold-stage="closed"] .tri-fold-panel--0 {
   z-index: 6;
   transform: rotateY(179.4deg);
+}
+
+.publication-pages[data-mode="fold"][data-opening-leaf="true"] .tri-fold-panel--2 {
+  visibility: hidden;
+}
+
+.publication-pages[data-mode="fold"][data-opening-leaf="true"][data-fold-stage="first-open"] .tri-fold-panel--0 {
+  z-index: 6;
+}
+
+.publication-pages[data-mode="fold"][data-opening-leaf="true"][data-fold-stage="inside-open"] .tri-fold-book__opening-leaf {
+  transform: rotateY(var(--fold-opening-rotation, 180deg));
+}
+
+.publication-pages[data-mode="fold"][data-opening-leaf="true"][data-fold-stage="inside-open"] .tri-fold-book,
+.publication-pages[data-mode="fold"][data-opening-leaf="true"][data-fold-stage="refold"] .tri-fold-book {
+  transition:
+    transform 900ms cubic-bezier(0.42, 0, 0.58, 1),
+    opacity 220ms ease;
+}
+
+.publication-pages[data-mode="fold"][data-opening-leaf="true"][data-fold-stage="inside-open"] .tri-fold-book__opening-leaf,
+.publication-pages[data-mode="fold"][data-opening-leaf="true"][data-fold-stage="refold"] .tri-fold-book__opening-leaf {
+  transition:
+    transform 900ms cubic-bezier(0.42, 0, 0.58, 1),
+    opacity 0ms linear;
+}
+
+.publication-pages[data-mode="fold"][data-opening-leaf="true"][data-fold-stage="back-cover"] .tri-fold-book__opening-leaf {
+  opacity: 0;
 }
 
 .publication-pages[data-mode="fold"][data-cover-panel="0"][data-fold-stage="closed"] .tri-fold-panel--2,
@@ -677,6 +748,7 @@
 @media (prefers-reduced-motion: reduce) {
   .tri-fold-book,
   .tri-fold-panel,
+  .tri-fold-book__opening-leaf,
   .tri-fold-book__closing-leaf,
   .reader-shell[data-view="pdf"] .publication-toolbar,
   .reader-shell[data-view="pdf"] .publication-rail,

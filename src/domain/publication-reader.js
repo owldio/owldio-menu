@@ -65,6 +65,33 @@ export function resolveTriFoldCoverPanel(panelIndex) {
   return Number(panelIndex) === 2 ? 2 : 0;
 }
 
+export function resolveTriFoldOpeningLeaf({
+  coverPanelIndex,
+  insidePanelOrder,
+  closingPanelIndex,
+  backCoverPanelIndex,
+} = {}) {
+  const hasBackCover = backCoverPanelIndex !== null
+    && backCoverPanelIndex !== ""
+    && Number.isInteger(Number(backCoverPanelIndex))
+    && Number(backCoverPanelIndex) >= 0
+    && Number(backCoverPanelIndex) <= 2;
+  if (resolveTriFoldCoverPanel(coverPanelIndex) !== 0 || !hasBackCover) return null;
+
+  const insideOrder = resolveTriFoldInsideOrder(insidePanelOrder);
+  const outsidePanel = Number(closingPanelIndex);
+
+  return {
+    positionPanelIndex: 1,
+    hinge: "right",
+    openRotation: 180,
+    outsidePanelIndex: Number.isInteger(outsidePanel) && outsidePanel >= 0 && outsidePanel <= 2
+      ? outsidePanel
+      : 2,
+    insidePanelIndex: insideOrder[2],
+  };
+}
+
 export function resolveTriFoldPanelCrop({ pageNumber, panelIndex, pageWidth, panelBoundaries }) {
   const fallback = [0, 1 / 3, 2 / 3, 1];
   const configured = panelBoundaries?.[String(Number(pageNumber) || 1)];
@@ -157,6 +184,54 @@ export function normalizePublicationZoom(nextZoom, { minZoom = 0.8, maxZoom = 2.
 
 export function resolvePublicationDoubleTapZoom(currentZoom, expandedZoom = 2.2) {
   return Number(currentZoom) > 1 ? 1 : Number(expandedZoom) || 2.2;
+}
+
+export function resolvePublicationFocusAnchor({ point, rect }) {
+  const left = Number(rect?.left) || 0;
+  const top = Number(rect?.top) || 0;
+  const width = Math.max(1, Number(rect?.width) || 1);
+  const height = Math.max(1, Number(rect?.height) || 1);
+  const x = Number.isFinite(Number(point?.x)) ? Number(point.x) : left + width / 2;
+  const y = Number.isFinite(Number(point?.y)) ? Number(point.y) : top + height / 2;
+
+  return {
+    x: Math.min(1, Math.max(0, (x - left) / width)),
+    y: Math.min(1, Math.max(0, (y - top) / height)),
+  };
+}
+
+export function resolvePublicationPinchTranslation({ startPoint, currentPoint }) {
+  return {
+    x: (Number(currentPoint?.x) || 0) - (Number(startPoint?.x) || 0),
+    y: (Number(currentPoint?.y) || 0) - (Number(startPoint?.y) || 0),
+  };
+}
+
+export function resolvePublicationFocusScroll({
+  stageRect,
+  canvasRect,
+  scrollLeft,
+  scrollTop,
+  focusAnchor,
+  focalPoint,
+}) {
+  const stageLeft = Number(stageRect?.left) || 0;
+  const stageTop = Number(stageRect?.top) || 0;
+  const canvasLeft = Number(canvasRect?.left) || 0;
+  const canvasTop = Number(canvasRect?.top) || 0;
+  const canvasWidth = Math.max(1, Number(canvasRect?.width) || 1);
+  const canvasHeight = Math.max(1, Number(canvasRect?.height) || 1);
+  const anchorX = Math.min(1, Math.max(0, Number(focusAnchor?.x) || 0));
+  const anchorY = Math.min(1, Math.max(0, Number(focusAnchor?.y) || 0));
+  const pointX = Number.isFinite(Number(focalPoint?.x)) ? Number(focalPoint.x) : stageLeft;
+  const pointY = Number.isFinite(Number(focalPoint?.y)) ? Number(focalPoint.y) : stageTop;
+  const contentLeft = canvasLeft + (Number(scrollLeft) || 0) - stageLeft;
+  const contentTop = canvasTop + (Number(scrollTop) || 0) - stageTop;
+
+  return {
+    left: contentLeft + anchorX * canvasWidth - (pointX - stageLeft),
+    top: contentTop + anchorY * canvasHeight - (pointY - stageTop),
+  };
 }
 
 export function fitTriFoldScale({
