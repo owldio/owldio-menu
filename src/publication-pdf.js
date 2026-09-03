@@ -1,10 +1,14 @@
 import {
   classifyPublicationGesture,
+  classifyPublicationTapZone,
   choosePageMode,
   fitTriFoldScale,
   isPublicationDoubleTap,
   movePublicationPage,
+  normalizePublicationZoom,
   publicationSpread,
+  resolvePublicationDoubleTapZoom,
+  resolvePublicationPinchZoom,
   resolveTriFoldCoverPanel,
   resolveTriFoldInsideOrder,
   resolveTriFoldPanelCrop,
@@ -91,6 +95,8 @@ export function createPublicationViewer(root, { onError } = {}) {
   let tapTimer;
   let lastTap = null;
   let pointerStart = null;
+  const activePointers = new Map();
+  let pinchState = null;
   let active = false;
 
   function readingPositionCount() {
@@ -209,10 +215,10 @@ export function createPublicationViewer(root, { onError } = {}) {
         ? `${foldStep.label} · 三折頁實體閱讀`
         : source?.caption || "原始印刷節目冊";
     hint.textContent = pageMode === "panel"
-      ? "左右滑動翻頁 · 點兩下放大"
+      ? "左右滑動或點兩側翻頁 · 雙指或點兩下縮放"
       : pageMode === "fold"
         ? "拖曳或使用方向鍵 · 依折線展開"
-        : "左右滑動 · 方向鍵翻頁 · 點兩下放大";
+        : "左右滑動或點兩側翻頁 · 雙指或點兩下縮放";
     scrubber.max = String(total);
     scrubber.value = String(first);
     progress.style.width = `${(last / total) * 100}%`;
@@ -221,7 +227,7 @@ export function createPublicationViewer(root, { onError } = {}) {
     zoomOut.disabled = zoom <= 0.8;
     zoomIn.disabled = zoom >= 2.2;
     zoomLabel.value = `${Math.round(zoom * 100)}%`;
-    reader.dataset.zoomed = zoom > 1.01 ? "true" : "false";
+    reader.dataset.zoomed = zoom > 1 ? "true" : "false";
     reader.dataset.fold = source?.foldMode || "none";
     reader.dataset.foldStage = foldStep?.id || "none";
     updateThumbnailSelection();
@@ -569,6 +575,9 @@ export function createPublicationViewer(root, { onError } = {}) {
     if (!pdfDocument) return;
     const nextPage = normalizePage(pageNumber);
     if (nextPage === currentPage && pages.childElementCount) return;
+    if (nextPage !== currentPage && isMobileReader()) {
+      setChromeVisible(false, { autoHide: false });
+    }
     currentPage = nextPage;
     renderCurrent(direction);
   }
@@ -576,12 +585,12 @@ export function createPublicationViewer(root, { onError } = {}) {
   function move(direction) {
     if (!pdfDocument) return;
     const nextPage = movePublicationPage(currentPage, direction, readingPositionCount(), pageMode);
-    if (nextPage !== currentPage && zoom > 1.01) zoom = 1;
+    if (nextPage !== currentPage && zoom > 1) zoom = 1;
     goTo(nextPage, direction);
   }
 
   async function setZoom(nextZoom, focalPoint = null) {
-    const normalized = Math.round(clamp(nextZoom, 0.8, 2.2) * 10) / 10;
+    const normalized = normalizePublicationZoom(nextZoom);
     if (normalized === zoom) return;
     const stageRect = stage.getBoundingClientRect();
     const activeCanvas = pages.querySelector(".publication-page canvas");
@@ -600,7 +609,7 @@ export function createPublicationViewer(root, { onError } = {}) {
     await renderCurrent(0);
     await nextFrame();
 
-    if (zoom <= 1.01) {
+    if (zoom <= 1) {
       stage.scrollTo({ left: 0, top: 0, behavior: "auto" });
       return;
     }
@@ -819,20 +828,24 @@ export function createPublicationViewer(root, { onError } = {}) {
     window.clearTimeout(hintTimer);
     window.clearTimeout(tapTimer);
     lastTap = null;
+    pointerStart = null;
+    activePointers.clear();
+    pinchState = null;
+    reader.dataset.pinching = "false";
+    pages.style.removeProperty("transform");
+    pages.style.removeProperty("transform-origin");
+    pages.style.removeProperty("will-change");
     setChromeVisible(true, { autoHide: false });
     setThumbnails(false);
   }
 
   previous.addEventListener("click", () => {
-    revealChrome();
     move(-1);
   });
   next.addEventListener("click", () => {
-    revealChrome();
     move(1);
   });
   scrubber.addEventListener("change", () => {
-    revealChrome();
     goTo(Number(scrubber.value), Number(scrubber.value) >= currentPage ? 1 : -1);
   });
   zoomOut.addEventListener("click", () => {
@@ -852,6 +865,7 @@ export function createPublicationViewer(root, { onError } = {}) {
     const page = Number(target.dataset.pageNumber);
     goTo(page, page >= currentPage ? 1 : -1);
     setThumbnails(false);
+    if (isMobileReader()) setChromeVisible(false, { autoHide: false });
   });
 
   root.addEventListener("focusin", (event) => {
@@ -896,7 +910,7 @@ export function createPublicationViewer(root, { onError } = {}) {
       window.clearTimeout(tapTimer);
       tapTimer = null;
       lastTap = null;
-      setZoom(zoom > 1.01 ? 1 : 2.2, tap);
+      setZoom(resolvePublicationDoubleTapZoom(zoom), tap);
       return;
     }
 
@@ -904,17 +918,143 @@ export function createPublicationViewer(root, { onError } = {}) {
     window.clearTimeout(tapTimer);
     tapTimer = window.setTimeout(() => {
       lastTap = null;
-      setChromeVisible(root.dataset.chrome === "hidden");
+      const stageRect = stage.getBoundingClientRect();
+      const action = classifyPublicationTapZone({
+        clientX: tap.x,
+        stageLeft: stageRect.left,
+        stageWidth: stageRect.width,
+        zoom,
+      });
+      if (action === "previous") move(-1);
+      if (action === "next") move(1);
+      if (action === "toggle-chrome") {
+        setChromeVisible(root.dataset.chrome === "hidden");
+      }
     }, 330);
+  }
+
+  function clearPendingTap({ keepLastTap = false } = {}) {
+    window.clearTimeout(tapTimer);
+    tapTimer = null;
+    if (!keepLastTap) lastTap = null;
+  }
+
+  function capturePointer(pointerId) {
+    try {
+      stage.setPointerCapture?.(pointerId);
+    } catch {
+      // Pointer capture is an enhancement; touch-action still preserves the gesture.
+    }
+  }
+
+  function releasePointer(pointerId) {
+    try {
+      if (stage.hasPointerCapture?.(pointerId)) stage.releasePointerCapture(pointerId);
+    } catch {
+      // The browser may have released capture after a cancelled system gesture.
+    }
+  }
+
+  function trackedTouchPointers() {
+    return [...activePointers.entries()]
+      .filter(([, point]) => point.pointerType !== "mouse")
+      .slice(0, 2);
+  }
+
+  function pointerDistance(first, second) {
+    return Math.hypot(second.x - first.x, second.y - first.y);
+  }
+
+  function pointerMidpoint(first, second) {
+    return {
+      x: (first.x + second.x) / 2,
+      y: (first.y + second.y) / 2,
+    };
+  }
+
+  function beginPinch() {
+    const pointers = trackedTouchPointers();
+    if (pointers.length < 2) return false;
+
+    const [[firstId, first], [secondId, second]] = pointers;
+    const startDistance = pointerDistance(first, second);
+    if (startDistance <= 0) return false;
+
+    const focalPoint = pointerMidpoint(first, second);
+    const pagesRect = pages.getBoundingClientRect();
+    pinchState = {
+      ids: [firstId, secondId],
+      startDistance,
+      startZoom: zoom,
+      zoom,
+      focalPoint,
+      origin: {
+        x: focalPoint.x - pagesRect.left,
+        y: focalPoint.y - pagesRect.top,
+      },
+    };
+    pointerStart = null;
+    clearPendingTap();
+    setChromeVisible(false, { autoHide: false });
+    reader.dataset.pinching = "true";
+    pages.style.willChange = "transform";
+    pages.style.transformOrigin = `${pinchState.origin.x}px ${pinchState.origin.y}px`;
+    return true;
+  }
+
+  function updatePinchPreview() {
+    if (!pinchState) return;
+    const [firstId, secondId] = pinchState.ids;
+    const first = activePointers.get(firstId);
+    const second = activePointers.get(secondId);
+    if (!first || !second) return;
+
+    pinchState.zoom = resolvePublicationPinchZoom({
+      startZoom: pinchState.startZoom,
+      startDistance: pinchState.startDistance,
+      currentDistance: pointerDistance(first, second),
+    });
+    pinchState.focalPoint = pointerMidpoint(first, second);
+    pages.style.transform = `scale(${pinchState.zoom / pinchState.startZoom})`;
+  }
+
+  function finishPinch({ commit = true } = {}) {
+    if (!pinchState) return;
+    const completedPinch = pinchState;
+    pinchState = null;
+    pointerStart = null;
+    reader.dataset.pinching = "false";
+    pages.style.removeProperty("transform");
+    pages.style.removeProperty("transform-origin");
+    pages.style.removeProperty("will-change");
+    if (commit) void setZoom(completedPinch.zoom, completedPinch.focalPoint);
   }
 
   stage.addEventListener("dblclick", (event) => {
     if (isMobileReader()) return;
     event.preventDefault();
-    setZoom(zoom > 1.01 ? 1 : 2.2, { x: event.clientX, y: event.clientY });
+    setZoom(resolvePublicationDoubleTapZoom(zoom), { x: event.clientX, y: event.clientY });
   });
   stage.addEventListener("pointerdown", (event) => {
     if (event.button !== undefined && event.button !== 0) return;
+    clearPendingTap({ keepLastTap: true });
+    activePointers.set(event.pointerId, {
+      x: event.clientX,
+      y: event.clientY,
+      pointerType: event.pointerType,
+    });
+    capturePointer(event.pointerId);
+
+    if (pinchState) {
+      event.preventDefault();
+      return;
+    }
+
+    if (beginPinch()) {
+      event.preventDefault();
+      return;
+    }
+
     pointerStart = {
       x: event.clientX,
       y: event.clientY,
@@ -922,27 +1062,67 @@ export function createPublicationViewer(root, { onError } = {}) {
       scrollLeft: stage.scrollLeft,
       scrollTop: stage.scrollTop,
     };
-    if (zoom > 1.01) stage.setPointerCapture?.(event.pointerId);
   });
   stage.addEventListener("pointermove", (event) => {
-    if (!pointerStart || pointerStart.id !== event.pointerId || zoom <= 1.01) return;
+    if (!activePointers.has(event.pointerId)) return;
+    activePointers.set(event.pointerId, {
+      x: event.clientX,
+      y: event.clientY,
+      pointerType: event.pointerType,
+    });
+
+    if (pinchState) {
+      event.preventDefault();
+      updatePinchPreview();
+      return;
+    }
+
+    if (!pointerStart || pointerStart.id !== event.pointerId) return;
+    const deltaX = event.clientX - pointerStart.x;
+    const deltaY = event.clientY - pointerStart.y;
+    const canPanVertically = stage.scrollHeight > stage.clientHeight + 1;
+    const shouldPan = zoom > 1
+      || (canPanVertically && Math.abs(deltaY) > Math.abs(deltaX));
+    if (!shouldPan) return;
+
     event.preventDefault();
-    stage.scrollLeft = pointerStart.scrollLeft - (event.clientX - pointerStart.x);
-    stage.scrollTop = pointerStart.scrollTop - (event.clientY - pointerStart.y);
+    if (zoom > 1) stage.scrollLeft = pointerStart.scrollLeft - deltaX;
+    stage.scrollTop = pointerStart.scrollTop - deltaY;
   });
   stage.addEventListener("pointerup", (event) => {
+    if (!activePointers.has(event.pointerId)) return;
+    activePointers.set(event.pointerId, {
+      x: event.clientX,
+      y: event.clientY,
+      pointerType: event.pointerType,
+    });
+    const endedPinchPointer = pinchState?.ids.includes(event.pointerId) || false;
+    if (endedPinchPointer) updatePinchPreview();
+    activePointers.delete(event.pointerId);
+    releasePointer(event.pointerId);
+    if (endedPinchPointer) {
+      finishPinch();
+      return;
+    }
+    if (pinchState) return;
+
     if (!pointerStart || pointerStart.id !== event.pointerId) return;
     const deltaX = event.clientX - pointerStart.x;
     const deltaY = event.clientY - pointerStart.y;
     pointerStart = null;
-    if (stage.hasPointerCapture?.(event.pointerId)) stage.releasePointerCapture(event.pointerId);
     const gesture = classifyPublicationGesture({ deltaX, deltaY, zoom });
     if (gesture === "next") move(1);
     if (gesture === "previous") move(-1);
     if (gesture === "tap" && isMobileReader()) handlePublicationTap(event);
+    if (gesture !== "tap") clearPendingTap();
   });
-  stage.addEventListener("pointercancel", () => {
-    pointerStart = null;
+  stage.addEventListener("pointercancel", (event) => {
+    const cancelledPinchPointer = pinchState?.ids.includes(event.pointerId) || false;
+    activePointers.delete(event.pointerId);
+    releasePointer(event.pointerId);
+    if (cancelledPinchPointer) finishPinch();
+    if (pointerStart?.id === event.pointerId) pointerStart = null;
+    clearPendingTap();
   });
 
   window.addEventListener("resize", () => {

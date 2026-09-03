@@ -136,7 +136,7 @@ describe("classifyPublicationGesture", () => {
     expect(publicationReader.classifyPublicationGesture({
       deltaX: -120,
       deltaY: 12,
-      zoom: 2,
+      zoom: 1.01,
     })).toBe("pan");
   });
 
@@ -162,6 +162,79 @@ describe("isPublicationDoubleTap", () => {
       { x: 80, y: 420, at: 1000 },
       { x: 320, y: 420, at: 1200 },
     )).toBe(false);
+  });
+});
+
+describe("classifyPublicationTapZone", () => {
+  it("turns steady taps on the left and right edges into page actions", () => {
+    expect(publicationReader.classifyPublicationTapZone({
+      clientX: 72,
+      stageLeft: 20,
+      stageWidth: 360,
+      zoom: 1,
+    })).toBe("previous");
+    expect(publicationReader.classifyPublicationTapZone({
+      clientX: 328,
+      stageLeft: 20,
+      stageWidth: 360,
+      zoom: 1,
+    })).toBe("next");
+  });
+
+  it("keeps the centre as the controls toggle and disables edge paging while zoomed", () => {
+    expect(publicationReader.classifyPublicationTapZone({
+      clientX: 200,
+      stageLeft: 20,
+      stageWidth: 360,
+      zoom: 1,
+    })).toBe("toggle-chrome");
+    expect(publicationReader.classifyPublicationTapZone({
+      clientX: 328,
+      stageLeft: 20,
+      stageWidth: 360,
+      zoom: 1.01,
+    })).toBe("toggle-chrome");
+  });
+});
+
+describe("resolvePublicationPinchZoom", () => {
+  it("scales in proportion to the distance between two fingers", () => {
+    expect(publicationReader.resolvePublicationPinchZoom({
+      startZoom: 1,
+      startDistance: 100,
+      currentDistance: 180,
+    })).toBeCloseTo(1.8, 6);
+  });
+
+  it("clamps pinch zoom to the reader minimum and maximum", () => {
+    expect(publicationReader.resolvePublicationPinchZoom({
+      startZoom: 1.4,
+      startDistance: 100,
+      currentDistance: 30,
+    })).toBe(1);
+    expect(publicationReader.resolvePublicationPinchZoom({
+      startZoom: 1.8,
+      startDistance: 100,
+      currentDistance: 180,
+    })).toBe(2.2);
+  });
+});
+
+describe("normalizePublicationZoom", () => {
+  it("keeps a continuous pinch result instead of snapping to ten-percent steps", () => {
+    expect(publicationReader.normalizePublicationZoom(1.37)).toBe(1.37);
+    expect(publicationReader.normalizePublicationZoom(1.764)).toBe(1.76);
+  });
+});
+
+describe("resolvePublicationDoubleTapZoom", () => {
+  it("returns every enlarged state to one hundred percent", () => {
+    expect(publicationReader.resolvePublicationDoubleTapZoom(1.01)).toBe(1);
+    expect(publicationReader.resolvePublicationDoubleTapZoom(1.76)).toBe(1);
+  });
+
+  it("enlarges only when the reader is at one hundred percent", () => {
+    expect(publicationReader.resolvePublicationDoubleTapZoom(1)).toBe(2.2);
   });
 });
 

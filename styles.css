@@ -5985,7 +5985,12 @@ body {
 
   .reader-shell[data-view="pdf"] .publication-stage {
     inset: 0;
+    overscroll-behavior: none;
     scrollbar-width: none;
+    touch-action: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
   }
 
   .reader-shell[data-view="pdf"] .publication-stage::-webkit-scrollbar {
@@ -5995,5 +6000,10 @@ body {
   .reader-shell[data-view="pdf"] .publication-pages,
   .reader-shell[data-view="pdf"] .publication-pages[data-mode="panel"] {
     padding: 10px 8px;
+  }
+
+  .reader-shell[data-view="pdf"] .publication-reader[data-pinching="true"] .publication-pages {
+    animation: none !important;
+    transition: none;
   }
 }

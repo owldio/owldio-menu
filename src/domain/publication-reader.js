@@ -93,7 +93,7 @@ export function classifyPublicationGesture({ deltaX, deltaY, zoom }) {
   const vertical = Number(deltaY) || 0;
   const movement = Math.hypot(horizontal, vertical);
 
-  if ((Number(zoom) || 1) > 1.01) return movement <= 9 ? "tap" : "pan";
+  if ((Number(zoom) || 1) > 1) return movement <= 9 ? "tap" : "pan";
   if (movement <= 9) return "tap";
   if (Math.abs(horizontal) >= 48 && Math.abs(horizontal) > Math.abs(vertical) * 1.15) {
     return horizontal < 0 ? "next" : "previous";
@@ -109,6 +109,54 @@ export function isPublicationDoubleTap(previousTap, currentTap) {
     Number(currentTap.y) - Number(previousTap.y),
   );
   return elapsed >= 0 && elapsed <= 320 && distance <= 32;
+}
+
+export function classifyPublicationTapZone({
+  clientX,
+  stageLeft = 0,
+  stageWidth,
+  zoom = 1,
+  edgeRatio = 0.3,
+}) {
+  if ((Number(zoom) || 1) > 1) return "toggle-chrome";
+
+  const width = Number(stageWidth);
+  if (!Number.isFinite(width) || width <= 0) return "toggle-chrome";
+
+  const ratio = Math.min(0.45, Math.max(0.2, Number(edgeRatio) || 0.3));
+  const position = (Number(clientX) - (Number(stageLeft) || 0)) / width;
+  if (position <= ratio) return "previous";
+  if (position >= 1 - ratio) return "next";
+  return "toggle-chrome";
+}
+
+export function resolvePublicationPinchZoom({
+  startZoom,
+  startDistance,
+  currentDistance,
+  minZoom = 1,
+  maxZoom = 2.2,
+}) {
+  const minimum = Number(minZoom) || 1;
+  const maximum = Math.max(minimum, Number(maxZoom) || 2.2);
+  const initialZoom = Math.min(maximum, Math.max(minimum, Number(startZoom) || 1));
+  const initialDistance = Number(startDistance);
+  const nextDistance = Number(currentDistance);
+
+  if (!Number.isFinite(initialDistance) || initialDistance <= 0) return initialZoom;
+  if (!Number.isFinite(nextDistance) || nextDistance <= 0) return initialZoom;
+  return Math.min(maximum, Math.max(minimum, initialZoom * (nextDistance / initialDistance)));
+}
+
+export function normalizePublicationZoom(nextZoom, { minZoom = 0.8, maxZoom = 2.2 } = {}) {
+  const minimum = Number(minZoom) || 0.8;
+  const maximum = Math.max(minimum, Number(maxZoom) || 2.2);
+  const requested = Number.isFinite(Number(nextZoom)) ? Number(nextZoom) : 1;
+  return Math.round(Math.min(maximum, Math.max(minimum, requested)) * 100) / 100;
+}
+
+export function resolvePublicationDoubleTapZoom(currentZoom, expandedZoom = 2.2) {
+  return Number(currentZoom) > 1 ? 1 : Number(expandedZoom) || 2.2;
 }
 
 export function fitTriFoldScale({
