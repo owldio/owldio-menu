@@ -133,6 +133,22 @@ describe("resolveTriFoldOpeningLeaf", () => {
   });
 });
 
+describe("resolveTriFoldActiveLeaf", () => {
+  it("keeps the closing leaf active while returning from the back cover", () => {
+    expect(publicationReader.resolveTriFoldActiveLeaf({
+      foldStage: "refold",
+      direction: "previous",
+    })).toBe("closing");
+  });
+
+  it("uses the opening leaf for the ordinary inward refold", () => {
+    expect(publicationReader.resolveTriFoldActiveLeaf({
+      foldStage: "refold",
+      direction: "next",
+    })).toBe("opening");
+  });
+});
+
 describe("resolveTriFoldPanelCrop", () => {
   it("uses the calibrated fold lines instead of leaking the neighbouring panel", () => {
     const crop = publicationReader.resolveTriFoldPanelCrop({

@@ -12,6 +12,7 @@ import {
   resolvePublicationFocusScroll,
   resolvePublicationPinchZoom,
   resolvePublicationPinchTranslation,
+  resolveTriFoldActiveLeaf,
   resolveTriFoldCoverPanel,
   resolveTriFoldInsideOrder,
   resolveTriFoldOpeningLeaf,
@@ -290,11 +291,16 @@ export function createPublicationViewer(root, { onError } = {}) {
       closingPanelIndex,
       backCoverPanelIndex,
     });
+    const activeLeaf = resolveTriFoldActiveLeaf({
+      foldStage: step.id,
+      direction: reader.dataset.turn,
+    });
     const renderKey = `${stage.clientWidth}x${stage.clientHeight}@${zoom}`;
     const existingBook = pages.querySelector(".tri-fold-book");
     if (existingBook && pages.dataset.renderKey === renderKey) {
       existingBook.setAttribute("aria-label", `三折頁：${step.label}`);
       pages.dataset.foldStage = step.id;
+      pages.dataset.activeLeaf = activeLeaf;
       setBusy(false);
       return;
     }
@@ -477,6 +483,7 @@ export function createPublicationViewer(root, { onError } = {}) {
     pages.dataset.foldStage = step.id;
     pages.dataset.coverPanel = String(coverPanel);
     pages.dataset.openingLeaf = openingLeafLayout ? "true" : "false";
+    pages.dataset.activeLeaf = activeLeaf;
     pages.dataset.renderKey = renderKey;
 
     try {

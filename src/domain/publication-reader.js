@@ -92,6 +92,12 @@ export function resolveTriFoldOpeningLeaf({
   };
 }
 
+export function resolveTriFoldActiveLeaf({ foldStage, direction } = {}) {
+  if (foldStage === "back-cover") return "closing";
+  if (foldStage === "refold" && direction === "previous") return "closing";
+  return "opening";
+}
+
 export function resolveTriFoldPanelCrop({ pageNumber, panelIndex, pageWidth, panelBoundaries }) {
   const fallback = [0, 1 / 3, 2 / 3, 1];
   const configured = panelBoundaries?.[String(Number(pageNumber) || 1)];
