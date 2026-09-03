@@ -353,7 +353,9 @@ export function createPublicationViewer(root, { onError } = {}) {
       loadingTask = pdfjs.getDocument({ url: source.url });
       pdfDocument = await loadingTask.promise;
       pageCount = pdfDocument.numPages;
-      panelOrder = source.foldMode === "tri-fold" ? triFoldReadingOrder(pageCount) : [];
+      panelOrder = source.foldMode === "tri-fold"
+        ? triFoldReadingOrder(pageCount, source.readingOrder)
+        : [];
       const firstPage = await pdfDocument.getPage(1);
       const viewport = firstPage.getViewport({ scale: 1 });
       pageSize = { width: viewport.width, height: viewport.height };

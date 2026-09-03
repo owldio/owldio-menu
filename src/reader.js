@@ -12,7 +12,8 @@ import {
   resolveOrbitPose,
   resolveOrbitTransition,
 } from "./domain/carousel.js";
-import { samplePdf, sampleProgramme, sampleProgrammes } from "./data/sample-programme.js";
+import { hasWebEdition } from "./domain/programme.js";
+import { sampleProgrammes } from "./data/sample-programme.js";
 import { createPublicationViewer } from "./publication-pdf.js";
 
 const routeMeta = {
@@ -378,6 +379,11 @@ function hydrateProgramme(programme) {
   text("programme-status-copy", state.copy);
   text("pdf-title", programme.title);
 
+  const webEditionAvailable = hasWebEdition(programme);
+  document.querySelectorAll('[data-route="contents"]').forEach((control) => {
+    control.hidden = !webEditionAvailable;
+  });
+
   renderContents(programme);
 
   const firstChapter = programme.chapters?.[0];
@@ -386,22 +392,6 @@ function hydrateProgramme(programme) {
   routeMeta.contents.title = `目錄｜${programme.title}`;
   routeMeta.chapter.title = `${firstChapter?.title || "網頁版"}｜${programme.title}`;
   routeMeta.pdf.title = `翻閱節目冊｜${programme.title}`;
-}
-
-function configureSamplePdf() {
-  return {
-    url: samplePdf.downloadUrl,
-    downloadUrl: samplePdf.downloadUrl,
-    previewUrl: samplePdf.previewUrl,
-    previewAlt: "《理性與感性》節目冊第一頁預覽",
-    previewPanelIndex: 2,
-    previewPanelAspectRatio: 0.4704,
-    foldMode: "tri-fold",
-    panelLabels: ["封面", "曲目", "演出者（一）", "演出者（二）", "樂曲解說（一）", "樂曲解說（二）"],
-    caption: "原始印刷節目冊 · 422 × 299 mm · 三折頁",
-    filename: "rational-sensual-programme-sample-v1.pdf",
-    forceDownload: true,
-  };
 }
 
 export async function mountReader({ root, repository, initialRoute }) {
@@ -778,7 +768,7 @@ export async function mountReader({ root, repository, initialRoute }) {
 
     shell.dataset.view = nextRoute;
     headerContext.textContent = routeMeta[nextRoute]?.context || routeMeta.shelf.context;
-    headerIndex.hidden = nextRoute === "shelf";
+    headerIndex.hidden = nextRoute === "shelf" || !hasWebEdition(currentProgramme);
     document.title = routeMeta[nextRoute]?.title || routeMeta.shelf.title;
 
     if (nextRoute === "pdf") {
@@ -814,8 +804,8 @@ export async function mountReader({ root, repository, initialRoute }) {
       }
     }
 
-    if (programme.client_slug === sampleProgramme.client_slug && programme.slug === sampleProgramme.slug) {
-      await publicationViewer.prepare(configureSamplePdf());
+    if (programme.pdf_source?.url) {
+      await publicationViewer.prepare(programme.pdf_source);
       return;
     }
 

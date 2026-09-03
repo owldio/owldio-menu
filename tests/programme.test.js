@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   canTransitionVisibility,
+  hasWebEdition,
   isListedProgramme,
   isPubliclyReadable,
   listedProgrammes,
@@ -38,5 +39,13 @@ describe("admin publication transitions", () => {
   it("requires an archived programme to return to draft before publishing", () => {
     expect(canTransitionVisibility("archived", "published")).toBe(false);
     expect(canTransitionVisibility("archived", "draft")).toBe(true);
+  });
+});
+
+describe("programme editions", () => {
+  it("offers the web edition only when a visible chapter exists", () => {
+    expect(hasWebEdition({ chapters: [] })).toBe(false);
+    expect(hasWebEdition({ chapters: [{ is_visible: false }] })).toBe(false);
+    expect(hasWebEdition({ chapters: [{ is_visible: true }] })).toBe(true);
   });
 });

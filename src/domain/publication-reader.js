@@ -3,14 +3,27 @@ function clampPage(pageNumber, pageCount) {
   return Math.min(total, Math.max(1, Number(pageNumber) || 1));
 }
 
-export function triFoldReadingOrder(pageCount) {
+export function triFoldReadingOrder(pageCount, configuredOrder) {
   const total = Math.max(1, Number(pageCount) || 1);
-  const sequence = total === 1
+  const defaultSequence = total === 1
     ? [[1, 2], [1, 0], [1, 1]]
     : [[1, 2], [2, 0], [2, 1], [2, 2], [1, 0], [1, 1]];
 
+  const configuredSequence = Array.isArray(configuredOrder)
+    ? configuredOrder
+        .map(({ pageNumber, panelIndex } = {}) => [Number(pageNumber), Number(panelIndex)])
+        .filter(([pageNumber, panelIndex]) => (
+          Number.isInteger(pageNumber)
+          && pageNumber >= 1
+          && pageNumber <= total
+          && Number.isInteger(panelIndex)
+          && panelIndex >= 0
+          && panelIndex <= 2
+        ))
+    : [];
+  const sequence = configuredSequence.length ? configuredSequence : defaultSequence;
+
   return sequence
-    .filter(([pageNumber]) => pageNumber <= total)
     .map(([pageNumber, panelIndex]) => ({ pageNumber, panelIndex }));
 }
 

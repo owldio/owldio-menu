@@ -1,5 +1,8 @@
 import samplePdfUrl from "../../assets/rational-sensual-programme-sample-v1.pdf?url";
 import sampleCoverUrl from "../../assets/rational-sensual-page-1-v1.png?url";
+import moonlightPromisePdfUrl from "../../assets/moonlight-promise-programme-v1.pdf?url";
+import moonlightPromiseCoverUrl from "../../assets/moonlight-promise-cover-v1.jpg?url";
+import moonlightPromisePreviewUrl from "../../assets/moonlight-promise-page-1-v1.jpg?url";
 
 export const sampleProgramme = {
   id: "sample-sense-and-sensibility",
@@ -24,6 +27,19 @@ export const sampleProgramme = {
   pdf_filename: "rational-sensual-programme-sample-v1.pdf",
   pdf_size_bytes: null,
   published_at: "2022-08-01T00:00:00+08:00",
+  pdf_source: {
+    url: samplePdfUrl,
+    downloadUrl: samplePdfUrl,
+    previewUrl: sampleCoverUrl,
+    previewAlt: "《理性與感性》節目冊第一面預覽",
+    previewPanelIndex: 2,
+    previewPanelAspectRatio: 0.4704,
+    foldMode: "tri-fold",
+    panelLabels: ["封面", "曲目", "演出者（一）", "演出者（二）", "樂曲解說（一）", "樂曲解說（二）"],
+    caption: "原始印刷節目冊 · 422 × 299 mm · 三折頁",
+    filename: "rational-sensual-programme-sample-v1.pdf",
+    forceDownload: true,
+  },
   chapters: [
     {
       id: "sample-chapter-one",
@@ -209,6 +225,58 @@ export const sampleProgramme = {
   ],
 };
 
+export const moonlightPromiseProgramme = {
+  id: "sample-moonlight-promise",
+  client_slug: "cycu-feng-ya-song",
+  slug: "moonlight-promise",
+  title: "月光下的約定",
+  title_en: null,
+  summary: "月光映心弦，臺日情意長；豎琴與弦樂的浪漫對話。",
+  production_type: "豎琴與弦樂室內樂之夜",
+  venue: "國家兩廳院演奏廳",
+  starts_at: "2026-09-25T19:30:00+08:00",
+  ends_at: null,
+  duration_minutes: null,
+  visibility: "published",
+  cover_theme: "cobalt",
+  cover_image_url: moonlightPromiseCoverUrl,
+  cover_format: "portrait",
+  cover_aspect_ratio: 0.4691,
+  pdf_path: null,
+  pdf_filename: "月光下的約定-節目單.pdf",
+  pdf_size_bytes: 994654,
+  published_at: "2026-09-03T00:00:00+08:00",
+  pdf_source: {
+    url: moonlightPromisePdfUrl,
+    downloadUrl: moonlightPromisePdfUrl,
+    previewUrl: moonlightPromisePreviewUrl,
+    previewAlt: "《月光下的約定》節目冊第一面預覽",
+    previewPanelIndex: 0,
+    previewPanelAspectRatio: 0.4691,
+    foldMode: "tri-fold",
+    panelLabels: [
+      "封面",
+      "曲目順序",
+      "彩愛玲",
+      "音樂家介紹（小提琴一、二／中提琴）",
+      "音樂家介紹（大提琴／鋼琴）",
+      "贊助資訊",
+    ],
+    readingOrder: [
+      { pageNumber: 1, panelIndex: 0 },
+      { pageNumber: 2, panelIndex: 2 },
+      { pageNumber: 1, panelIndex: 2 },
+      { pageNumber: 2, panelIndex: 1 },
+      { pageNumber: 2, panelIndex: 0 },
+      { pageNumber: 1, panelIndex: 1 },
+    ],
+    caption: "原始印刷節目冊 · A3 橫式 · 三折頁",
+    filename: "月光下的約定-節目單.pdf",
+    forceDownload: true,
+  },
+  chapters: [],
+};
+
 function demoProgramme(overrides) {
   return {
     ...sampleProgramme,
@@ -222,6 +290,7 @@ function demoProgramme(overrides) {
 
 export const sampleProgrammes = [
   sampleProgramme,
+  moonlightPromiseProgramme,
   demoProgramme({
     id: "sample-before-the-migrating-birds-stall",
     client_slug: "field-notes",
@@ -283,8 +352,3 @@ export const sampleProgrammes = [
     cover_format: "square",
   }),
 ];
-
-export const samplePdf = {
-  downloadUrl: samplePdfUrl,
-  previewUrl: sampleCoverUrl,
-};

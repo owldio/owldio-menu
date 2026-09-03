@@ -41,6 +41,19 @@ describe("triFoldReadingOrder", () => {
       { pageNumber: 1, panelIndex: 1 },
     ]);
   });
+
+  it("uses the reading sequence configured for an individual publication", () => {
+    const moonlightPromiseOrder = [
+      { pageNumber: 1, panelIndex: 0 },
+      { pageNumber: 2, panelIndex: 2 },
+      { pageNumber: 1, panelIndex: 2 },
+      { pageNumber: 2, panelIndex: 1 },
+      { pageNumber: 2, panelIndex: 0 },
+      { pageNumber: 1, panelIndex: 1 },
+    ];
+
+    expect(triFoldReadingOrder(2, moonlightPromiseOrder)).toEqual(moonlightPromiseOrder);
+  });
 });
 
 describe("publicationSpread", () => {

@@ -19,6 +19,10 @@ export function listedProgrammes(programmes) {
   return programmes.filter(isListedProgramme);
 }
 
+export function hasWebEdition(programme) {
+  return programme?.chapters?.some((chapter) => chapter?.is_visible !== false) ?? false;
+}
+
 export function canTransitionVisibility(from, to) {
   if (from === to) {
     return true;
