@@ -5500,3 +5500,93 @@ body {
   max-height: none;
   object-fit: fill;
 }
+
+/* Mobile interaction guardrails: preserve the editorial chrome with reliable touch targets. */
+@media (max-width: 880px) {
+  .reader-shell[data-view="pdf"] .publication-toolbar {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+  }
+
+  .reader-shell[data-view="pdf"] .publication-toolbar__identity {
+    min-width: 0;
+  }
+
+  .reader-shell[data-view="pdf"] .publication-toolbar__tools {
+    padding-right: 6px;
+  }
+
+  .reader-shell[data-view="pdf"] .publication-toolbar__tools > button,
+  .reader-shell[data-view="pdf"] .publication-toolbar__tools > a {
+    min-width: 48px;
+  }
+
+  .reader-shell[data-view="pdf"] .publication-rail__thumbs {
+    width: 44px;
+    height: 44px;
+  }
+
+  .reader-shell[data-view="pdf"] .publication-rail__scrubber {
+    height: 44px;
+  }
+
+  .reader-shell[data-view="pdf"] .publication-rail__scrubber::before,
+  .reader-shell[data-view="pdf"] .publication-rail__scrubber i {
+    top: 21px;
+  }
+}
+
+@media (max-width: 620px) {
+  .reader-shell[data-view="shelf"] .carousel-arrow {
+    width: 44px;
+    min-width: 44px;
+    height: 44px;
+  }
+
+  .reader-shell[data-view="shelf"] .carousel-selection__open {
+    min-height: 44px;
+  }
+
+  .reader-shell[data-view="pdf"] .publication-toolbar {
+    grid-template-columns: 58px minmax(0, 1fr) 52px;
+  }
+
+  .reader-shell[data-view="pdf"] .publication-toolbar__identity {
+    justify-self: stretch;
+    width: auto;
+    text-align: center;
+  }
+
+  .reader-shell[data-view="pdf"] .publication-toolbar__identity strong {
+    max-width: 100%;
+  }
+
+  .reader-shell[data-view="pdf"] .publication-toolbar__tools {
+    padding-right: 2px;
+  }
+
+  .reader-shell[data-view="pdf"] .publication-toolbar__tools > a {
+    min-width: 48px;
+    padding: 0;
+  }
+
+  .reader-shell[data-view="pdf"] .publication-reader__hint {
+    top: 8px;
+    display: block;
+    color: rgb(240 236 216 / 0.64);
+    font-size: 9px;
+    letter-spacing: 0.06em;
+  }
+
+  .reader-shell[data-view="pdf"] .publication-turn--prev {
+    left: 2px;
+  }
+
+  .reader-shell[data-view="pdf"] .publication-turn--next {
+    right: 2px;
+  }
+
+  .reader-shell[data-view="pdf"] .publication-rail {
+    grid-template-columns: 44px 70px minmax(0, 1fr);
+    padding: 0 8px;
+  }
+}

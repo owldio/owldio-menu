@@ -40,6 +40,17 @@ export function parseAppLocation(pathname, hash) {
   }
 
   const rawSegments = normalizedPath.split("/").filter(Boolean);
+  if (rawSegments.length === 1) {
+    const programmeSlug = decodeSegment(rawSegments[0]);
+    if (!programmeSlug) return { kind: "not-found" };
+
+    return {
+      kind: "programme",
+      programmeSlug,
+      ...parseReaderHash(hash),
+    };
+  }
+
   if (rawSegments.length !== 2) {
     return { kind: "not-found" };
   }
@@ -53,14 +64,15 @@ export function parseAppLocation(pathname, hash) {
     kind: "programme",
     clientSlug,
     programmeSlug,
+    legacyPath: true,
     ...parseReaderHash(hash),
   };
 }
 
-export function buildProgrammePath(clientSlug, programmeSlug) {
-  return `/${encodeURIComponent(clientSlug)}/${encodeURIComponent(programmeSlug)}`;
+export function buildProgrammePath(programmeSlug) {
+  return `/${encodeURIComponent(programmeSlug)}`;
 }
 
-export function buildProgrammeReaderPath(clientSlug, programmeSlug) {
-  return buildProgrammePath(clientSlug, programmeSlug);
+export function buildProgrammeReaderPath(programmeSlug) {
+  return buildProgrammePath(programmeSlug);
 }

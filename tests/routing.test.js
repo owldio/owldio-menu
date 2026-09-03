@@ -15,20 +15,30 @@ describe("parseAppLocation", () => {
     expect(parseAppLocation("/admin", "")).toEqual({ kind: "admin" });
   });
 
-  it("resolves a client and programme path and keeps the reader chapter", () => {
+  it("opens a programme from its single public slug", () => {
+    expect(parseAppLocation("/sense-and-sensibility", "")).toEqual({
+      kind: "programme",
+      programmeSlug: "sense-and-sensibility",
+      view: "pdf",
+    });
+  });
+
+  it("marks an old client and programme path for canonical redirection", () => {
     expect(parseAppLocation("/ours/tide-awake", "#contents")).toEqual({
       kind: "programme",
       clientSlug: "ours",
       programmeSlug: "tide-awake",
+      legacyPath: true,
       view: "contents",
     });
   });
 
-  it("opens a clean programme URL directly in the reader", () => {
+  it("keeps the former client-prefixed URL readable during migration", () => {
     expect(parseAppLocation("/yuan-chamber/sense-and-sensibility", "")).toEqual({
       kind: "programme",
       clientSlug: "yuan-chamber",
       programmeSlug: "sense-and-sensibility",
+      legacyPath: true,
       view: "pdf",
     });
   });
@@ -38,6 +48,7 @@ describe("parseAppLocation", () => {
       kind: "programme",
       clientSlug: "ours",
       programmeSlug: "tide-awake",
+      legacyPath: true,
       view: "chapter",
       chapterSlug: "directors-note",
     });
@@ -57,15 +68,11 @@ describe("parseAppLocation", () => {
 });
 
 describe("buildProgrammePath", () => {
-  it("encodes each path segment", () => {
-    expect(buildProgrammePath("故事 工廠", "潮聲/未眠")).toBe(
-      "/%E6%95%85%E4%BA%8B%20%E5%B7%A5%E5%BB%A0/%E6%BD%AE%E8%81%B2%2F%E6%9C%AA%E7%9C%A0",
-    );
+  it("builds one encoded public programme segment", () => {
+    expect(buildProgrammePath("潮聲/未眠")).toBe("/%E6%BD%AE%E8%81%B2%2F%E6%9C%AA%E7%9C%A0");
   });
 
   it("builds the direct reading destination used by programme covers", () => {
-    expect(buildProgrammeReaderPath("yuan-chamber", "sense-and-sensibility")).toBe(
-      "/yuan-chamber/sense-and-sensibility",
-    );
+    expect(buildProgrammeReaderPath("sense-and-sensibility")).toBe("/sense-and-sensibility");
   });
 });

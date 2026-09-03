@@ -82,6 +82,17 @@ export class ProgrammeRepository {
     return sortedChapters(throwOnError(result));
   }
 
+  async getPublicBySlug(programmeSlug) {
+    const result = await this.client
+      .from("programmes")
+      .select(PUBLIC_PROGRAMME_SELECT)
+      .eq("slug", programmeSlug)
+      .in("visibility", ["published", "unlisted"])
+      .maybeSingle();
+
+    return sortedChapters(throwOnError(result));
+  }
+
   async listForAdmin() {
     const result = await this.client
       .from("programmes")

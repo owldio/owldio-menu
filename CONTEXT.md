@@ -4,7 +4,7 @@
 
 | Term | Definition |
 | --- | --- |
-| Programme（節目冊） | 一場表演對應的一份數位節目冊，由客戶代稱與節目代稱共同形成獨立網址。 |
+| Programme（節目冊） | 一場表演對應的一份數位節目冊，以全站唯一的節目代稱形成單層公開網址。 |
 | Client（客戶） | 擁有一個或多個節目冊的製作單位、團隊或藝術家。 |
 | Chapter（章節） | 節目冊中的可跳轉閱讀單元，例如曲目、導演的話、演職人員或場館資訊。 |
 | Original PDF（原始 PDF） | 客戶上傳的印刷版節目單檔案；是次要閱讀方式，不取代原生網頁內容。 |
@@ -17,7 +17,8 @@
 
 ## Invariants
 
-- Programme 的 `client_slug + slug` 必須唯一。
+- Programme 的 `slug` 必須全站唯一；`client_slug` 僅供後台歸屬與管理。
+- 已發布的公開網址使用 `/{slug}`；舊的 `/{client_slug}/{slug}` 只作相容轉址。
 - Draft 與 Archived 不可由未登入觀眾讀取。
 - 只有 Published 會出現在 Public Index。
 - Original PDF 必須是 PDF，且不得超過平台限制。

@@ -123,12 +123,13 @@ function dashboardTemplate() {
               <legend><span>02</span> 網址與演出</legend>
               <div class="admin-form-grid">
                 <label class="admin-field">
-                  <span>客戶網址代稱 *</span>
+                  <span>客戶識別代稱（僅後台）*</span>
                   <input name="client_slug" required pattern="[a-z0-9]+(?:-[a-z0-9]+)*" placeholder="ours" />
                 </label>
                 <label class="admin-field">
-                  <span>節目網址代稱 *</span>
+                  <span>公開網址代稱 *</span>
                   <input name="slug" required pattern="[a-z0-9]+(?:-[a-z0-9]+)*" placeholder="tide-awake" />
+                  <small>發布網址：menu.owldio.art/這個代稱</small>
                 </label>
                 <label class="admin-field">
                   <span>首場時間</span>
@@ -370,7 +371,7 @@ export async function mountAdmin({ root, client }) {
         const title = document.createElement("strong");
         title.textContent = programme.title;
         const path = document.createElement("small");
-        path.textContent = `/${programme.client_slug}/${programme.slug}`;
+        path.textContent = `/${programme.slug}`;
         copy.append(title, path);
         const visibility = document.createElement("i");
         visibility.dataset.visibility = programme.visibility;
@@ -405,7 +406,7 @@ export async function mountAdmin({ root, client }) {
       }
 
       if (programme && ["published", "unlisted"].includes(programme.visibility)) {
-        preview.href = buildProgrammePath(programme.client_slug, programme.slug);
+        preview.href = buildProgrammePath(programme.slug);
         preview.hidden = false;
       } else {
         preview.hidden = true;

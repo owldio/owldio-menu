@@ -70,7 +70,7 @@ function performanceState(programme) {
 
 function volumeCard(programme, index, total) {
   const link = document.createElement("a");
-  const readerPath = buildProgrammeReaderPath(programme.client_slug, programme.slug);
+  const readerPath = buildProgrammeReaderPath(programme.slug);
   link.href = readerPath;
   link.className = "programme-volume";
   link.dataset.carouselIndex = String(index);
@@ -702,7 +702,7 @@ export async function mountReader({ root, repository, initialRoute }) {
   function openActiveShelfProgramme() {
     const selected = activeShelfProgramme();
     if (selected) {
-      window.location.assign(buildProgrammeReaderPath(selected.client_slug, selected.slug));
+      window.location.assign(buildProgrammeReaderPath(selected.slug));
     }
   }
 
@@ -838,7 +838,7 @@ export async function mountReader({ root, repository, initialRoute }) {
       if (!currentProgramme) {
         const first = shelfProgrammes[0];
         if (first) {
-          window.location.assign(`${buildProgrammePath(first.client_slug, first.slug)}#${target}`);
+          window.location.assign(`${buildProgrammePath(first.slug)}#${target}`);
         } else {
           showToast("目前沒有可開啟的節目冊。");
         }
@@ -1066,7 +1066,9 @@ export async function mountReader({ root, repository, initialRoute }) {
   } else if (initialRoute.kind === "programme") {
     try {
       currentProgramme = repository
-        ? await repository.getPublicByPath(initialRoute.clientSlug, initialRoute.programmeSlug)
+        ? await (initialRoute.legacyPath
+          ? repository.getPublicByPath(initialRoute.clientSlug, initialRoute.programmeSlug)
+          : repository.getPublicBySlug(initialRoute.programmeSlug))
         : null;
     } catch (error) {
       console.error("Unable to load programme", error);
@@ -1074,10 +1076,13 @@ export async function mountReader({ root, repository, initialRoute }) {
 
     if (!currentProgramme) {
       currentProgramme = sampleProgrammes.find(
-        (programme) => (programme.client_slug === initialRoute.clientSlug
-          || programme.legacy_client_slugs?.includes(initialRoute.clientSlug))
-          && (programme.slug === initialRoute.programmeSlug
-            || programme.legacy_slugs?.includes(initialRoute.programmeSlug)),
+        (programme) => {
+          const slugMatches = programme.slug === initialRoute.programmeSlug
+            || programme.legacy_slugs?.includes(initialRoute.programmeSlug);
+          if (!initialRoute.legacyPath) return slugMatches;
+          return slugMatches && (programme.client_slug === initialRoute.clientSlug
+            || programme.legacy_client_slugs?.includes(initialRoute.clientSlug));
+        },
       );
     }
 
@@ -1085,12 +1090,16 @@ export async function mountReader({ root, repository, initialRoute }) {
       initialRoute.kind = "not-found";
       showRoute("not-found", { updateHash: false });
     } else {
-      if (currentProgramme.slug !== initialRoute.programmeSlug || (initialRoute.view === "pdf" && location.hash)) {
+      if (
+        initialRoute.legacyPath
+        || currentProgramme.slug !== initialRoute.programmeSlug
+        || (initialRoute.view === "pdf" && location.hash)
+      ) {
         const canonicalHash = initialRoute.view === "pdf" ? "" : location.hash;
         history.replaceState(
           { route: initialRoute.view, chapterSlug: initialRoute.chapterSlug },
           "",
-          `${buildProgrammePath(currentProgramme.client_slug, currentProgramme.slug)}${canonicalHash}`,
+          `${buildProgrammePath(currentProgramme.slug)}${canonicalHash}`,
         );
       }
       hydrateProgramme(currentProgramme);

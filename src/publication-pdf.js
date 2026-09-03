@@ -137,7 +137,7 @@ export function createPublicationViewer(root, { onError } = {}) {
       ? `${source?.panelLabels?.[first - 1] || `第 ${first} 欄`} · 三折頁行動閱讀`
       : source?.caption || "原始印刷節目冊";
     hint.textContent = pageMode === "panel"
-      ? "左右滑動 · 逐欄閱讀 · 點擊放大"
+      ? "左右滑動 · 逐欄閱讀 · 點一下放大"
       : "左右滑動 · 方向鍵翻頁 · 點擊放大";
     scrubber.max = String(total);
     scrubber.value = String(first);
