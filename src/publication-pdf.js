@@ -1,7 +1,13 @@
 import {
+  classifyPublicationGesture,
   choosePageMode,
+  fitTriFoldScale,
+  isPublicationDoubleTap,
   movePublicationPage,
   publicationSpread,
+  resolveTriFoldCoverPanel,
+  resolveTriFoldPanelCrop,
+  triFoldDesktopSteps,
   triFoldReadingOrder,
 } from "./domain/publication-reader.js";
 
@@ -33,6 +39,7 @@ function nextFrame() {
 }
 
 export function createPublicationViewer(root, { onError } = {}) {
+  const toolbar = root.querySelector(".publication-toolbar");
   const reader = root.querySelector("#pdf-reader");
   const hint = root.querySelector(".publication-reader__hint");
   const stage = root.querySelector("#pdf-stage");
@@ -55,6 +62,7 @@ export function createPublicationViewer(root, { onError } = {}) {
   const thumbnailToggle = root.querySelector("#pdf-thumbnails-toggle");
   const thumbnailMobile = root.querySelector("#pdf-thumbnails-mobile");
   const thumbnailClose = root.querySelector("#pdf-thumbnails-close");
+  const pager = root.querySelector("#pdf-pager");
 
   let source = null;
   let pdfDocument = null;
@@ -63,23 +71,66 @@ export function createPublicationViewer(root, { onError } = {}) {
   let pageCount = 0;
   let pageMode = "single";
   let panelOrder = [];
+  let foldSteps = [];
   let pageSize = { width: 1, height: 1 };
   let zoom = 1;
   let renderRevision = 0;
   let thumbnailRevision = 0;
   let resizeTimer;
+  let chromeTimer;
+  let hintTimer;
+  let tapTimer;
+  let lastTap = null;
   let pointerStart = null;
   let active = false;
 
   function readingPositionCount() {
-    return pageMode === "panel" ? panelOrder.length : pageCount;
+    if (pageMode === "panel") return panelOrder.length;
+    if (pageMode === "fold") return foldSteps.length;
+    return pageCount;
   }
 
   function currentSpread() {
     const total = readingPositionCount();
-    return pageMode === "panel"
-      ? [clamp(currentPage, 1, Math.max(1, total))]
-      : publicationSpread(currentPage, pageCount, pageMode);
+    if (pageMode === "panel" || pageMode === "fold") {
+      return [clamp(currentPage, 1, Math.max(1, total))];
+    }
+    return publicationSpread(currentPage, pageCount, pageMode);
+  }
+
+  function isMobileReader() {
+    return window.innerWidth < 900;
+  }
+
+  function clearChromeTimer() {
+    window.clearTimeout(chromeTimer);
+    chromeTimer = null;
+  }
+
+  function setChromeVisible(visible, { autoHide = true } = {}) {
+    const shouldShow = !isMobileReader() || Boolean(visible) || !active;
+    root.dataset.chrome = shouldShow ? "visible" : "hidden";
+    toolbar.inert = !shouldShow;
+    pager.inert = !shouldShow;
+    previous.inert = !shouldShow;
+    next.inert = !shouldShow;
+    clearChromeTimer();
+
+    if (shouldShow && autoHide && active && isMobileReader() && thumbnailPanel.hidden) {
+      chromeTimer = window.setTimeout(() => setChromeVisible(false, { autoHide: false }), 3000);
+    }
+  }
+
+  function revealChrome() {
+    setChromeVisible(true);
+  }
+
+  function showGestureHint() {
+    window.clearTimeout(hintTimer);
+    reader.dataset.hint = "visible";
+    hintTimer = window.setTimeout(() => {
+      reader.dataset.hint = "hidden";
+    }, 3200);
   }
 
   function showPreview(previewSource) {
@@ -91,13 +142,22 @@ export function createPublicationViewer(root, { onError } = {}) {
     image.alt = previewSource.previewAlt || "節目冊第一頁預覽";
     image.decoding = "async";
 
-    if (previewSource.foldMode === "tri-fold" && window.innerWidth < 900) {
-      const panelIndex = clamp(Number(previewSource.previewPanelIndex) || 0, 0, 2);
+    if (previewSource.foldMode === "tri-fold") {
+      const panelIndex = resolveTriFoldCoverPanel(previewSource.previewPanelIndex);
+      const crop = resolveTriFoldPanelCrop({
+        pageNumber: 1,
+        panelIndex,
+        pageWidth: 1,
+        panelBoundaries: previewSource.panelBoundaries,
+      });
       frame.classList.add("publication-page--preview-panel");
       frame.style.setProperty("--preview-panel-index", String(panelIndex));
-      frame.style.setProperty("--preview-panel-offset", `${panelIndex * -100}%`);
+      frame.style.setProperty("--preview-panel-offset", `${-(crop.leftRatio / crop.widthRatio) * 100}%`);
+      frame.style.setProperty("--preview-image-width", `${100 / crop.widthRatio}%`);
       frame.style.setProperty("--preview-panel-ratio", String(previewSource.previewPanelAspectRatio || 0.4704));
-      pages.dataset.mode = "panel";
+      pages.dataset.mode = isMobileReader() ? "panel" : "fold";
+      pages.dataset.coverPanel = String(panelIndex);
+      reader.dataset.foldStage = "closed";
     } else {
       pages.dataset.mode = "single";
     }
@@ -133,12 +193,17 @@ export function createPublicationViewer(root, { onError } = {}) {
     pageLabel.textContent = spread.length > 1
       ? `${padPage(first)}–${padPage(last)} / ${padPage(total)}`
       : `${padPage(first)} / ${padPage(total)}`;
+    const foldStep = pageMode === "fold" ? foldSteps[first - 1] : null;
     caption.textContent = pageMode === "panel"
       ? `${source?.panelLabels?.[first - 1] || `第 ${first} 欄`} · 三折頁行動閱讀`
-      : source?.caption || "原始印刷節目冊";
+      : foldStep
+        ? `${foldStep.label} · 三折頁實體閱讀`
+        : source?.caption || "原始印刷節目冊";
     hint.textContent = pageMode === "panel"
-      ? "左右滑動 · 逐欄閱讀 · 點一下放大"
-      : "左右滑動 · 方向鍵翻頁 · 點擊放大";
+      ? "左右滑動翻頁 · 點兩下放大"
+      : pageMode === "fold"
+        ? "拖曳或使用方向鍵 · 依折線展開"
+        : "左右滑動 · 方向鍵翻頁 · 點兩下放大";
     scrubber.max = String(total);
     scrubber.value = String(first);
     progress.style.width = `${(last / total) * 100}%`;
@@ -149,7 +214,169 @@ export function createPublicationViewer(root, { onError } = {}) {
     zoomLabel.value = `${Math.round(zoom * 100)}%`;
     reader.dataset.zoomed = zoom > 1.01 ? "true" : "false";
     reader.dataset.fold = source?.foldMode || "none";
+    reader.dataset.foldStage = foldStep?.id || "none";
     updateThumbnailSelection();
+  }
+
+  function createRenderedCanvas({
+    page,
+    pageNumber,
+    panelIndex = null,
+    cssScale,
+    pixelRatio,
+    displayWidth,
+    displayHeight,
+    label,
+  }) {
+    const canvas = document.createElement("canvas");
+    const viewport = page.getViewport({ scale: 1 });
+    const renderViewport = page.getViewport({ scale: cssScale * pixelRatio });
+    const crop = panelIndex === null
+      ? { leftRatio: 0, widthRatio: 1 }
+      : resolveTriFoldPanelCrop({
+          pageNumber,
+          panelIndex,
+          pageWidth: viewport.width,
+          panelBoundaries: source?.panelBoundaries,
+        });
+
+    canvas.width = Math.ceil(renderViewport.width * crop.widthRatio);
+    canvas.height = Math.ceil(renderViewport.height);
+    canvas.style.width = `${Math.round(displayWidth)}px`;
+    canvas.style.height = `${Math.round(displayHeight)}px`;
+    canvas.setAttribute("role", "img");
+    canvas.setAttribute("aria-label", label);
+
+    const renderOptions = {
+      canvasContext: canvas.getContext("2d", { alpha: false }),
+      viewport: renderViewport,
+    };
+    if (panelIndex !== null) {
+      renderOptions.transform = [1, 0, 0, 1, -renderViewport.width * crop.leftRatio, 0];
+    }
+
+    return { canvas, renderPromise: page.render(renderOptions).promise };
+  }
+
+  async function renderTriFoldCurrent(revision) {
+    const step = foldSteps[currentPage - 1] || foldSteps[0];
+    const coverPanel = resolveTriFoldCoverPanel(source?.previewPanelIndex);
+    const renderKey = `${stage.clientWidth}x${stage.clientHeight}@${zoom}`;
+    const existingBook = pages.querySelector(".tri-fold-book");
+    if (existingBook && pages.dataset.renderKey === renderKey) {
+      existingBook.setAttribute("aria-label", `三折頁：${step.label}`);
+      pages.dataset.foldStage = step.id;
+      setBusy(false);
+      return;
+    }
+
+    setBusy(true, "正在依折線展開節目冊…");
+    const outsidePageNumber = 1;
+    const insidePageNumber = Math.min(2, pageCount);
+    const [outsidePage, insidePage] = await Promise.all([
+      pdfDocument.getPage(outsidePageNumber),
+      pdfDocument.getPage(insidePageNumber),
+    ]);
+    if (revision !== renderRevision) return;
+
+    const insideViewport = insidePage.getViewport({ scale: 1 });
+    const fitScale = fitTriFoldScale({
+      stageWidth: stage.clientWidth,
+      stageHeight: stage.clientHeight,
+      pageWidth: insideViewport.width,
+      pageHeight: insideViewport.height,
+      horizontalPadding: 72,
+      verticalPadding: 42,
+    });
+    const cssScale = Math.max(0.12, fitScale * zoom);
+    const pixelRatio = clamp(window.devicePixelRatio || 1, 1, 2);
+    const panelWidth = (insideViewport.width / 3) * cssScale;
+    const displayHeight = insideViewport.height * cssScale;
+
+    const book = document.createElement("div");
+    book.className = "tri-fold-book";
+    book.setAttribute("role", "img");
+    book.setAttribute("aria-label", `三折頁：${step.label}`);
+    book.style.setProperty("--fold-panel-width", `${panelWidth}px`);
+    book.style.setProperty("--fold-sheet-height", `${displayHeight}px`);
+
+    const assembly = document.createElement("div");
+    assembly.className = "tri-fold-book__assembly";
+    const renderJobs = [];
+
+    for (let panelIndex = 0; panelIndex < 3; panelIndex += 1) {
+      const panel = document.createElement("section");
+      panel.className = `tri-fold-panel tri-fold-panel--${panelIndex}`;
+      panel.setAttribute("aria-hidden", "true");
+
+      const front = document.createElement("div");
+      front.className = "tri-fold-panel__face tri-fold-panel__face--front";
+      const frontRender = createRenderedCanvas({
+        page: insidePage,
+        pageNumber: insidePageNumber,
+        panelIndex,
+        cssScale,
+        pixelRatio,
+        displayWidth: panelWidth,
+        displayHeight,
+        label: `節目冊內頁第 ${panelIndex + 1} 欄`,
+      });
+      front.append(frontRender.canvas);
+      renderJobs.push(frontRender.renderPromise);
+
+      const back = document.createElement("div");
+      back.className = "tri-fold-panel__face tri-fold-panel__face--back";
+      const backRender = createRenderedCanvas({
+        page: outsidePage,
+        pageNumber: outsidePageNumber,
+        panelIndex,
+        cssScale,
+        pixelRatio,
+        displayWidth: panelWidth,
+        displayHeight,
+        label: `節目冊外側第 ${panelIndex + 1} 欄`,
+      });
+      back.append(backRender.canvas);
+      renderJobs.push(backRender.renderPromise);
+
+      panel.append(front, back);
+      assembly.append(panel);
+    }
+
+    const reverse = document.createElement("div");
+    reverse.className = "tri-fold-book__reverse";
+    reverse.setAttribute("aria-hidden", "true");
+    const reverseRender = createRenderedCanvas({
+      page: outsidePage,
+      pageNumber: outsidePageNumber,
+      cssScale,
+      pixelRatio,
+      displayWidth: panelWidth * 3,
+      displayHeight,
+      label: "節目冊完整外側",
+    });
+    reverse.append(reverseRender.canvas);
+    renderJobs.push(reverseRender.renderPromise);
+
+    book.append(assembly, reverse);
+    pages.replaceChildren(book);
+    pages.dataset.mode = "fold";
+    pages.dataset.foldStage = step.id;
+    pages.dataset.coverPanel = String(coverPanel);
+    pages.dataset.renderKey = renderKey;
+
+    try {
+      await Promise.all(renderJobs);
+      if (revision !== renderRevision) return;
+      book.classList.add("is-rendered");
+      setBusy(false);
+    } catch (error) {
+      if (revision !== renderRevision) return;
+      setBusy(false);
+      empty.hidden = false;
+      empty.textContent = "三折頁暫時無法顯示，請稍後再試或下載原始 PDF。";
+      onError?.(error);
+    }
   }
 
   async function renderCurrent(direction = 0) {
@@ -159,8 +386,17 @@ export function createPublicationViewer(root, { onError } = {}) {
     const spread = currentSpread();
     reader.dataset.turn = direction < 0 ? "previous" : direction > 0 ? "next" : "still";
     reader.dataset.mode = pageMode;
-    setBusy(true, "正在翻到下一頁…");
     updateChrome();
+
+    if (pageMode === "fold") {
+      await renderTriFoldCurrent(revision);
+      window.setTimeout(() => {
+        if (reader.dataset.turn !== "still") reader.dataset.turn = "still";
+      }, 820);
+      return;
+    }
+
+    setBusy(true, "正在翻到下一頁…");
 
     const records = await Promise.all(
       spread.map(async (position) => {
@@ -168,13 +404,22 @@ export function createPublicationViewer(root, { onError } = {}) {
         const pageNumber = panel?.pageNumber || position;
         const page = await pdfDocument.getPage(pageNumber);
         const viewport = page.getViewport({ scale: 1 });
+        const crop = panel
+          ? resolveTriFoldPanelCrop({
+              pageNumber,
+              panelIndex: panel.panelIndex,
+              pageWidth: viewport.width,
+              panelBoundaries: source?.panelBoundaries,
+            })
+          : null;
         return {
           page,
           pageNumber,
           panelIndex: panel?.panelIndex ?? null,
           position,
           viewport,
-          displayWidth: panel ? viewport.width / 3 : viewport.width,
+          crop,
+          displayWidth: crop?.width || viewport.width,
         };
       }),
     );
@@ -187,14 +432,14 @@ export function createPublicationViewer(root, { onError } = {}) {
     const stageMargin = window.innerWidth < 620 ? 16 : 48;
     const availableWidth = Math.max(pageMode === "panel" ? 220 : 260, stage.clientWidth - stageMargin - gap);
     const availableHeight = Math.max(280, stage.clientHeight - 44);
-    const fitScale = pageMode === "panel" && currentPage !== 1
+    const fitScale = pageMode === "panel"
       ? availableWidth / baseWidth
       : Math.min(availableWidth / baseWidth, availableHeight / baseHeight);
     const cssScale = Math.max(0.12, fitScale * zoom);
     const pixelRatio = clamp(window.devicePixelRatio || 1, 1, 2);
 
     const fragment = document.createDocumentFragment();
-    const renderJobs = records.map(({ page, pageNumber, panelIndex, position, viewport, displayWidth }, index) => {
+    const renderJobs = records.map(({ page, pageNumber, panelIndex, position, viewport, crop, displayWidth }, index) => {
       const frame = document.createElement("figure");
       frame.className = "publication-page";
       frame.dataset.pageNumber = String(position);
@@ -208,7 +453,7 @@ export function createPublicationViewer(root, { onError } = {}) {
 
       const canvas = document.createElement("canvas");
       const renderViewport = page.getViewport({ scale: cssScale * pixelRatio });
-      const panelPixelWidth = renderViewport.width / 3;
+      const panelPixelWidth = renderViewport.width * (crop?.widthRatio || 1);
       canvas.width = Math.ceil(panelIndex === null ? renderViewport.width : panelPixelWidth);
       canvas.height = Math.ceil(renderViewport.height);
       canvas.style.width = `${Math.round(displayWidth * cssScale)}px`;
@@ -228,7 +473,7 @@ export function createPublicationViewer(root, { onError } = {}) {
         viewport: renderViewport,
       };
       if (panelIndex !== null) {
-        renderOptions.transform = [1, 0, 0, 1, -panelIndex * panelPixelWidth, 0];
+        renderOptions.transform = [1, 0, 0, 1, -renderViewport.width * crop.leftRatio, 0];
       }
 
       return page.render(renderOptions).promise
@@ -261,7 +506,9 @@ export function createPublicationViewer(root, { onError } = {}) {
   function normalizePage(pageNumber) {
     const total = readingPositionCount();
     const page = clamp(Number(pageNumber) || 1, 1, Math.max(1, total));
-    return pageMode === "panel" ? page : publicationSpread(page, pageCount, pageMode)[0];
+    return pageMode === "panel" || pageMode === "fold"
+      ? page
+      : publicationSpread(page, pageCount, pageMode)[0];
   }
 
   function goTo(pageNumber, direction = 0) {
@@ -275,14 +522,45 @@ export function createPublicationViewer(root, { onError } = {}) {
   function move(direction) {
     if (!pdfDocument) return;
     const nextPage = movePublicationPage(currentPage, direction, readingPositionCount(), pageMode);
+    if (nextPage !== currentPage && zoom > 1.01) zoom = 1;
     goTo(nextPage, direction);
   }
 
-  function setZoom(nextZoom) {
+  async function setZoom(nextZoom, focalPoint = null) {
     const normalized = Math.round(clamp(nextZoom, 0.8, 2.2) * 10) / 10;
     if (normalized === zoom) return;
+    const stageRect = stage.getBoundingClientRect();
+    const activeCanvas = pages.querySelector(".publication-page canvas");
+    const canvasRect = activeCanvas?.getBoundingClientRect();
+    const point = focalPoint || {
+      x: stageRect.left + stageRect.width / 2,
+      y: stageRect.top + stageRect.height / 2,
+    };
+    const anchor = canvasRect
+      ? {
+          x: clamp((point.x - canvasRect.left) / Math.max(1, canvasRect.width), 0, 1),
+          y: clamp((point.y - canvasRect.top) / Math.max(1, canvasRect.height), 0, 1),
+        }
+      : { x: 0.5, y: 0.5 };
     zoom = normalized;
-    renderCurrent(0);
+    await renderCurrent(0);
+    await nextFrame();
+
+    if (zoom <= 1.01) {
+      stage.scrollTo({ left: 0, top: 0, behavior: "auto" });
+      return;
+    }
+
+    const nextCanvas = pages.querySelector(".publication-page canvas");
+    if (!nextCanvas) return;
+    const nextRect = nextCanvas.getBoundingClientRect();
+    const contentLeft = nextRect.left + stage.scrollLeft - stageRect.left;
+    const contentTop = nextRect.top + stage.scrollTop - stageRect.top;
+    stage.scrollTo({
+      left: contentLeft + anchor.x * nextRect.width - (point.x - stageRect.left),
+      top: contentTop + anchor.y * nextRect.height - (point.y - stageRect.top),
+      behavior: "auto",
+    });
   }
 
   async function buildThumbnails() {
@@ -293,7 +571,13 @@ export function createPublicationViewer(root, { onError } = {}) {
     for (let position = 1; position <= total; position += 1) {
       if (revision !== thumbnailRevision) return;
       const panel = pageMode === "panel" ? panelOrder[position - 1] : null;
-      const pageNumber = panel?.pageNumber || position;
+      const foldStep = pageMode === "fold" ? foldSteps[position - 1] : null;
+      const foldPageNumber = foldStep
+        ? (foldStep.id === "outside-open" || foldStep.id === "closed" ? 1 : Math.min(2, pageCount))
+        : null;
+      const pageNumber = panel?.pageNumber || foldPageNumber || position;
+      const panelIndex = panel?.panelIndex
+        ?? (foldStep?.id === "closed" ? resolveTriFoldCoverPanel(source?.previewPanelIndex) : null);
       const button = document.createElement("button");
       button.type = "button";
       button.className = "publication-thumbnail";
@@ -302,6 +586,8 @@ export function createPublicationViewer(root, { onError } = {}) {
         "aria-label",
         pageMode === "panel"
           ? `前往${source?.panelLabels?.[position - 1] || `第 ${position} 欄`}`
+          : foldStep
+            ? `前往${foldStep.label}`
           : `前往第 ${pageNumber} 頁`,
       );
 
@@ -313,11 +599,19 @@ export function createPublicationViewer(root, { onError } = {}) {
 
       const page = await pdfDocument.getPage(pageNumber);
       const viewport = page.getViewport({ scale: 1 });
-      const displayWidth = panel ? viewport.width / 3 : viewport.width;
+      const crop = panelIndex === null
+        ? null
+        : resolveTriFoldPanelCrop({
+            pageNumber,
+            panelIndex,
+            pageWidth: viewport.width,
+            panelBoundaries: source?.panelBoundaries,
+          });
+      const displayWidth = crop?.width || viewport.width;
       const thumbScale = Math.min(104 / displayWidth, 78 / viewport.height);
       const thumbViewport = page.getViewport({ scale: thumbScale * 1.4 });
-      const panelPixelWidth = thumbViewport.width / 3;
-      canvas.width = Math.ceil(panel ? panelPixelWidth : thumbViewport.width);
+      const panelPixelWidth = thumbViewport.width * (crop?.widthRatio || 1);
+      canvas.width = Math.ceil(crop ? panelPixelWidth : thumbViewport.width);
       canvas.height = Math.ceil(thumbViewport.height);
       canvas.style.width = `${Math.round(displayWidth * thumbScale)}px`;
       canvas.style.height = `${Math.round(viewport.height * thumbScale)}px`;
@@ -325,8 +619,8 @@ export function createPublicationViewer(root, { onError } = {}) {
         canvasContext: canvas.getContext("2d", { alpha: false }),
         viewport: thumbViewport,
       };
-      if (panel) {
-        renderOptions.transform = [1, 0, 0, 1, -panel.panelIndex * panelPixelWidth, 0];
+      if (crop) {
+        renderOptions.transform = [1, 0, 0, 1, -thumbViewport.width * crop.leftRatio, 0];
       }
       await page.render(renderOptions).promise;
       if (position % 4 === 0) await nextFrame();
@@ -340,7 +634,12 @@ export function createPublicationViewer(root, { onError } = {}) {
     thumbnailPanel.hidden = !isOpen;
     thumbnailToggle.setAttribute("aria-expanded", String(isOpen));
     root.dataset.thumbnails = isOpen ? "open" : "closed";
-    if (isOpen) buildThumbnails();
+    if (isOpen) {
+      setChromeVisible(true, { autoHide: false });
+      buildThumbnails();
+    } else if (active) {
+      setChromeVisible(true);
+    }
   }
 
   async function loadPreparedSource() {
@@ -356,6 +655,9 @@ export function createPublicationViewer(root, { onError } = {}) {
       panelOrder = source.foldMode === "tri-fold"
         ? triFoldReadingOrder(pageCount, source.readingOrder)
         : [];
+      foldSteps = source.foldMode === "tri-fold"
+        ? triFoldDesktopSteps(pageCount)
+        : [];
       const firstPage = await pdfDocument.getPage(1);
       const viewport = firstPage.getViewport({ scale: 1 });
       pageSize = { width: viewport.width, height: viewport.height };
@@ -368,6 +670,10 @@ export function createPublicationViewer(root, { onError } = {}) {
       currentPage = 1;
       loadingTask = null;
       await renderCurrent(0);
+      if (active) {
+        setChromeVisible(true);
+        showGestureHint();
+      }
     } catch (error) {
       loadingTask = null;
       pdfDocument = null;
@@ -401,6 +707,7 @@ export function createPublicationViewer(root, { onError } = {}) {
     pageCount = 0;
     pageMode = "single";
     panelOrder = [];
+    foldSteps = [];
     zoom = 1;
     showPreview(source);
     caption.textContent = source?.caption || "原始印刷節目冊";
@@ -433,19 +740,41 @@ export function createPublicationViewer(root, { onError } = {}) {
 
   function activate() {
     active = true;
+    setChromeVisible(true);
+    showGestureHint();
     loadPreparedSource();
   }
 
   function deactivate() {
     active = false;
+    clearChromeTimer();
+    window.clearTimeout(hintTimer);
+    window.clearTimeout(tapTimer);
+    lastTap = null;
+    setChromeVisible(true, { autoHide: false });
     setThumbnails(false);
   }
 
-  previous.addEventListener("click", () => move(-1));
-  next.addEventListener("click", () => move(1));
-  scrubber.addEventListener("change", () => goTo(Number(scrubber.value), Number(scrubber.value) >= currentPage ? 1 : -1));
-  zoomOut.addEventListener("click", () => setZoom(zoom - 0.2));
-  zoomIn.addEventListener("click", () => setZoom(zoom + 0.2));
+  previous.addEventListener("click", () => {
+    revealChrome();
+    move(-1);
+  });
+  next.addEventListener("click", () => {
+    revealChrome();
+    move(1);
+  });
+  scrubber.addEventListener("change", () => {
+    revealChrome();
+    goTo(Number(scrubber.value), Number(scrubber.value) >= currentPage ? 1 : -1);
+  });
+  zoomOut.addEventListener("click", () => {
+    revealChrome();
+    setZoom(zoom - 0.2);
+  });
+  zoomIn.addEventListener("click", () => {
+    revealChrome();
+    setZoom(zoom + 0.2);
+  });
   thumbnailToggle.addEventListener("click", () => setThumbnails(thumbnailPanel.hidden));
   thumbnailMobile.addEventListener("click", () => setThumbnails(true));
   thumbnailClose.addEventListener("click", () => setThumbnails(false));
@@ -457,7 +786,14 @@ export function createPublicationViewer(root, { onError } = {}) {
     setThumbnails(false);
   });
 
+  root.addEventListener("focusin", (event) => {
+    if (event.target.closest(".publication-toolbar, .publication-rail, .publication-turn, .publication-thumbnails")) {
+      revealChrome();
+    }
+  });
+
   fullscreen.addEventListener("click", async () => {
+    revealChrome();
     if (document.fullscreenElement) {
       await document.exitFullscreen();
     } else {
@@ -486,22 +822,56 @@ export function createPublicationViewer(root, { onError } = {}) {
     if (event.key === "Escape" && !thumbnailPanel.hidden) setThumbnails(false);
   });
 
-  stage.addEventListener("dblclick", () => setZoom(zoom > 1.01 ? 1 : 1.6));
+  function handlePublicationTap(event) {
+    const tap = { x: event.clientX, y: event.clientY, at: performance.now() };
+    if (isPublicationDoubleTap(lastTap, tap)) {
+      window.clearTimeout(tapTimer);
+      tapTimer = null;
+      lastTap = null;
+      setZoom(zoom > 1.01 ? 1 : 2.2, tap);
+      return;
+    }
+
+    lastTap = tap;
+    window.clearTimeout(tapTimer);
+    tapTimer = window.setTimeout(() => {
+      lastTap = null;
+      setChromeVisible(root.dataset.chrome === "hidden");
+    }, 330);
+  }
+
+  stage.addEventListener("dblclick", (event) => {
+    if (isMobileReader()) return;
+    event.preventDefault();
+    setZoom(zoom > 1.01 ? 1 : 2.2, { x: event.clientX, y: event.clientY });
+  });
   stage.addEventListener("pointerdown", (event) => {
-    pointerStart = { x: event.clientX, y: event.clientY, id: event.pointerId };
+    if (event.button !== undefined && event.button !== 0) return;
+    pointerStart = {
+      x: event.clientX,
+      y: event.clientY,
+      id: event.pointerId,
+      scrollLeft: stage.scrollLeft,
+      scrollTop: stage.scrollTop,
+    };
+    if (zoom > 1.01) stage.setPointerCapture?.(event.pointerId);
+  });
+  stage.addEventListener("pointermove", (event) => {
+    if (!pointerStart || pointerStart.id !== event.pointerId || zoom <= 1.01) return;
+    event.preventDefault();
+    stage.scrollLeft = pointerStart.scrollLeft - (event.clientX - pointerStart.x);
+    stage.scrollTop = pointerStart.scrollTop - (event.clientY - pointerStart.y);
   });
   stage.addEventListener("pointerup", (event) => {
     if (!pointerStart || pointerStart.id !== event.pointerId) return;
     const deltaX = event.clientX - pointerStart.x;
     const deltaY = event.clientY - pointerStart.y;
     pointerStart = null;
-    if (Math.abs(deltaX) > 48 && Math.abs(deltaX) > Math.abs(deltaY)) {
-      move(deltaX < 0 ? 1 : -1);
-      return;
-    }
-    if (window.innerWidth < 900 && Math.abs(deltaX) < 9 && Math.abs(deltaY) < 9 && event.target.closest("canvas")) {
-      setZoom(zoom > 1.01 ? 1 : 1.8);
-    }
+    if (stage.hasPointerCapture?.(event.pointerId)) stage.releasePointerCapture(event.pointerId);
+    const gesture = classifyPublicationGesture({ deltaX, deltaY, zoom });
+    if (gesture === "next") move(1);
+    if (gesture === "previous") move(-1);
+    if (gesture === "tap" && isMobileReader()) handlePublicationTap(event);
   });
   stage.addEventListener("pointercancel", () => {
     pointerStart = null;
@@ -512,9 +882,11 @@ export function createPublicationViewer(root, { onError } = {}) {
     resizeTimer = window.setTimeout(() => {
       if (!active || !pdfDocument) return;
       const previousMode = pageMode;
-      const visibleSourcePage = previousMode === "panel"
-        ? panelOrder[currentPage - 1]?.pageNumber || 1
-        : currentPage;
+      const visiblePanel = previousMode === "panel" ? panelOrder[currentPage - 1] : null;
+      const visibleSourcePage = visiblePanel?.pageNumber
+        ?? (previousMode === "fold"
+          ? (currentPage > 1 && currentPage < 4 ? Math.min(2, pageCount) : 1)
+          : currentPage);
       const nextMode = choosePageMode({
         viewportWidth: window.innerWidth,
         pageWidth: pageSize.width,
@@ -522,18 +894,34 @@ export function createPublicationViewer(root, { onError } = {}) {
         foldMode: source?.foldMode,
       });
       if (nextMode === previousMode) {
+        setChromeVisible(true);
         renderCurrent(0);
         return;
       }
 
       pageMode = nextMode;
-      currentPage = nextMode === "panel"
-        ? Math.max(1, panelOrder.findIndex((panel) => panel.pageNumber === visibleSourcePage) + 1)
-        : clamp(visibleSourcePage, 1, pageCount);
+      if (nextMode === "panel") {
+        const preferredPanel = previousMode === "fold" && currentPage === 2
+          ? { pageNumber: 1, panelIndex: 2 }
+          : { pageNumber: visibleSourcePage, panelIndex: null };
+        const panelIndex = panelOrder.findIndex((panel) => (
+          panel.pageNumber === preferredPanel.pageNumber
+          && (preferredPanel.panelIndex === null || panel.panelIndex === preferredPanel.panelIndex)
+        ));
+        currentPage = Math.max(1, panelIndex + 1);
+      } else if (nextMode === "fold") {
+        currentPage = visiblePanel?.pageNumber === 1
+          ? (visiblePanel.panelIndex === resolveTriFoldCoverPanel(source?.previewPanelIndex) ? 1 : foldSteps.length)
+          : Math.min(3, foldSteps.length);
+      } else {
+        currentPage = clamp(visibleSourcePage, 1, pageCount);
+      }
       thumbnailRevision += 1;
       thumbnailRail.replaceChildren();
       setThumbnails(false);
       zoom = 1;
+      setChromeVisible(true);
+      showGestureHint();
       renderCurrent(0);
     }, 180);
   });

@@ -24,6 +24,9 @@ describe("sample programme catalogue", () => {
         { pageNumber: 2, panelIndex: 0 },
         { pageNumber: 1, panelIndex: 1 },
       ],
+      panelBoundaries: {
+        1: [0, 0.337383, 0.676974, 1],
+      },
     });
   });
 });

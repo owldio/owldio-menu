@@ -6,6 +6,7 @@ import {
   publicationSpread,
   triFoldReadingOrder,
 } from "../src/domain/publication-reader.js";
+import * as publicationReader from "../src/domain/publication-reader.js";
 
 describe("choosePageMode", () => {
   it("uses facing pages for a portrait publication on a wide screen", () => {
@@ -27,6 +28,15 @@ describe("choosePageMode", () => {
       pageHeight: 595,
       foldMode: "tri-fold",
     })).toBe("panel");
+  });
+
+  it("uses the physical fold viewer for a tri-fold sheet on a wide screen", () => {
+    expect(choosePageMode({
+      viewportWidth: 1440,
+      pageWidth: 1185,
+      pageHeight: 842,
+      foldMode: "tri-fold",
+    })).toBe("fold");
   });
 });
 
@@ -53,6 +63,100 @@ describe("triFoldReadingOrder", () => {
     ];
 
     expect(triFoldReadingOrder(2, moonlightPromiseOrder)).toEqual(moonlightPromiseOrder);
+  });
+});
+
+describe("triFoldDesktopSteps", () => {
+  it("follows the physical four-stage unfolding sequence from the reference video", () => {
+    expect(publicationReader.triFoldDesktopSteps(2)).toEqual([
+      { id: "closed", label: "封面" },
+      { id: "first-open", label: "打開第一折" },
+      { id: "inside-open", label: "完整展開" },
+      { id: "outside-open", label: "翻至背面" },
+    ]);
+  });
+});
+
+describe("resolveTriFoldCoverPanel", () => {
+  it("mirrors the physical fold when the cover is printed on the right panel", () => {
+    expect(publicationReader.resolveTriFoldCoverPanel(2)).toBe(2);
+  });
+
+  it("falls back to the left panel for unsupported cover positions", () => {
+    expect(publicationReader.resolveTriFoldCoverPanel(1)).toBe(0);
+  });
+});
+
+describe("resolveTriFoldPanelCrop", () => {
+  it("uses the calibrated fold lines instead of leaking the neighbouring panel", () => {
+    const crop = publicationReader.resolveTriFoldPanelCrop({
+      pageNumber: 1,
+      panelIndex: 2,
+      pageWidth: 1811,
+      panelBoundaries: {
+        1: [0, 611 / 1811, 1226 / 1811, 1],
+      },
+    });
+
+    expect(crop.left).toBeCloseTo(1226, 6);
+    expect(crop.width).toBeCloseTo(585, 6);
+  });
+});
+
+describe("classifyPublicationGesture", () => {
+  it("turns an unzoomed horizontal swipe into the next page action", () => {
+    expect(publicationReader.classifyPublicationGesture({
+      deltaX: -72,
+      deltaY: 8,
+      zoom: 1,
+    })).toBe("next");
+  });
+
+  it("pans the enlarged page instead of changing pages", () => {
+    expect(publicationReader.classifyPublicationGesture({
+      deltaX: -120,
+      deltaY: 12,
+      zoom: 2,
+    })).toBe("pan");
+  });
+
+  it("treats a steady release as a tap instead of an accidental page turn", () => {
+    expect(publicationReader.classifyPublicationGesture({
+      deltaX: 6,
+      deltaY: -4,
+      zoom: 1,
+    })).toBe("tap");
+  });
+});
+
+describe("isPublicationDoubleTap", () => {
+  it("recognises two nearby taps within the mobile double-tap window", () => {
+    expect(publicationReader.isPublicationDoubleTap(
+      { x: 180, y: 420, at: 1000 },
+      { x: 193, y: 408, at: 1260 },
+    )).toBe(true);
+  });
+
+  it("keeps distant taps as separate chrome toggles", () => {
+    expect(publicationReader.isPublicationDoubleTap(
+      { x: 80, y: 420, at: 1000 },
+      { x: 320, y: 420, at: 1200 },
+    )).toBe(false);
+  });
+});
+
+describe("fitTriFoldScale", () => {
+  it("keeps the complete sheet inside the reader at the desktop breakpoint", () => {
+    const scale = publicationReader.fitTriFoldScale({
+      stageWidth: 792,
+      stageHeight: 794,
+      pageWidth: 1190,
+      pageHeight: 842,
+      horizontalPadding: 72,
+      verticalPadding: 42,
+    });
+
+    expect(scale * 1190).toBeCloseTo(720, 6);
   });
 });
 
