@@ -765,6 +765,7 @@ export async function mountReader({ root, repository, initialRoute }) {
     views.forEach((view, key) => {
       view.hidden = key !== nextRoute;
     });
+    document.documentElement.removeAttribute("data-publication-boot");
 
     shell.dataset.view = nextRoute;
     headerContext.textContent = routeMeta[nextRoute]?.context || routeMeta.shelf.context;
@@ -790,10 +791,18 @@ export async function mountReader({ root, repository, initialRoute }) {
   }
 
   async function configurePdf(programme) {
+    const presentation = {
+      title: programme.title,
+      previewUrl: programme.cover_image_url,
+      previewAlt: `《${programme.title}》節目冊封面預覽`,
+      previewAspectRatio: programme.cover_aspect_ratio,
+    };
+
     if (programme.pdf_path && repository) {
       const signedUrl = await repository.createPdfUrl(programme.pdf_path);
       if (signedUrl) {
         await publicationViewer.prepare({
+          ...presentation,
           url: signedUrl,
           downloadUrl: signedUrl,
           filename: programme.pdf_filename || "programme.pdf",
@@ -805,11 +814,16 @@ export async function mountReader({ root, repository, initialRoute }) {
     }
 
     if (programme.pdf_source?.url) {
-      await publicationViewer.prepare(programme.pdf_source);
+      await publicationViewer.prepare({
+        ...presentation,
+        ...programme.pdf_source,
+        title: programme.title,
+      });
       return;
     }
 
     await publicationViewer.prepare({
+      ...presentation,
       url: null,
       caption: "後台上傳後，原始印刷版會顯示在這裡。",
     });
@@ -1054,6 +1068,11 @@ export async function mountReader({ root, repository, initialRoute }) {
     showRoute("shelf", { updateHash: false });
     startShelfMarquee();
   } else if (initialRoute.kind === "programme") {
+    if (initialRoute.view === "pdf") {
+      publicationViewer.preload();
+      showRoute("pdf", { updateHash: false });
+    }
+
     try {
       currentProgramme = repository
         ? await (initialRoute.legacyPath

@@ -742,6 +742,198 @@
   }
 }
 
+/* Reader responsiveness: keep a meaningful cover on screen while PDF.js works off-stage. */
+.publication-boot {
+  display: none;
+}
+
+html[data-publication-boot="true"] .publication-boot {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+  min-height: 100dvh;
+  background:
+    radial-gradient(circle at 50% 42%, rgb(105 141 111 / 0.16), transparent 48%),
+    linear-gradient(180deg, #173b34 0%, #102f2a 64%, #0b2723 100%);
+}
+
+.reader-shell[data-view="pdf"] .publication-page--preview {
+  isolation: isolate;
+  aspect-ratio: var(--preview-ratio, 0.707);
+}
+
+.reader-shell[data-view="pdf"] .publication-page--preview.publication-page--preview-panel {
+  aspect-ratio: var(--preview-panel-ratio, 0.4704);
+}
+
+.reader-shell[data-view="pdf"] .publication-page--preview > img {
+  z-index: 2;
+  width: 100%;
+  max-width: none;
+  height: 100%;
+  max-height: none;
+  opacity: 0;
+  object-fit: contain;
+  transition: opacity 220ms ease;
+}
+
+.reader-shell[data-view="pdf"] .publication-page--preview[data-preview-state="ready"] > img {
+  opacity: 1;
+}
+
+.reader-shell[data-view="pdf"] .publication-page--preview[data-preview-state="ready"] .publication-placeholder {
+  opacity: 0;
+}
+
+.reader-shell[data-view="pdf"] .publication-page--preview[data-preview-crop="false"] > img {
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.publication-placeholder {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: 9px;
+  padding: 28px 20px;
+  overflow: hidden;
+  border: 1px solid rgb(185 162 105 / 0.42);
+  background:
+    linear-gradient(110deg, transparent 0 48%, rgb(240 236 216 / 0.035) 49%, transparent 51%),
+    #173b34;
+  color: #eee9d3;
+  text-align: center;
+  transition: opacity 220ms ease;
+}
+
+.publication-placeholder::before {
+  width: 38px;
+  height: 1px;
+  margin-bottom: 8px;
+  background: #b9a269;
+  content: "";
+}
+
+.publication-placeholder > span {
+  color: #b9a269;
+  font-family: var(--font-latin);
+  font-size: 7px;
+  letter-spacing: 0.24em;
+}
+
+.publication-placeholder > strong {
+  max-width: 15em;
+  color: #f3efdc;
+  font-family: var(--font-serif);
+  font-size: clamp(17px, 4vw, 25px);
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  line-height: 1.45;
+}
+
+.publication-placeholder > small {
+  color: rgb(240 236 216 / 0.58);
+  font-family: var(--font-sans);
+  font-size: 9px;
+  letter-spacing: 0.05em;
+}
+
+.publication-placeholder > i {
+  position: relative;
+  width: min(116px, 58%);
+  height: 1px;
+  margin-top: 13px;
+  overflow: hidden;
+  background: rgb(240 236 216 / 0.14);
+}
+
+.publication-placeholder > i::after {
+  position: absolute;
+  inset: 0;
+  width: 44%;
+  background: #b9a269;
+  content: "";
+  animation: publication-loading-sweep 1.35s cubic-bezier(0.44, 0, 0.56, 1) infinite;
+}
+
+.publication-placeholder--stage {
+  position: relative;
+  width: min(270px, calc(100vw - 88px), 35dvh);
+  aspect-ratio: 0.469;
+  flex: 0 0 auto;
+  box-shadow: 0 24px 38px rgb(3 17 14 / 0.32);
+}
+
+.publication-placeholder--boot {
+  position: relative;
+  width: min(270px, calc(100vw - 88px), 35dvh);
+  aspect-ratio: 0.469;
+  box-shadow: 0 24px 38px rgb(3 17 14 / 0.32);
+}
+
+.reader-shell[data-view="pdf"] .publication-loading {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  border: 1px solid rgb(240 236 216 / 0.12);
+  border-radius: 999px;
+  box-shadow: 0 8px 24px rgb(3 17 14 / 0.18);
+}
+
+.reader-shell[data-view="pdf"] .publication-loading::before {
+  width: 5px;
+  height: 5px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: #b9a269;
+  box-shadow: 0 0 0 0 rgb(185 162 105 / 0.36);
+  content: "";
+  animation: publication-loading-pulse 1.2s ease-out infinite;
+}
+
+.reader-shell[data-view="pdf"] .publication-loading[hidden] {
+  display: none;
+}
+
+.reader-shell[data-view="pdf"] .publication-reader[data-dragging="true"] .publication-pages {
+  animation: none !important;
+  backface-visibility: hidden;
+}
+
+.reader-shell[data-view="pdf"] .publication-reader[data-loading="true"] .publication-page.is-rendered::after {
+  opacity: 0.1;
+}
+
+.reader-shell[data-view="pdf"] .publication-reader[data-turn="next"] .publication-pages,
+.reader-shell[data-view="pdf"] .publication-reader[data-turn="previous"] .publication-pages {
+  animation-duration: 300ms;
+}
+
+@keyframes publication-loading-sweep {
+  from { transform: translateX(-115%); }
+  to { transform: translateX(330%); }
+}
+
+@keyframes publication-loading-pulse {
+  70%, 100% { box-shadow: 0 0 0 7px rgb(185 162 105 / 0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .publication-placeholder > i::after,
+  .reader-shell[data-view="pdf"] .publication-loading::before {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
+
 .publication-pages[data-mode="fold"][data-cover-panel="0"][data-fold-stage="closed"] .tri-fold-panel--0 {
   transform: translateZ(4px) rotateY(180deg);
 }
@@ -6095,4 +6287,19 @@ body {
     animation: none !important;
     transition: none;
   }
+}
+
+/* The reader replaces the boot card in place; fading the entire view would look like a blank frame. */
+.reader-shell[data-view="pdf"] .view--pdf.view-enter {
+  animation: none;
+}
+
+@keyframes publication-turn-next {
+  from { opacity: 0.78; transform: perspective(1000px) translateX(46px) rotateY(-1.2deg); }
+  to { opacity: 1; transform: perspective(1000px) translateX(0) rotateY(0); }
+}
+
+@keyframes publication-turn-previous {
+  from { opacity: 0.78; transform: perspective(1000px) translateX(-46px) rotateY(1.2deg); }
+  to { opacity: 1; transform: perspective(1000px) translateX(0) rotateY(0); }
 }

@@ -6,6 +6,17 @@
     <meta name="theme-color" content="#102422" />
     <meta name="description" content="OWLDIO MENU 音樂會、合唱與表演藝術電子節目冊平台" />
     <title>OWLDIO MENU｜電子節目冊</title>
+    <script>
+      (() => {
+        const isProgrammePath = location.pathname !== "/"
+          && !location.pathname.startsWith("/admin")
+          && !location.pathname.startsWith("/login");
+        const hashRoute = location.hash.slice(1).split("/")[0];
+        if (isProgrammePath && (!hashRoute || hashRoute === "pdf")) {
+          document.documentElement.dataset.publicationBoot = "true";
+        }
+      })();
+    </script>
     <link rel="icon" href="./assets/owldio-owl-reader-mark-v1.svg" type="image/svg+xml" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -18,6 +29,15 @@
   </head>
   <body>
     <a class="skip-link" href="#main-content">跳至主要內容</a>
+
+    <div class="publication-boot" aria-live="polite" aria-label="正在開啟電子節目冊">
+      <div class="publication-placeholder publication-placeholder--boot" aria-hidden="true">
+        <span>OWLDIO MENU</span>
+        <strong>電子節目冊</strong>
+        <small>正在取得演出與節目資訊</small>
+        <i></i>
+      </div>
+    </div>
 
     <div class="reader-shell" id="reader-shell" data-view="shelf">
       <header class="site-header">
@@ -201,7 +221,7 @@
             </button>
             <div class="publication-toolbar__identity">
               <span>OWLDIO MENU / DIGITAL ARCHIVE</span>
-              <strong id="pdf-title">理性與感性</strong>
+              <strong id="pdf-title">電子節目冊</strong>
             </div>
             <div class="publication-toolbar__tools">
               <button type="button" data-route="contents"><span>網頁目錄</span></button>
@@ -225,8 +245,15 @@
             </button>
 
             <div class="publication-stage" id="pdf-stage" tabindex="0" aria-label="節目冊閱讀舞台">
-              <div class="publication-pages" id="pdf-pages" aria-live="polite"></div>
-              <p class="publication-loading" id="pdf-loading">正在展開節目冊…</p>
+              <div class="publication-pages" id="pdf-pages" aria-live="polite">
+                <div class="publication-placeholder publication-placeholder--stage" aria-hidden="true">
+                  <span>OWLDIO MENU</span>
+                  <strong>電子節目冊</strong>
+                  <small>正在取得演出與節目資訊</small>
+                  <i></i>
+                </div>
+              </div>
+              <p class="publication-loading" id="pdf-loading" role="status" aria-live="polite">正在開啟節目冊…</p>
               <p class="pdf-empty" id="pdf-empty" hidden>這份節目冊尚未上傳 PDF。</p>
             </div>
 

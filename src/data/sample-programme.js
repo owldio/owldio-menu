@@ -1,8 +1,9 @@
 import samplePdfUrl from "../../assets/rational-sensual-programme-sample-v1.pdf?url";
 import sampleCoverUrl from "../../assets/rational-sensual-page-1-v1.png?url";
+import samplePreviewUrl from "../../assets/rational-sensual-preview-v2.webp?url";
 import moonlightPromisePdfUrl from "../../assets/moonlight-promise-programme-v1.pdf?url";
 import moonlightPromiseCoverUrl from "../../assets/moonlight-promise-cover-v1.jpg?url";
-import moonlightPromisePreviewUrl from "../../assets/moonlight-promise-page-1-v1.jpg?url";
+import moonlightPromisePreviewUrl from "../../assets/moonlight-promise-preview-v2.webp?url";
 
 export const sampleProgramme = {
   id: "sample-sense-and-sensibility",
@@ -30,10 +31,11 @@ export const sampleProgramme = {
   pdf_source: {
     url: samplePdfUrl,
     downloadUrl: samplePdfUrl,
-    previewUrl: sampleCoverUrl,
+    previewUrl: samplePreviewUrl,
     previewAlt: "《理性與感性》節目冊第一面預覽",
     previewPanelIndex: 2,
     previewPanelAspectRatio: 0.4704,
+    previewIsPanel: true,
     foldMode: "tri-fold",
     panelLabels: ["封面", "曲目", "演出者（一）", "演出者（二）", "樂曲解說（一）", "樂曲解說（二）"],
     caption: "原始印刷節目冊 · 422 × 299 mm · 三折頁",
@@ -253,6 +255,7 @@ export const moonlightPromiseProgramme = {
     previewAlt: "《月光下的約定》節目冊第一面預覽",
     previewPanelIndex: 0,
     previewPanelAspectRatio: 0.4691,
+    previewIsPanel: true,
     foldMode: "tri-fold",
     panelLabels: [
       "封面",

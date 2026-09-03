@@ -134,6 +134,25 @@ export function classifyPublicationGesture({ deltaX, deltaY, zoom }) {
   return "none";
 }
 
+export function resolvePublicationDragOffset({
+  deltaX,
+  stageWidth,
+  canMovePrevious = true,
+  canMoveNext = true,
+  edgeResistance = 0.18,
+}) {
+  const width = Math.max(1, Number(stageWidth) || 1);
+  const horizontal = Number(deltaX) || 0;
+  const isBlocked = (horizontal > 0 && !canMovePrevious)
+    || (horizontal < 0 && !canMoveNext);
+  const resistance = isBlocked
+    ? Math.min(1, Math.max(0, Number(edgeResistance) || 0.18))
+    : 1;
+  const limit = width * 0.92;
+  const offset = Math.min(limit, Math.max(-limit, horizontal * resistance));
+  return Math.round(offset * 100) / 100;
+}
+
 export function isPublicationDoubleTap(previousTap, currentTap) {
   if (!previousTap || !currentTap) return false;
   const elapsed = Number(currentTap.at) - Number(previousTap.at);
@@ -289,4 +308,17 @@ export function movePublicationPage(pageNumber, direction, pageCount, mode = "si
   if (step < 0) return spreadStart <= 2 ? 1 : spreadStart - 2;
   if (spread.includes(total)) return spreadStart;
   return spreadStart === 1 ? Math.min(2, total) : Math.min(spreadStart + 2, total);
+}
+
+export function publicationPreloadTargets(pageNumber, pageCount, mode = "single") {
+  const total = Math.max(1, Number(pageCount) || 1);
+  const current = clampPage(pageNumber, total);
+  const candidates = [
+    movePublicationPage(current, 1, total, mode),
+    movePublicationPage(current, -1, total, mode),
+  ];
+
+  return candidates.filter((candidate, index) => (
+    candidate !== current && candidates.indexOf(candidate) === index
+  ));
 }

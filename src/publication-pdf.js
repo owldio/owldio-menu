@@ -6,7 +6,9 @@ import {
   isPublicationDoubleTap,
   movePublicationPage,
   normalizePublicationZoom,
+  publicationPreloadTargets,
   publicationSpread,
+  resolvePublicationDragOffset,
   resolvePublicationDoubleTapZoom,
   resolvePublicationFocusAnchor,
   resolvePublicationFocusScroll,
@@ -31,6 +33,9 @@ async function loadPdfEngine() {
     ]).then(([pdfjs, workerModule]) => {
       pdfjs.GlobalWorkerOptions.workerSrc = workerModule.default;
       return pdfjs;
+    }).catch((error) => {
+      pdfEnginePromise = null;
+      throw error;
     });
   }
   return pdfEnginePromise;
@@ -83,8 +88,10 @@ export function createPublicationViewer(root, { onError } = {}) {
   const pager = root.querySelector("#pdf-pager");
 
   let source = null;
+  let sourceRevision = 0;
   let pdfDocument = null;
   let loadingTask = null;
+  let sourceLoadPromise = null;
   let currentPage = 1;
   let pageCount = 0;
   let pageMode = "single";
@@ -94,13 +101,18 @@ export function createPublicationViewer(root, { onError } = {}) {
   let zoom = 1;
   let renderRevision = 0;
   let thumbnailRevision = 0;
+  let preloadRevision = 0;
   let resizeTimer;
   let chromeTimer;
   let hintTimer;
   let tapTimer;
+  let dragFrame;
+  let dragSettleTimer;
+  let pendingDragOffset = 0;
   let lastTap = null;
   let pointerStart = null;
   const activePointers = new Map();
+  const renderCache = new Map();
   let pinchState = null;
   let active = false;
 
@@ -116,6 +128,14 @@ export function createPublicationViewer(root, { onError } = {}) {
       return [clamp(currentPage, 1, Math.max(1, total))];
     }
     return publicationSpread(currentPage, pageCount, pageMode);
+  }
+
+  function spreadForPosition(position) {
+    const total = readingPositionCount();
+    if (pageMode === "panel" || pageMode === "fold") {
+      return [clamp(position, 1, Math.max(1, total))];
+    }
+    return publicationSpread(position, pageCount, pageMode);
   }
 
   function isMobileReader() {
@@ -153,16 +173,34 @@ export function createPublicationViewer(root, { onError } = {}) {
     }, 3200);
   }
 
+  function createLoadingPlaceholder(title = "電子節目冊") {
+    const placeholder = document.createElement("div");
+    placeholder.className = "publication-placeholder";
+    placeholder.setAttribute("aria-hidden", "true");
+
+    const eyebrow = document.createElement("span");
+    eyebrow.textContent = "OWLDIO MENU";
+    const heading = document.createElement("strong");
+    heading.textContent = title;
+    const status = document.createElement("small");
+    status.textContent = "正在準備清晰、可縮放的頁面";
+    const progressTrack = document.createElement("i");
+
+    placeholder.append(eyebrow, heading, status, progressTrack);
+    return placeholder;
+  }
+
   function showPreview(previewSource) {
-    if (!previewSource?.previewUrl) return;
     const frame = document.createElement("figure");
     frame.className = "publication-page publication-page--preview";
-    const image = document.createElement("img");
-    image.src = previewSource.previewUrl;
-    image.alt = previewSource.previewAlt || "節目冊第一頁預覽";
-    image.decoding = "async";
+    frame.dataset.previewState = "loading";
+    frame.style.setProperty(
+      "--preview-ratio",
+      String(previewSource?.previewAspectRatio || previewSource?.previewPanelAspectRatio || 0.707),
+    );
+    frame.append(createLoadingPlaceholder(previewSource?.title));
 
-    if (previewSource.foldMode === "tri-fold") {
+    if (previewSource?.foldMode === "tri-fold") {
       const panelIndex = resolveTriFoldCoverPanel(previewSource.previewPanelIndex);
       const crop = resolveTriFoldPanelCrop({
         pageNumber: 1,
@@ -171,9 +209,16 @@ export function createPublicationViewer(root, { onError } = {}) {
         panelBoundaries: previewSource.panelBoundaries,
       });
       frame.classList.add("publication-page--preview-panel");
+      frame.dataset.previewCrop = previewSource.previewIsPanel ? "false" : "true";
       frame.style.setProperty("--preview-panel-index", String(panelIndex));
-      frame.style.setProperty("--preview-panel-offset", `${-(crop.leftRatio / crop.widthRatio) * 100}%`);
-      frame.style.setProperty("--preview-image-width", `${100 / crop.widthRatio}%`);
+      frame.style.setProperty(
+        "--preview-panel-offset",
+        previewSource.previewIsPanel ? "0%" : `${-(crop.leftRatio / crop.widthRatio) * 100}%`,
+      );
+      frame.style.setProperty(
+        "--preview-image-width",
+        previewSource.previewIsPanel ? "100%" : `${100 / crop.widthRatio}%`,
+      );
       frame.style.setProperty("--preview-panel-ratio", String(previewSource.previewPanelAspectRatio || 0.4704));
       pages.dataset.mode = isMobileReader() ? "panel" : "fold";
       pages.dataset.coverPanel = String(panelIndex);
@@ -182,12 +227,27 @@ export function createPublicationViewer(root, { onError } = {}) {
       pages.dataset.mode = "single";
     }
 
-    frame.append(image);
+    if (previewSource?.previewUrl) {
+      const image = document.createElement("img");
+      image.alt = previewSource.previewAlt || "節目冊第一頁預覽";
+      image.decoding = "async";
+      image.loading = "eager";
+      image.fetchPriority = "high";
+      image.addEventListener("load", () => {
+        frame.dataset.previewState = "ready";
+      }, { once: true });
+      image.addEventListener("error", () => {
+        frame.dataset.previewState = "error";
+      }, { once: true });
+      image.src = previewSource.previewUrl;
+      frame.append(image);
+    }
     pages.replaceChildren(frame);
   }
 
   function setBusy(isBusy, message = "正在展開節目冊…") {
     root.setAttribute("aria-busy", String(isBusy));
+    reader.dataset.loading = isBusy ? "true" : "false";
     loading.textContent = message;
     loading.hidden = !isBusy;
   }
@@ -238,6 +298,90 @@ export function createPublicationViewer(root, { onError } = {}) {
     updateThumbnailSelection();
   }
 
+  function clearRenderCache() {
+    preloadRevision += 1;
+    renderCache.clear();
+  }
+
+  function getCachedRenderAsset({
+    page,
+    pageNumber,
+    panelIndex = null,
+    cssScale,
+    pixelRatio,
+    crop: suppliedCrop = null,
+  }) {
+    const viewport = page.getViewport({ scale: 1 });
+    const renderViewport = page.getViewport({ scale: cssScale * pixelRatio });
+    const crop = suppliedCrop || (panelIndex === null
+      ? { leftRatio: 0, widthRatio: 1 }
+      : resolveTriFoldPanelCrop({
+          pageNumber,
+          panelIndex,
+          pageWidth: viewport.width,
+          panelBoundaries: source?.panelBoundaries,
+        }));
+    const width = Math.ceil(renderViewport.width * crop.widthRatio);
+    const height = Math.ceil(renderViewport.height);
+    const key = [
+      pageNumber,
+      panelIndex ?? "page",
+      width,
+      height,
+      crop.leftRatio.toFixed(6),
+      crop.widthRatio.toFixed(6),
+    ].join(":");
+
+    const cached = renderCache.get(key);
+    if (cached) {
+      renderCache.delete(key);
+      renderCache.set(key, cached);
+      return cached.promise;
+    }
+
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    const renderOptions = {
+      canvasContext: canvas.getContext("2d", { alpha: false }),
+      viewport: renderViewport,
+    };
+    if (panelIndex !== null) {
+      renderOptions.transform = [1, 0, 0, 1, -renderViewport.width * crop.leftRatio, 0];
+    }
+
+    const entry = { promise: null };
+    entry.promise = page.render(renderOptions).promise
+      .then(() => ({ canvas, width, height, key }))
+      .catch((error) => {
+        if (renderCache.get(key) === entry) renderCache.delete(key);
+        throw error;
+      });
+    renderCache.set(key, entry);
+
+    while (renderCache.size > 8) {
+      renderCache.delete(renderCache.keys().next().value);
+    }
+
+    return entry.promise;
+  }
+
+  function copyRenderedCanvas(asset, { displayWidth, displayHeight, label }) {
+    const canvas = document.createElement("canvas");
+    canvas.width = asset.width;
+    canvas.height = asset.height;
+    const context = canvas.getContext("2d", { alpha: false });
+    context.imageSmoothingEnabled = true;
+    context.imageSmoothingQuality = "high";
+    context.drawImage(asset.canvas, 0, 0);
+    canvas.style.width = `${Math.round(displayWidth)}px`;
+    canvas.style.height = `${Math.round(displayHeight)}px`;
+    canvas.setAttribute("role", "img");
+    canvas.setAttribute("aria-label", label);
+    canvas.dataset.renderState = "ready";
+    return canvas;
+  }
+
   function createRenderedCanvas({
     page,
     pageNumber,
@@ -248,9 +392,7 @@ export function createPublicationViewer(root, { onError } = {}) {
     displayHeight,
     label,
   }) {
-    const canvas = document.createElement("canvas");
     const viewport = page.getViewport({ scale: 1 });
-    const renderViewport = page.getViewport({ scale: cssScale * pixelRatio });
     const crop = panelIndex === null
       ? { leftRatio: 0, widthRatio: 1 }
       : resolveTriFoldPanelCrop({
@@ -259,6 +401,8 @@ export function createPublicationViewer(root, { onError } = {}) {
           pageWidth: viewport.width,
           panelBoundaries: source?.panelBoundaries,
         });
+    const renderViewport = page.getViewport({ scale: cssScale * pixelRatio });
+    const canvas = document.createElement("canvas");
 
     canvas.width = Math.ceil(renderViewport.width * crop.widthRatio);
     canvas.height = Math.ceil(renderViewport.height);
@@ -267,15 +411,22 @@ export function createPublicationViewer(root, { onError } = {}) {
     canvas.setAttribute("role", "img");
     canvas.setAttribute("aria-label", label);
 
-    const renderOptions = {
-      canvasContext: canvas.getContext("2d", { alpha: false }),
-      viewport: renderViewport,
-    };
-    if (panelIndex !== null) {
-      renderOptions.transform = [1, 0, 0, 1, -renderViewport.width * crop.leftRatio, 0];
-    }
+    const renderPromise = getCachedRenderAsset({
+      page,
+      pageNumber,
+      panelIndex,
+      cssScale,
+      pixelRatio,
+      crop,
+    }).then((asset) => {
+      const context = canvas.getContext("2d", { alpha: false });
+      context.imageSmoothingEnabled = true;
+      context.imageSmoothingQuality = "high";
+      context.drawImage(asset.canvas, 0, 0);
+      canvas.dataset.renderState = "ready";
+    });
 
-    return { canvas, renderPromise: page.render(renderOptions).promise };
+    return { canvas, renderPromise };
   }
 
   async function renderTriFoldCurrent(revision) {
@@ -478,18 +629,17 @@ export function createPublicationViewer(root, { onError } = {}) {
       renderJobs.push(reverseRender.renderPromise);
       book.append(reverse);
     }
-    pages.replaceChildren(book);
-    pages.dataset.mode = "fold";
-    pages.dataset.foldStage = step.id;
-    pages.dataset.coverPanel = String(coverPanel);
-    pages.dataset.openingLeaf = openingLeafLayout ? "true" : "false";
-    pages.dataset.activeLeaf = activeLeaf;
-    pages.dataset.renderKey = renderKey;
-
     try {
       await Promise.all(renderJobs);
       if (revision !== renderRevision) return;
       book.classList.add("is-rendered");
+      pages.replaceChildren(book);
+      pages.dataset.mode = "fold";
+      pages.dataset.foldStage = step.id;
+      pages.dataset.coverPanel = String(coverPanel);
+      pages.dataset.openingLeaf = openingLeafLayout ? "true" : "false";
+      pages.dataset.activeLeaf = activeLeaf;
+      pages.dataset.renderKey = renderKey;
       setBusy(false);
     } catch (error) {
       if (revision !== renderRevision) return;
@@ -500,29 +650,14 @@ export function createPublicationViewer(root, { onError } = {}) {
     }
   }
 
-  async function renderCurrent(direction = 0) {
-    if (!pdfDocument || !pageCount) return;
-
-    const revision = ++renderRevision;
-    const spread = currentSpread();
-    reader.dataset.turn = direction < 0 ? "previous" : direction > 0 ? "next" : "still";
-    reader.dataset.mode = pageMode;
-    updateChrome();
-
-    if (pageMode === "fold") {
-      await renderTriFoldCurrent(revision);
-      window.setTimeout(() => {
-        if (reader.dataset.turn !== "still") reader.dataset.turn = "still";
-      }, 820);
-      return;
-    }
-
-    setBusy(true, "正在翻到下一頁…");
-
+  async function preparePageArtwork(position) {
+    const mode = pageMode;
+    const activeZoom = zoom;
+    const spread = spreadForPosition(position);
     const records = await Promise.all(
-      spread.map(async (position) => {
-        const panel = pageMode === "panel" ? panelOrder[position - 1] : null;
-        const pageNumber = panel?.pageNumber || position;
+      spread.map(async (spreadPosition) => {
+        const panel = mode === "panel" ? panelOrder[spreadPosition - 1] : null;
+        const pageNumber = panel?.pageNumber || spreadPosition;
         const page = await pdfDocument.getPage(pageNumber);
         const viewport = page.getViewport({ scale: 1 });
         const crop = panel
@@ -537,7 +672,7 @@ export function createPublicationViewer(root, { onError } = {}) {
           page,
           pageNumber,
           panelIndex: panel?.panelIndex ?? null,
-          position,
+          position: spreadPosition,
           viewport,
           crop,
           displayWidth: crop?.width || viewport.width,
@@ -545,78 +680,121 @@ export function createPublicationViewer(root, { onError } = {}) {
       }),
     );
 
-    if (revision !== renderRevision) return;
-
     const gap = spread.length > 1 ? 3 : 0;
     const baseWidth = records.reduce((sum, record) => sum + record.displayWidth, 0);
     const baseHeight = Math.max(...records.map((record) => record.viewport.height));
     const stageMargin = window.innerWidth < 620 ? 16 : 48;
-    const availableWidth = Math.max(pageMode === "panel" ? 220 : 260, stage.clientWidth - stageMargin - gap);
+    const availableWidth = Math.max(mode === "panel" ? 220 : 260, stage.clientWidth - stageMargin - gap);
     const availableHeight = Math.max(280, stage.clientHeight - 44);
-    const fitScale = pageMode === "panel"
+    const fitScale = mode === "panel"
       ? availableWidth / baseWidth
       : Math.min(availableWidth / baseWidth, availableHeight / baseHeight);
-    const cssScale = Math.max(0.12, fitScale * zoom);
+    const cssScale = Math.max(0.12, fitScale * activeZoom);
     const pixelRatio = clamp(window.devicePixelRatio || 1, 1, 2);
 
-    const fragment = document.createDocumentFragment();
-    const renderJobs = records.map(({ page, pageNumber, panelIndex, position, viewport, crop, displayWidth }, index) => {
+    const renderedRecords = await Promise.all(records.map(async (record) => ({
+      ...record,
+      asset: await getCachedRenderAsset({
+        page: record.page,
+        pageNumber: record.pageNumber,
+        panelIndex: record.panelIndex,
+        cssScale,
+        pixelRatio,
+        crop: record.crop || { leftRatio: 0, widthRatio: 1 },
+      }),
+    })));
+
+    return { cssScale, mode, records: renderedRecords, spread };
+  }
+
+  function materializePageArtwork({ cssScale, mode, records, spread }) {
+    return records.map((record, index) => {
       const frame = document.createElement("figure");
-      frame.className = "publication-page";
-      frame.dataset.pageNumber = String(position);
-      frame.dataset.sourcePage = String(pageNumber);
-      if (panelIndex !== null) {
-        frame.dataset.panelIndex = String(panelIndex);
+      frame.className = "publication-page is-rendered";
+      frame.dataset.pageNumber = String(record.position);
+      frame.dataset.sourcePage = String(record.pageNumber);
+      if (record.panelIndex !== null) {
+        frame.dataset.panelIndex = String(record.panelIndex);
         frame.classList.add("publication-page--panel");
       }
       if (spread.length > 1 && index === 0) frame.classList.add("publication-page--left");
       if (spread.length > 1 && index === 1) frame.classList.add("publication-page--right");
 
-      const canvas = document.createElement("canvas");
-      const renderViewport = page.getViewport({ scale: cssScale * pixelRatio });
-      const panelPixelWidth = renderViewport.width * (crop?.widthRatio || 1);
-      canvas.width = Math.ceil(panelIndex === null ? renderViewport.width : panelPixelWidth);
-      canvas.height = Math.ceil(renderViewport.height);
-      canvas.style.width = `${Math.round(displayWidth * cssScale)}px`;
-      canvas.style.height = `${Math.round(viewport.height * cssScale)}px`;
-      canvas.setAttribute("role", "img");
-      canvas.setAttribute(
-        "aria-label",
-        pageMode === "panel"
-          ? source?.panelLabels?.[position - 1] || `節目冊第 ${position} 欄`
-          : `節目冊第 ${pageNumber} 頁`,
-      );
+      const canvas = copyRenderedCanvas(record.asset, {
+        displayWidth: record.displayWidth * cssScale,
+        displayHeight: record.viewport.height * cssScale,
+        label: mode === "panel"
+          ? source?.panelLabels?.[record.position - 1] || `節目冊第 ${record.position} 欄`
+          : `節目冊第 ${record.pageNumber} 頁`,
+      });
       frame.append(canvas);
-      fragment.append(frame);
-
-      const renderOptions = {
-        canvasContext: canvas.getContext("2d", { alpha: false }),
-        viewport: renderViewport,
-      };
-      if (panelIndex !== null) {
-        renderOptions.transform = [1, 0, 0, 1, -renderViewport.width * crop.leftRatio, 0];
-      }
-
-      return page.render(renderOptions).promise
-        .then(() => frame.classList.add("is-rendered"));
+      return frame;
     });
+  }
 
-    pages.replaceChildren(fragment);
-    pages.dataset.mode = pageMode;
-    if (direction !== 0) {
-      stage.scrollTop = 0;
-      stage.scrollLeft = 0;
+  function prewarmAdjacentPages(position) {
+    if (!active || zoom !== 1 || pageMode === "fold") return;
+    const revision = ++preloadRevision;
+    const mode = pageMode;
+    const targets = publicationPreloadTargets(position, readingPositionCount(), mode);
+
+    void (async () => {
+      await nextFrame();
+      for (const target of targets) {
+        if (revision !== preloadRevision || mode !== pageMode || zoom !== 1) return;
+        await preparePageArtwork(target);
+        await nextFrame();
+      }
+    })().catch(() => {});
+  }
+
+  async function renderCurrent(direction = 0) {
+    if (!pdfDocument || !pageCount) return;
+
+    const revision = ++renderRevision;
+    const targetPosition = currentPage;
+    const turn = direction < 0 ? "previous" : direction > 0 ? "next" : "still";
+    reader.dataset.mode = pageMode;
+    updateChrome();
+
+    if (pageMode === "fold") {
+      reader.dataset.turn = turn;
+      await renderTriFoldCurrent(revision);
+      window.setTimeout(() => {
+        if (reader.dataset.turn !== "still") reader.dataset.turn = "still";
+      }, 820);
+      return;
     }
 
+    reader.dataset.turn = "still";
+    const hasRenderedArtwork = Boolean(pages.querySelector(".publication-page.is-rendered"));
+    setBusy(
+      true,
+      hasRenderedArtwork ? "正在準備下一頁…" : "正在準備清晰、可縮放的頁面…",
+    );
+
     try {
-      await Promise.all(renderJobs);
+      const artwork = await preparePageArtwork(targetPosition);
       if (revision !== renderRevision) return;
+      const frames = materializePageArtwork(artwork);
+      clearPublicationDrag();
+      pages.replaceChildren(...frames);
+      pages.dataset.mode = pageMode;
+      empty.hidden = true;
+      if (direction !== 0) {
+        stage.scrollTop = 0;
+        stage.scrollLeft = 0;
+        void pages.offsetWidth;
+        reader.dataset.turn = turn;
+      }
       setBusy(false);
+      prewarmAdjacentPages(targetPosition);
       window.setTimeout(() => {
         if (reader.dataset.turn !== "still") reader.dataset.turn = "still";
       }, 360);
     } catch (error) {
       if (revision !== renderRevision) return;
+      clearPublicationDrag();
       setBusy(false);
       empty.hidden = false;
       empty.textContent = "這一頁暫時無法顯示，請稍後再試或下載原始 PDF。";
@@ -678,6 +856,7 @@ export function createPublicationViewer(root, { onError } = {}) {
       return;
     }
 
+    clearRenderCache();
     zoom = normalized;
     await renderCurrent(0);
     await nextFrame();
@@ -792,58 +971,86 @@ export function createPublicationViewer(root, { onError } = {}) {
     }
   }
 
-  async function loadPreparedSource() {
-    if (!source?.url || pdfDocument || loadingTask) return;
-    empty.hidden = true;
-    setBusy(true);
+  function loadPreparedSource() {
+    if (!source?.url || pdfDocument || loadingTask) return sourceLoadPromise || Promise.resolve();
+    if (sourceLoadPromise) return sourceLoadPromise;
 
-    try {
-      const pdfjs = await loadPdfEngine();
-      loadingTask = pdfjs.getDocument({ url: source.url });
-      pdfDocument = await loadingTask.promise;
-      pageCount = pdfDocument.numPages;
-      panelOrder = source.foldMode === "tri-fold"
-        ? triFoldReadingOrder(pageCount, source.readingOrder)
-        : [];
-      foldSteps = source.foldMode === "tri-fold"
-        ? triFoldDesktopSteps(pageCount, {
-            backCoverPanelIndex: source?.foldLayout?.backCoverPanelIndex,
-          })
-        : [];
-      const firstPage = await pdfDocument.getPage(1);
-      const viewport = firstPage.getViewport({ scale: 1 });
-      pageSize = { width: viewport.width, height: viewport.height };
-      pageMode = choosePageMode({
-        viewportWidth: window.innerWidth,
-        pageWidth: pageSize.width,
-        pageHeight: pageSize.height,
-        foldMode: source.foldMode,
-      });
-      currentPage = 1;
-      loadingTask = null;
-      await renderCurrent(0);
-      if (active) {
-        setChromeVisible(true);
-        showGestureHint();
+    const preparedSource = source;
+    const preparedRevision = sourceRevision;
+    const loadPromise = (async () => {
+      empty.hidden = true;
+      setBusy(true);
+
+      try {
+        const pdfjs = await loadPdfEngine();
+        if (sourceRevision !== preparedRevision) return;
+        loadingTask = pdfjs.getDocument({ url: preparedSource.url });
+        const loadedDocument = await loadingTask.promise;
+        if (sourceRevision !== preparedRevision) {
+          await loadedDocument.destroy().catch(() => {});
+          return;
+        }
+        pdfDocument = loadedDocument;
+        pageCount = pdfDocument.numPages;
+        panelOrder = source.foldMode === "tri-fold"
+          ? triFoldReadingOrder(pageCount, source.readingOrder)
+          : [];
+        foldSteps = source.foldMode === "tri-fold"
+          ? triFoldDesktopSteps(pageCount, {
+              backCoverPanelIndex: source?.foldLayout?.backCoverPanelIndex,
+            })
+          : [];
+        const firstPage = await pdfDocument.getPage(1);
+        const viewport = firstPage.getViewport({ scale: 1 });
+        pageSize = { width: viewport.width, height: viewport.height };
+        pageMode = choosePageMode({
+          viewportWidth: window.innerWidth,
+          pageWidth: pageSize.width,
+          pageHeight: pageSize.height,
+          foldMode: source.foldMode,
+        });
+        currentPage = 1;
+        loadingTask = null;
+        await renderCurrent(0);
+        if (active) {
+          setChromeVisible(true);
+          showGestureHint();
+        }
+      } catch (error) {
+        if (sourceRevision !== preparedRevision) return;
+        loadingTask = null;
+        pdfDocument = null;
+        setBusy(false);
+        empty.hidden = false;
+        empty.textContent = "節目冊暫時無法展開。你仍可使用右上角下載原始 PDF。";
+        onError?.(error);
       }
-    } catch (error) {
-      loadingTask = null;
-      pdfDocument = null;
-      setBusy(false);
-      empty.hidden = false;
-      empty.textContent = "節目冊暫時無法展開。你仍可使用右上角下載原始 PDF。";
-      onError?.(error);
-    }
+    })();
+
+    sourceLoadPromise = loadPromise;
+    void loadPromise.finally(() => {
+      if (sourceLoadPromise === loadPromise) sourceLoadPromise = null;
+    });
+    return loadPromise;
   }
 
   async function prepare(nextSource) {
     renderRevision += 1;
     thumbnailRevision += 1;
+    clearRenderCache();
+    sourceRevision += 1;
+    source = nextSource || null;
+    sourceLoadPromise = null;
     setThumbnails(false);
     thumbnailRail.replaceChildren();
     pages.replaceChildren();
     empty.hidden = true;
-    setBusy(false);
+    if (source?.url) {
+      showPreview(source);
+      setBusy(true, "正在準備清晰、可縮放的頁面…");
+    } else {
+      setBusy(false);
+    }
 
     if (loadingTask) {
       await loadingTask.destroy().catch(() => {});
@@ -854,18 +1061,17 @@ export function createPublicationViewer(root, { onError } = {}) {
       pdfDocument = null;
     }
 
-    source = nextSource || null;
     currentPage = 1;
     pageCount = 0;
     pageMode = "single";
     panelOrder = [];
     foldSteps = [];
     zoom = 1;
-    showPreview(source);
     caption.textContent = source?.caption || "原始印刷節目冊";
     download.hidden = !source?.url;
 
     if (source?.url) {
+      void loadPdfEngine().catch(() => {});
       download.href = source.downloadUrl || source.url;
       if (source.forceDownload) {
         download.setAttribute("download", source.filename || "programme.pdf");
@@ -880,9 +1086,11 @@ export function createPublicationViewer(root, { onError } = {}) {
       scrubber.max = "1";
       scrubber.value = "1";
       progress.style.width = "0%";
+      if (active) void loadPreparedSource();
       return;
     }
 
+    setBusy(false);
     pageLabel.textContent = "NO PDF";
     empty.hidden = false;
     empty.textContent = "這份節目冊尚未上傳 PDF。";
@@ -897,6 +1105,10 @@ export function createPublicationViewer(root, { onError } = {}) {
     loadPreparedSource();
   }
 
+  function preload() {
+    void loadPdfEngine().catch(() => {});
+  }
+
   function deactivate() {
     active = false;
     clearChromeTimer();
@@ -907,9 +1119,8 @@ export function createPublicationViewer(root, { onError } = {}) {
     activePointers.clear();
     pinchState = null;
     reader.dataset.pinching = "false";
-    pages.style.removeProperty("transform");
+    clearPublicationDrag();
     pages.style.removeProperty("transform-origin");
-    pages.style.removeProperty("will-change");
     setChromeVisible(true, { autoHide: false });
     setThumbnails(false);
   }
@@ -1030,6 +1241,49 @@ export function createPublicationViewer(root, { onError } = {}) {
     }
   }
 
+  function clearPublicationDrag({ settle = false } = {}) {
+    window.cancelAnimationFrame(dragFrame);
+    window.clearTimeout(dragSettleTimer);
+    dragFrame = null;
+
+    if (settle && reader.dataset.dragging === "true") {
+      pages.style.setProperty("will-change", "transform");
+      pages.style.setProperty("transition", "transform 180ms cubic-bezier(0.22, 0.78, 0.22, 1)");
+      pages.style.setProperty("transform", "translate3d(0, 0, 0)");
+      reader.dataset.dragging = "settling";
+      dragSettleTimer = window.setTimeout(() => clearPublicationDrag(), 190);
+      pendingDragOffset = 0;
+      return;
+    }
+
+    pendingDragOffset = 0;
+    reader.dataset.dragging = "false";
+    pages.style.removeProperty("transform");
+    pages.style.removeProperty("transition");
+    pages.style.removeProperty("will-change");
+  }
+
+  function schedulePublicationDrag(offset) {
+    pendingDragOffset = offset;
+    reader.dataset.dragging = "true";
+    pages.style.setProperty("transition", "none");
+    pages.style.setProperty("will-change", "transform");
+    if (dragFrame) return;
+    dragFrame = window.requestAnimationFrame(() => {
+      dragFrame = null;
+      pages.style.setProperty("transform", `translate3d(${pendingDragOffset}px, 0, 0)`);
+    });
+  }
+
+  function publicationTurnAvailability() {
+    const spread = currentSpread();
+    const total = readingPositionCount();
+    return {
+      previous: spread[0] > 1,
+      next: !spread.includes(total),
+    };
+  }
+
   function trackedTouchPointers() {
     return [...activePointers.entries()]
       .filter(([, point]) => point.pointerType !== "mouse")
@@ -1126,6 +1380,7 @@ export function createPublicationViewer(root, { onError } = {}) {
   stage.addEventListener("pointerdown", (event) => {
     if (event.button !== undefined && event.button !== 0) return;
     clearPendingTap({ keepLastTap: true });
+    if (!pinchState) clearPublicationDrag();
     activePointers.set(event.pointerId, {
       x: event.clientX,
       y: event.clientY,
@@ -1149,6 +1404,7 @@ export function createPublicationViewer(root, { onError } = {}) {
       id: event.pointerId,
       scrollLeft: stage.scrollLeft,
       scrollTop: stage.scrollTop,
+      horizontal: false,
     };
   });
   stage.addEventListener("pointermove", (event) => {
@@ -1168,6 +1424,22 @@ export function createPublicationViewer(root, { onError } = {}) {
     if (!pointerStart || pointerStart.id !== event.pointerId) return;
     const deltaX = event.clientX - pointerStart.x;
     const deltaY = event.clientY - pointerStart.y;
+    const horizontalIntent = Math.abs(deltaX) >= 4
+      && Math.abs(deltaX) > Math.abs(deltaY) * 1.05;
+    if (zoom <= 1 && (pointerStart.horizontal || horizontalIntent)) {
+      event.preventDefault();
+      pointerStart.horizontal = true;
+      if (Math.abs(deltaX) >= 12) setChromeVisible(false, { autoHide: false });
+      const availability = publicationTurnAvailability();
+      schedulePublicationDrag(resolvePublicationDragOffset({
+        deltaX,
+        stageWidth: stage.clientWidth,
+        canMovePrevious: availability.previous,
+        canMoveNext: availability.next,
+      }));
+      return;
+    }
+
     const canPanVertically = stage.scrollHeight > stage.clientHeight + 1;
     const shouldPan = zoom > 1
       || (canPanVertically && Math.abs(deltaY) > Math.abs(deltaX));
@@ -1197,11 +1469,13 @@ export function createPublicationViewer(root, { onError } = {}) {
     if (!pointerStart || pointerStart.id !== event.pointerId) return;
     const deltaX = event.clientX - pointerStart.x;
     const deltaY = event.clientY - pointerStart.y;
+    const wasHorizontal = pointerStart.horizontal;
     pointerStart = null;
     const gesture = classifyPublicationGesture({ deltaX, deltaY, zoom });
+    if (wasHorizontal) clearPublicationDrag({ settle: true });
     if (gesture === "next") move(1);
     if (gesture === "previous") move(-1);
-    if (gesture === "tap" && isMobileReader()) handlePublicationTap(event);
+    if (!wasHorizontal && gesture === "tap" && isMobileReader()) handlePublicationTap(event);
     if (gesture !== "tap") clearPendingTap();
   });
   stage.addEventListener("pointercancel", (event) => {
@@ -1209,7 +1483,11 @@ export function createPublicationViewer(root, { onError } = {}) {
     activePointers.delete(event.pointerId);
     releasePointer(event.pointerId);
     if (cancelledPinchPointer) finishPinch();
-    if (pointerStart?.id === event.pointerId) pointerStart = null;
+    if (pointerStart?.id === event.pointerId) {
+      const wasHorizontal = pointerStart.horizontal;
+      pointerStart = null;
+      if (wasHorizontal) clearPublicationDrag({ settle: true });
+    }
     clearPendingTap();
   });
 
@@ -1244,6 +1522,7 @@ export function createPublicationViewer(root, { onError } = {}) {
         foldMode: source?.foldMode,
       });
       if (nextMode === previousMode) {
+        clearRenderCache();
         setChromeVisible(true);
         renderCurrent(0);
         return;
@@ -1275,6 +1554,7 @@ export function createPublicationViewer(root, { onError } = {}) {
       thumbnailRevision += 1;
       thumbnailRail.replaceChildren();
       setThumbnails(false);
+      clearRenderCache();
       zoom = 1;
       setChromeVisible(true);
       showGestureHint();
@@ -1282,5 +1562,5 @@ export function createPublicationViewer(root, { onError } = {}) {
     }, 180);
   });
 
-  return { activate, deactivate, prepare };
+  return { activate, deactivate, preload, prepare };
 }

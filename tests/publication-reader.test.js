@@ -3,7 +3,9 @@ import { describe, expect, it } from "vitest";
 import {
   choosePageMode,
   movePublicationPage,
+  publicationPreloadTargets,
   publicationSpread,
+  resolvePublicationDragOffset,
   triFoldReadingOrder,
 } from "../src/domain/publication-reader.js";
 import * as publicationReader from "../src/domain/publication-reader.js";
@@ -191,6 +193,35 @@ describe("classifyPublicationGesture", () => {
   });
 });
 
+describe("resolvePublicationDragOffset", () => {
+  it("keeps an available horizontal page turn attached to the finger", () => {
+    expect(resolvePublicationDragOffset({
+      deltaX: -146,
+      stageWidth: 390,
+      canMovePrevious: false,
+      canMoveNext: true,
+    })).toBe(-146);
+  });
+
+  it("adds elastic resistance instead of dragging into an unavailable page", () => {
+    expect(resolvePublicationDragOffset({
+      deltaX: 100,
+      stageWidth: 390,
+      canMovePrevious: false,
+      canMoveNext: true,
+    })).toBe(18);
+  });
+
+  it("caps extreme movement so the artwork never escapes the stage", () => {
+    expect(resolvePublicationDragOffset({
+      deltaX: -900,
+      stageWidth: 390,
+      canMovePrevious: true,
+      canMoveNext: true,
+    })).toBe(-358.8);
+  });
+});
+
 describe("isPublicationDoubleTap", () => {
   it("recognises two nearby taps within the mobile double-tap window", () => {
     expect(publicationReader.isPublicationDoubleTap(
@@ -354,5 +385,20 @@ describe("movePublicationPage", () => {
     expect(movePublicationPage(3, 1, 4, "single")).toBe(4);
     expect(movePublicationPage(4, 1, 4, "single")).toBe(4);
     expect(movePublicationPage(1, -1, 4, "single")).toBe(1);
+  });
+});
+
+describe("publicationPreloadTargets", () => {
+  it("warms the next page first and then the previous page", () => {
+    expect(publicationPreloadTargets(3, 6, "panel")).toEqual([4, 2]);
+  });
+
+  it("does not request the current page again at either end", () => {
+    expect(publicationPreloadTargets(1, 6, "panel")).toEqual([2]);
+    expect(publicationPreloadTargets(6, 6, "panel")).toEqual([5]);
+  });
+
+  it("preloads neighbouring spreads by their first page", () => {
+    expect(publicationPreloadTargets(2, 8, "spread")).toEqual([4, 1]);
   });
 });
