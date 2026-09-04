@@ -4,8 +4,10 @@ import {
   choosePageMode,
   movePublicationPage,
   publicationPreloadTargets,
+  publicationSwipePositions,
   publicationSpread,
   resolvePublicationDragOffset,
+  resolvePublicationSwipeRelease,
   triFoldReadingOrder,
 } from "../src/domain/publication-reader.js";
 import * as publicationReader from "../src/domain/publication-reader.js";
@@ -219,6 +221,79 @@ describe("resolvePublicationDragOffset", () => {
       canMovePrevious: true,
       canMoveNext: true,
     })).toBe(-358.8);
+  });
+});
+
+describe("publicationSwipePositions", () => {
+  it("places the previous and next reading positions around the current panel", () => {
+    expect(publicationSwipePositions(3, 6, "panel")).toEqual({
+      previous: 2,
+      current: 3,
+      next: 4,
+    });
+  });
+
+  it("leaves the unavailable side empty at the beginning and end", () => {
+    expect(publicationSwipePositions(1, 6, "panel")).toEqual({
+      previous: null,
+      current: 1,
+      next: 2,
+    });
+    expect(publicationSwipePositions(6, 6, "panel")).toEqual({
+      previous: 5,
+      current: 6,
+      next: null,
+    });
+  });
+
+  it("uses whole reading spreads instead of adjacent PDF page numbers", () => {
+    expect(publicationSwipePositions(2, 8, "spread")).toEqual({
+      previous: 1,
+      current: 2,
+      next: 4,
+    });
+  });
+});
+
+describe("resolvePublicationSwipeRelease", () => {
+  it("continues a committed next-page drag to the next track slot", () => {
+    expect(resolvePublicationSwipeRelease({
+      offset: -220,
+      velocityX: -0.2,
+      stageWidth: 390,
+      canMovePrevious: false,
+      canMoveNext: true,
+    })).toEqual({ action: "next", direction: 1, targetOffset: -390 });
+  });
+
+  it("returns a short slow drag to the current track slot", () => {
+    expect(resolvePublicationSwipeRelease({
+      offset: -35,
+      velocityX: -0.1,
+      stageWidth: 390,
+      canMovePrevious: true,
+      canMoveNext: true,
+    })).toEqual({ action: "cancel", direction: 0, targetOffset: 0 });
+  });
+
+  it("commits a quick flick without requiring a long drag", () => {
+    expect(resolvePublicationSwipeRelease({
+      offset: -32,
+      velocityX: -0.72,
+      stageWidth: 390,
+      canMovePrevious: true,
+      canMoveNext: true,
+    })).toEqual({ action: "next", direction: 1, targetOffset: -390 });
+  });
+
+  it("cannot commit into an unavailable edge slot", () => {
+    expect(resolvePublicationSwipeRelease({
+      offset: 180,
+      velocityX: 0.8,
+      stageWidth: 390,
+      canMovePrevious: false,
+      canMoveNext: true,
+    })).toEqual({ action: "cancel", direction: 0, targetOffset: 0 });
   });
 });
 

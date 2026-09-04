@@ -310,6 +310,45 @@ export function movePublicationPage(pageNumber, direction, pageCount, mode = "si
   return spreadStart === 1 ? Math.min(2, total) : Math.min(spreadStart + 2, total);
 }
 
+export function publicationSwipePositions(pageNumber, pageCount, mode = "single") {
+  const total = Math.max(1, Number(pageCount) || 1);
+  const current = mode === "spread"
+    ? publicationSpread(pageNumber, total, mode)[0]
+    : clampPage(pageNumber, total);
+  const previous = movePublicationPage(current, -1, total, mode);
+  const next = movePublicationPage(current, 1, total, mode);
+
+  return {
+    previous: previous === current ? null : previous,
+    current,
+    next: next === current ? null : next,
+  };
+}
+
+export function resolvePublicationSwipeRelease({
+  offset,
+  velocityX = 0,
+  stageWidth,
+  canMovePrevious = true,
+  canMoveNext = true,
+  distanceRatio = 0.18,
+  velocityThreshold = 0.45,
+}) {
+  const width = Math.max(1, Number(stageWidth) || 1);
+  const horizontal = Number(offset) || 0;
+  const velocity = Number(velocityX) || 0;
+  const distanceThreshold = Math.min(96, width * Math.max(0.1, Number(distanceRatio) || 0.18));
+  const flickThreshold = Math.max(0.1, Number(velocityThreshold) || 0.45);
+
+  if (canMoveNext && (velocity <= -flickThreshold || horizontal <= -distanceThreshold)) {
+    return { action: "next", direction: 1, targetOffset: -width };
+  }
+  if (canMovePrevious && (velocity >= flickThreshold || horizontal >= distanceThreshold)) {
+    return { action: "previous", direction: -1, targetOffset: width };
+  }
+  return { action: "cancel", direction: 0, targetOffset: 0 };
+}
+
 export function publicationPreloadTargets(pageNumber, pageCount, mode = "single") {
   const total = Math.max(1, Number(pageCount) || 1);
   const current = clampPage(pageNumber, total);

@@ -6303,3 +6303,60 @@ body {
   from { opacity: 0.78; transform: perspective(1000px) translateX(-46px) rotateY(1.2deg); }
   to { opacity: 1; transform: perspective(1000px) translateX(0) rotateY(0); }
 }
+
+/* Mobile pages share one compositor track so the neighbouring page follows the finger. */
+@media (max-width: 899px) {
+  .reader-shell[data-view="pdf"] .publication-pages[data-swipe-track="true"] {
+    position: relative;
+    display: block;
+    width: 100%;
+    min-width: 100%;
+    height: 100%;
+    min-height: 100%;
+    margin: 0;
+    padding: 0;
+    overflow: visible;
+    filter: none;
+    animation: none !important;
+  }
+
+  .reader-shell[data-view="pdf"] .publication-swipe-track {
+    display: flex;
+    align-items: stretch;
+    height: 100%;
+    transform: translate3d(calc(0px - var(--publication-swipe-width)), 0, 0);
+    backface-visibility: hidden;
+    will-change: transform;
+  }
+
+  .reader-shell[data-view="pdf"] .publication-swipe-slot {
+    position: relative;
+    display: flex;
+    flex: 0 0 var(--publication-swipe-width);
+    align-items: center;
+    justify-content: center;
+    width: var(--publication-swipe-width);
+    height: 100%;
+    padding: 10px 8px;
+    overflow: hidden;
+    box-sizing: border-box;
+    contain: layout paint style;
+  }
+
+  .reader-shell[data-view="pdf"] .publication-swipe-slot > .publication-page {
+    flex: 0 0 auto;
+  }
+
+  .reader-shell[data-view="pdf"] .publication-placeholder--swipe {
+    position: relative;
+    width: min(270px, calc(100% - 72px), 35dvh);
+    aspect-ratio: var(--swipe-placeholder-ratio, 0.47);
+    flex: 0 0 auto;
+    box-shadow: 0 18px 34px rgb(3 17 14 / 0.24);
+  }
+
+  .reader-shell[data-view="pdf"] .publication-reader[data-dragging="true"] .publication-swipe-track,
+  .reader-shell[data-view="pdf"] .publication-reader[data-dragging="settling"] .publication-swipe-track {
+    backface-visibility: hidden;
+  }
+}

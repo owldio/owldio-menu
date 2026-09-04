@@ -7,6 +7,7 @@ import {
   movePublicationPage,
   normalizePublicationZoom,
   publicationPreloadTargets,
+  publicationSwipePositions,
   publicationSpread,
   resolvePublicationDragOffset,
   resolvePublicationDoubleTapZoom,
@@ -14,6 +15,7 @@ import {
   resolvePublicationFocusScroll,
   resolvePublicationPinchZoom,
   resolvePublicationPinchTranslation,
+  resolvePublicationSwipeRelease,
   resolveTriFoldActiveLeaf,
   resolveTriFoldCoverPanel,
   resolveTriFoldInsideOrder,
@@ -113,6 +115,7 @@ export function createPublicationViewer(root, { onError } = {}) {
   let pointerStart = null;
   const activePointers = new Map();
   const renderCache = new Map();
+  let swipeState = null;
   let pinchState = null;
   let active = false;
 
@@ -140,6 +143,22 @@ export function createPublicationViewer(root, { onError } = {}) {
 
   function isMobileReader() {
     return window.innerWidth < 900;
+  }
+
+  function usesMobileSwipeTrack() {
+    return isMobileReader() && pageMode !== "fold" && zoom <= 1;
+  }
+
+  function activePageCanvas() {
+    return pages.querySelector(
+      ".publication-swipe-slot[data-slot='current'] .publication-page canvas, :scope > .publication-page canvas",
+    );
+  }
+
+  function invalidateSwipeState() {
+    swipeState = null;
+    pages.removeAttribute("data-swipe-track");
+    pages.style.removeProperty("--publication-swipe-width");
   }
 
   function clearChromeTimer() {
@@ -261,7 +280,9 @@ export function createPublicationViewer(root, { onError } = {}) {
     });
 
     const currentThumb = thumbnailRail.querySelector("[aria-current='true']");
-    currentThumb?.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+    if (currentThumb && !thumbnailPanel.hidden) {
+      currentThumb.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+    }
   }
 
   function updateChrome() {
@@ -366,14 +387,22 @@ export function createPublicationViewer(root, { onError } = {}) {
     return entry.promise;
   }
 
-  function copyRenderedCanvas(asset, { displayWidth, displayHeight, label }) {
-    const canvas = document.createElement("canvas");
-    canvas.width = asset.width;
-    canvas.height = asset.height;
-    const context = canvas.getContext("2d", { alpha: false });
-    context.imageSmoothingEnabled = true;
-    context.imageSmoothingQuality = "high";
-    context.drawImage(asset.canvas, 0, 0);
+  function copyRenderedCanvas(asset, {
+    displayWidth,
+    displayHeight,
+    label,
+    reuseAsset = false,
+  }) {
+    const useOriginal = reuseAsset && !asset.canvas.isConnected;
+    const canvas = useOriginal ? asset.canvas : document.createElement("canvas");
+    if (!useOriginal) {
+      canvas.width = asset.width;
+      canvas.height = asset.height;
+      const context = canvas.getContext("2d", { alpha: false });
+      context.imageSmoothingEnabled = true;
+      context.imageSmoothingQuality = "high";
+      context.drawImage(asset.canvas, 0, 0);
+    }
     canvas.style.width = `${Math.round(displayWidth)}px`;
     canvas.style.height = `${Math.round(displayHeight)}px`;
     canvas.setAttribute("role", "img");
@@ -633,6 +662,7 @@ export function createPublicationViewer(root, { onError } = {}) {
       await Promise.all(renderJobs);
       if (revision !== renderRevision) return;
       book.classList.add("is-rendered");
+      invalidateSwipeState();
       pages.replaceChildren(book);
       pages.dataset.mode = "fold";
       pages.dataset.foldStage = step.id;
@@ -707,7 +737,7 @@ export function createPublicationViewer(root, { onError } = {}) {
     return { cssScale, mode, records: renderedRecords, spread };
   }
 
-  function materializePageArtwork({ cssScale, mode, records, spread }) {
+  function materializePageArtwork({ cssScale, mode, records, spread }, { reuseAssets = false } = {}) {
     return records.map((record, index) => {
       const frame = document.createElement("figure");
       frame.className = "publication-page is-rendered";
@@ -726,10 +756,249 @@ export function createPublicationViewer(root, { onError } = {}) {
         label: mode === "panel"
           ? source?.panelLabels?.[record.position - 1] || `節目冊第 ${record.position} 欄`
           : `節目冊第 ${record.pageNumber} 頁`,
+        reuseAsset: reuseAssets,
       });
       frame.append(canvas);
       return frame;
     });
+  }
+
+  function createSwipePlaceholder() {
+    const placeholder = createLoadingPlaceholder(source?.title);
+    placeholder.classList.add("publication-placeholder--swipe");
+    placeholder.style.setProperty(
+      "--swipe-placeholder-ratio",
+      String(pageMode === "panel"
+        ? source?.previewPanelAspectRatio || 0.47
+        : pageSize.width / pageSize.height || 0.707),
+    );
+    return placeholder;
+  }
+
+  function configureSwipeSlot(slot, role, position) {
+    const nextPosition = position === null ? "" : String(position);
+    const positionChanged = slot.dataset.position !== nextPosition;
+    slot.dataset.slot = role;
+    slot.dataset.position = nextPosition;
+    slot.toggleAttribute("aria-hidden", role !== "current");
+
+    if (position === null) {
+      slot.dataset.ready = "edge";
+      slot.replaceChildren();
+      return;
+    }
+
+    if (positionChanged) {
+      slot.dataset.ready = "false";
+      delete slot.dataset.loadingPosition;
+      slot.replaceChildren(createSwipePlaceholder());
+    }
+  }
+
+  function fillSwipeSlot(slot, artwork) {
+    slot.replaceChildren(...materializePageArtwork(artwork, { reuseAssets: true }));
+    slot.dataset.ready = "true";
+    delete slot.dataset.loadingPosition;
+  }
+
+  async function hydrateSwipeSlot(state, role) {
+    const slot = state.slots[role];
+    const position = state.positions[role];
+    if (!slot || position === null || slot.dataset.ready === "true") return;
+    if (slot.dataset.loadingPosition === String(position)) return;
+    slot.dataset.loadingPosition = String(position);
+
+    try {
+      const artwork = await preparePageArtwork(position);
+      if (swipeState !== state || !state.track.isConnected) return;
+      if (slot.dataset.position !== String(position)) return;
+      fillSwipeSlot(slot, artwork);
+      if (slot.dataset.slot === "current") setBusy(false);
+    } catch (error) {
+      if (swipeState !== state || slot.dataset.position !== String(position)) return;
+      delete slot.dataset.loadingPosition;
+      if (slot.dataset.slot === "current") {
+        setBusy(false);
+        empty.hidden = false;
+        empty.textContent = "這一頁暫時無法顯示，請稍後再試或下載原始 PDF。";
+        onError?.(error);
+      }
+    }
+  }
+
+  function setSwipeTrackOffset(state, offset, { animate = false, duration = 0 } = {}) {
+    if (!state?.track?.isConnected) return;
+    state.offset = offset;
+    const transition = animate
+      ? `transform ${duration}ms cubic-bezier(0.22, 0.72, 0.18, 1)`
+      : "none";
+    if (state.track.style.transition !== transition) state.track.style.transition = transition;
+    state.track.style.transform = `translate3d(${-state.width + offset}px, 0, 0)`;
+  }
+
+  function warmSwipeNeighbours(state) {
+    void (async () => {
+      await nextFrame();
+      for (const role of ["next", "previous"]) {
+        if (swipeState !== state) return;
+        await hydrateSwipeSlot(state, role);
+        await nextFrame();
+      }
+    })().catch(() => {});
+  }
+
+  async function renderMobileSwipeTrack(position, revision) {
+    const artwork = await preparePageArtwork(position);
+    if (revision !== renderRevision || !usesMobileSwipeTrack()) return false;
+
+    const width = Math.max(1, stage.clientWidth);
+    const positions = publicationSwipePositions(position, readingPositionCount(), pageMode);
+    const track = document.createElement("div");
+    track.className = "publication-swipe-track";
+    track.style.width = `${width * 3}px`;
+    const slots = {};
+
+    for (const role of ["previous", "current", "next"]) {
+      const slot = document.createElement("section");
+      slot.className = "publication-swipe-slot";
+      slot.style.flexBasis = `${width}px`;
+      configureSwipeSlot(slot, role, positions[role]);
+      slots[role] = slot;
+      track.append(slot);
+    }
+    fillSwipeSlot(slots.current, artwork);
+
+    const state = {
+      offset: 0,
+      positions,
+      slots,
+      track,
+      width,
+    };
+    window.cancelAnimationFrame(dragFrame);
+    window.clearTimeout(dragSettleTimer);
+    dragFrame = null;
+    pendingDragOffset = 0;
+    reader.dataset.dragging = "false";
+    swipeState = state;
+    pages.dataset.mode = pageMode;
+    pages.dataset.swipeTrack = "true";
+    pages.style.setProperty("--publication-swipe-width", `${width}px`);
+    pages.replaceChildren(track);
+    setSwipeTrackOffset(state, 0);
+    empty.hidden = true;
+    setBusy(false);
+    warmSwipeNeighbours(state);
+    return true;
+  }
+
+  function rotateSwipeTrack(direction) {
+    const state = swipeState;
+    if (!state?.track?.isConnected) return;
+    const targetPosition = movePublicationPage(
+      currentPage,
+      direction,
+      readingPositionCount(),
+      pageMode,
+    );
+    if (targetPosition === currentPage) {
+      setSwipeTrackOffset(state, 0);
+      reader.dataset.dragging = "false";
+      return;
+    }
+
+    const previousSlots = state.slots;
+    const slots = direction > 0
+      ? {
+          previous: previousSlots.current,
+          current: previousSlots.next,
+          next: previousSlots.previous,
+        }
+      : {
+          previous: previousSlots.next,
+          current: previousSlots.previous,
+          next: previousSlots.current,
+        };
+    const positions = publicationSwipePositions(
+      targetPosition,
+      readingPositionCount(),
+      pageMode,
+    );
+
+    currentPage = targetPosition;
+    state.positions = positions;
+    state.slots = slots;
+    state.track.replaceChildren(slots.previous, slots.current, slots.next);
+    for (const role of ["previous", "current", "next"]) {
+      configureSwipeSlot(slots[role], role, positions[role]);
+    }
+    setSwipeTrackOffset(state, 0);
+    pendingDragOffset = 0;
+    reader.dataset.dragging = "false";
+    stage.scrollTop = 0;
+    stage.scrollLeft = 0;
+    updateChrome();
+
+    if (slots.current.dataset.ready === "true") {
+      setBusy(false);
+    } else {
+      setBusy(true, "正在準備這一頁…");
+      void hydrateSwipeSlot(state, "current");
+    }
+    warmSwipeNeighbours(state);
+  }
+
+  function settleSwipeTrack(release) {
+    const state = swipeState;
+    if (!state?.track?.isConnected) {
+      clearPublicationDrag({ settle: true });
+      if (release.direction) {
+        const target = movePublicationPage(
+          currentPage,
+          release.direction,
+          readingPositionCount(),
+          pageMode,
+        );
+        goTo(target, release.direction);
+      }
+      return;
+    }
+
+    window.cancelAnimationFrame(dragFrame);
+    window.clearTimeout(dragSettleTimer);
+    dragFrame = null;
+    const remainingRatio = Math.min(
+      1,
+      Math.abs(release.targetOffset - state.offset) / Math.max(1, state.width),
+    );
+    const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    const duration = reduceMotion ? 1 : Math.round(150 + remainingRatio * 150);
+    let completed = false;
+
+    const finish = () => {
+      if (completed) return;
+      completed = true;
+      state.track.removeEventListener("transitionend", handleTransitionEnd);
+      window.clearTimeout(dragSettleTimer);
+      dragSettleTimer = null;
+      if (swipeState !== state) return;
+      if (release.action === "cancel") {
+        setSwipeTrackOffset(state, 0);
+        pendingDragOffset = 0;
+        reader.dataset.dragging = "false";
+        return;
+      }
+      rotateSwipeTrack(release.direction);
+    };
+    const handleTransitionEnd = (event) => {
+      if (event.target === state.track && event.propertyName === "transform") finish();
+    };
+
+    reader.dataset.dragging = "settling";
+    state.track.addEventListener("transitionend", handleTransitionEnd);
+    void state.track.offsetWidth;
+    setSwipeTrackOffset(state, release.targetOffset, { animate: true, duration });
+    dragSettleTimer = window.setTimeout(finish, duration + 80);
   }
 
   function prewarmAdjacentPages(position) {
@@ -766,6 +1035,25 @@ export function createPublicationViewer(root, { onError } = {}) {
       return;
     }
 
+    if (usesMobileSwipeTrack()) {
+      reader.dataset.turn = "still";
+      const hasRenderedArtwork = Boolean(pages.querySelector(".publication-page.is-rendered"));
+      setBusy(
+        true,
+        hasRenderedArtwork ? "正在準備下一頁…" : "正在準備清晰、可縮放的頁面…",
+      );
+      try {
+        await renderMobileSwipeTrack(targetPosition, revision);
+      } catch (error) {
+        if (revision !== renderRevision) return;
+        setBusy(false);
+        empty.hidden = false;
+        empty.textContent = "這一頁暫時無法顯示，請稍後再試或下載原始 PDF。";
+        onError?.(error);
+      }
+      return;
+    }
+
     reader.dataset.turn = "still";
     const hasRenderedArtwork = Boolean(pages.querySelector(".publication-page.is-rendered"));
     setBusy(
@@ -778,6 +1066,7 @@ export function createPublicationViewer(root, { onError } = {}) {
       if (revision !== renderRevision) return;
       const frames = materializePageArtwork(artwork);
       clearPublicationDrag();
+      invalidateSwipeState();
       pages.replaceChildren(...frames);
       pages.dataset.mode = pageMode;
       empty.hidden = true;
@@ -823,15 +1112,25 @@ export function createPublicationViewer(root, { onError } = {}) {
 
   function move(direction) {
     if (!pdfDocument) return;
+    if (reader.dataset.dragging === "settling") return;
     const nextPage = movePublicationPage(currentPage, direction, readingPositionCount(), pageMode);
     if (nextPage !== currentPage && zoom > 1) zoom = 1;
+    if (nextPage !== currentPage && usesMobileSwipeTrack() && swipeState?.track?.isConnected) {
+      setChromeVisible(false, { autoHide: false });
+      settleSwipeTrack({
+        action: direction > 0 ? "next" : "previous",
+        direction: Math.sign(direction),
+        targetOffset: direction > 0 ? -swipeState.width : swipeState.width,
+      });
+      return;
+    }
     goTo(nextPage, direction);
   }
 
   async function setZoom(nextZoom, focalPoint = null, { focusAnchor = null } = {}) {
     const normalized = normalizePublicationZoom(nextZoom);
     const stageRect = stage.getBoundingClientRect();
-    const activeCanvas = pages.querySelector(".publication-page canvas");
+    const activeCanvas = activePageCanvas();
     const canvasRect = activeCanvas?.getBoundingClientRect();
     const point = focalPoint || {
       x: stageRect.left + stageRect.width / 2,
@@ -866,7 +1165,7 @@ export function createPublicationViewer(root, { onError } = {}) {
       return;
     }
 
-    const nextCanvas = pages.querySelector(".publication-page canvas");
+    const nextCanvas = activePageCanvas();
     if (!nextCanvas) return;
     const nextRect = nextCanvas.getBoundingClientRect();
     const target = resolvePublicationFocusScroll({
@@ -1037,6 +1336,8 @@ export function createPublicationViewer(root, { onError } = {}) {
   async function prepare(nextSource) {
     renderRevision += 1;
     thumbnailRevision += 1;
+    clearPublicationDrag();
+    invalidateSwipeState();
     clearRenderCache();
     sourceRevision += 1;
     source = nextSource || null;
@@ -1246,6 +1547,17 @@ export function createPublicationViewer(root, { onError } = {}) {
     window.clearTimeout(dragSettleTimer);
     dragFrame = null;
 
+    if (swipeState?.track?.isConnected) {
+      if (settle && reader.dataset.dragging === "true") {
+        settleSwipeTrack({ action: "cancel", direction: 0, targetOffset: 0 });
+        return;
+      }
+      pendingDragOffset = 0;
+      reader.dataset.dragging = "false";
+      setSwipeTrackOffset(swipeState, 0);
+      return;
+    }
+
     if (settle && reader.dataset.dragging === "true") {
       pages.style.setProperty("will-change", "transform");
       pages.style.setProperty("transition", "transform 180ms cubic-bezier(0.22, 0.78, 0.22, 1)");
@@ -1265,13 +1577,27 @@ export function createPublicationViewer(root, { onError } = {}) {
 
   function schedulePublicationDrag(offset) {
     pendingDragOffset = offset;
-    reader.dataset.dragging = "true";
-    pages.style.setProperty("transition", "none");
-    pages.style.setProperty("will-change", "transform");
+    const state = swipeState?.track?.isConnected ? swipeState : null;
+    if (reader.dataset.dragging !== "true") {
+      reader.dataset.dragging = "true";
+    }
+    if (state && state.track.style.transition !== "none") {
+      state.offset = offset;
+      state.track.style.setProperty("transition", "none");
+      state.track.style.setProperty("will-change", "transform");
+    } else if (!state) {
+      pages.style.setProperty("transition", "none");
+      pages.style.setProperty("will-change", "transform");
+    }
+    if (state) state.offset = offset;
     if (dragFrame) return;
     dragFrame = window.requestAnimationFrame(() => {
       dragFrame = null;
-      pages.style.setProperty("transform", `translate3d(${pendingDragOffset}px, 0, 0)`);
+      if (state && swipeState === state) {
+        setSwipeTrackOffset(state, pendingDragOffset);
+      } else {
+        pages.style.setProperty("transform", `translate3d(${pendingDragOffset}px, 0, 0)`);
+      }
     });
   }
 
@@ -1311,7 +1637,7 @@ export function createPublicationViewer(root, { onError } = {}) {
 
     const focalPoint = pointerMidpoint(first, second);
     const pagesRect = pages.getBoundingClientRect();
-    const activeCanvas = pages.querySelector(".publication-page canvas");
+    const activeCanvas = activePageCanvas();
     pinchState = {
       ids: [firstId, secondId],
       startDistance,
@@ -1379,6 +1705,7 @@ export function createPublicationViewer(root, { onError } = {}) {
   });
   stage.addEventListener("pointerdown", (event) => {
     if (event.button !== undefined && event.button !== 0) return;
+    if (reader.dataset.dragging === "settling") return;
     clearPendingTap({ keepLastTap: true });
     if (!pinchState) clearPublicationDrag();
     activePointers.set(event.pointerId, {
@@ -1405,6 +1732,10 @@ export function createPublicationViewer(root, { onError } = {}) {
       scrollLeft: stage.scrollLeft,
       scrollTop: stage.scrollTop,
       horizontal: false,
+      chromeHidden: false,
+      lastX: event.clientX,
+      lastAt: Number(event.timeStamp) || 0,
+      velocityX: 0,
     };
   });
   stage.addEventListener("pointermove", (event) => {
@@ -1429,7 +1760,16 @@ export function createPublicationViewer(root, { onError } = {}) {
     if (zoom <= 1 && (pointerStart.horizontal || horizontalIntent)) {
       event.preventDefault();
       pointerStart.horizontal = true;
-      if (Math.abs(deltaX) >= 12) setChromeVisible(false, { autoHide: false });
+      const eventTime = Number(event.timeStamp) || pointerStart.lastAt;
+      const elapsed = Math.max(1, eventTime - pointerStart.lastAt);
+      const instantVelocity = (event.clientX - pointerStart.lastX) / elapsed;
+      pointerStart.velocityX = pointerStart.velocityX * 0.45 + instantVelocity * 0.55;
+      pointerStart.lastX = event.clientX;
+      pointerStart.lastAt = eventTime;
+      if (isMobileReader() && Math.abs(deltaX) >= 12 && !pointerStart.chromeHidden) {
+        pointerStart.chromeHidden = true;
+        setChromeVisible(false, { autoHide: false });
+      }
       const availability = publicationTurnAvailability();
       schedulePublicationDrag(resolvePublicationDragOffset({
         deltaX,
@@ -1469,9 +1809,27 @@ export function createPublicationViewer(root, { onError } = {}) {
     if (!pointerStart || pointerStart.id !== event.pointerId) return;
     const deltaX = event.clientX - pointerStart.x;
     const deltaY = event.clientY - pointerStart.y;
-    const wasHorizontal = pointerStart.horizontal;
+    const completedPointer = pointerStart;
+    const wasHorizontal = completedPointer.horizontal;
     pointerStart = null;
     const gesture = classifyPublicationGesture({ deltaX, deltaY, zoom });
+    if (wasHorizontal && swipeState?.track?.isConnected) {
+      const availability = publicationTurnAvailability();
+      const releaseAge = Math.max(
+        0,
+        (Number(event.timeStamp) || completedPointer.lastAt) - completedPointer.lastAt,
+      );
+      const release = resolvePublicationSwipeRelease({
+        offset: pendingDragOffset,
+        velocityX: releaseAge <= 90 ? completedPointer.velocityX : 0,
+        stageWidth: swipeState.width,
+        canMovePrevious: availability.previous,
+        canMoveNext: availability.next,
+      });
+      settleSwipeTrack(release);
+      clearPendingTap();
+      return;
+    }
     if (wasHorizontal) clearPublicationDrag({ settle: true });
     if (gesture === "next") move(1);
     if (gesture === "previous") move(-1);
