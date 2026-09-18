@@ -1,24 +1,15 @@
 import { programmeDateLabel, programmeTimeLabel } from "./domain/datetime.js";
+import { PAGE_WIDTH } from "./domain/notes-geometry.js";
 import { createElement } from "./lib/dom.js";
 
 const SVG_NS = "http://www.w3.org/2000/svg";
 
-/**
- * One fixed page for every device, in the proportions of a printed A4 leaf.
- * The stage scales this down to fit; zoom scales it back up for close reading.
- */
+/** Width and type are fixed; height comes from the stage. */
 export const PAGE = {
-  width: 800,
-  height: 1131,
-  paddingX: 80,
-  paddingTop: 92,
-  paddingBottom: 84,
+  width: PAGE_WIDTH,
   fontSize: 16,
   lineHeight: 30.4,
 };
-
-export const TEXT_WIDTH = PAGE.width - PAGE.paddingX * 2;
-export const PAGE_CAPACITY = PAGE.height - PAGE.paddingTop - PAGE.paddingBottom;
 
 function folioNumber(index) {
   return String(index + 1).padStart(2, "0");
@@ -268,8 +259,9 @@ export function renderAtom(atom) {
  * An empty page with its body and folio in place. The measurer builds one too,
  * so the height it reports for the body is the height atoms actually get.
  */
-export function createPageFrame({ runningHead = "", folioLabel = "00" } = {}) {
+export function createPageFrame({ runningHead = "", folioLabel = "00", height } = {}) {
   const article = createElement("article", "note-page");
+  if (height) article.style.height = `${height}px`;
   const body = createElement("div", "note-page__body");
 
   const folio = createElement("footer", "note-page__folio");
@@ -282,10 +274,11 @@ export function createPageFrame({ runningHead = "", folioLabel = "00" } = {}) {
   return { article, body };
 }
 
-export function renderPage(page, { total, runningHead }) {
+export function renderPage(page, { total, runningHead, height }) {
   const { article, body } = createPageFrame({
     runningHead,
     folioLabel: folioNumber(page.index),
+    height,
   });
 
   article.dataset.pageKind = page.kind;

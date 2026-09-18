@@ -115,20 +115,6 @@ describe("packAtoms page composition", () => {
     expect(pages[0].noteSlug).toBe("note-a");
   });
 
-  it("labels a page by the note that opens on it, not the one ending there", () => {
-    const atoms = [
-      paragraph("p1", repeat("甲", 40), "note-a"),
-      banner("note-b", 1),
-      paragraph("p2", repeat("乙", 40), "note-b"),
-    ];
-
-    const pages = packAtoms(atoms, options);
-
-    expect(pages).toHaveLength(1);
-    expect(pages[0].atoms.map((atom) => atom.id)).toEqual(["p1", "note-b:banner", "p2"]);
-    expect(pages[0].noteSlug).toBe("note-b");
-  });
-
   it("carries the running note onto pages that only continue it", () => {
     const atoms = [banner("note-a"), paragraph("p1", repeat("甲", 200), "note-a")];
 
@@ -155,21 +141,33 @@ describe("packAtoms page composition", () => {
 });
 
 describe("packAtoms typographic guards", () => {
-  it("moves a banner forward rather than leaving it stranded at the foot of a page", () => {
-    // Eight lines are used, leaving two — room for the banner, but not for the banner plus two lines of prose.
+  it("opens every note on a fresh page, however much room is left", () => {
     const atoms = [
-      paragraph("p1", repeat("甲", 80), "note-a"),
+      banner("note-a"),
+      paragraph("p1", repeat("甲", 20), "note-a"),
       banner("note-b", 1),
-      paragraph("p2", repeat("乙", 60), "note-b"),
+      paragraph("p2", repeat("乙", 20), "note-b"),
     ];
 
     const pages = packAtoms(atoms, options);
-    const bannerPage = pages.find((page) => page.atoms.some((atom) => atom.kind === "note-banner"));
-    const bannerIndex = bannerPage.atoms.findIndex((atom) => atom.kind === "note-banner");
-    const following = bannerPage.atoms.slice(bannerIndex + 1);
 
-    expect(following.length).toBeGreaterThan(0);
-    expect(measure(following[0])).toBeGreaterThanOrEqual(LINE_HEIGHT * 2);
+    expect(pages).toHaveLength(2);
+    expect(pages[0].atoms.map((atom) => atom.id)).toEqual(["note-a:banner", "p1"]);
+    expect(pages[1].atoms.map((atom) => atom.id)).toEqual(["note-b:banner", "p2"]);
+  });
+
+  it("never leaves two notes sharing a page", () => {
+    const atoms = [
+      paragraph("p1", repeat("甲", 40), "note-a"),
+      banner("note-b", 1),
+      paragraph("p2", repeat("乙", 40), "note-b"),
+    ];
+
+    const pages = packAtoms(atoms, options);
+
+    expect(pages).toHaveLength(2);
+    expect(pages[0].noteSlug).toBe("note-a");
+    expect(pages[1].noteSlug).toBe("note-b");
   });
 
   it("never splits a work card", () => {

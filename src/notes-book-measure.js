@@ -43,8 +43,8 @@ function safeBreak(text, index) {
  * The host must be laid out: a `display: none` ancestor measures every atom as
  * zero, which silently collapses the whole book onto one page.
  */
-export function createMeasurer(host = document.body) {
-  const { article: frame, body } = createPageFrame({ runningHead: "量測", folioLabel: "00" });
+export function createMeasurer(host = document.body, { height } = {}) {
+  const { article: frame, body } = createPageFrame({ runningHead: "量測", folioLabel: "00", height });
   frame.classList.add("note-page--measure");
   frame.setAttribute("aria-hidden", "true");
   host.append(frame);

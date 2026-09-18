@@ -7033,7 +7033,7 @@ body {
 
 .notes-stage {
   position: absolute;
-  inset: 0 clamp(44px, 5vw, 92px);
+  inset: 0 clamp(10px, 3.4vw, 76px);
   min-width: 0;
   overflow: hidden;
   outline: none;
@@ -7085,7 +7085,6 @@ body {
   display: flex;
   flex-direction: column;
   width: 800px;
-  height: 1131px;
   padding: 92px 80px 84px;
   background:
     radial-gradient(circle at 88% 6%, rgb(213 177 105 / 0.12), transparent 34%),
@@ -7359,7 +7358,7 @@ body {
 }
 
 .note-contents__kicker {
-  margin: 0 0 12px;
+  margin: 0 0 8px;
   color: var(--moon-gold);
   font-family: var(--font-sans);
   font-size: 9.5px;
@@ -7367,9 +7366,9 @@ body {
 }
 
 .note-contents__title {
-  margin: 0 0 34px;
+  margin: 0 0 20px;
   color: var(--moon-ivory);
-  font-size: 40px;
+  font-size: 34px;
   font-weight: 500;
   letter-spacing: -0.04em;
 }
@@ -7391,7 +7390,7 @@ body {
   gap: 14px;
   align-items: center;
   width: 100%;
-  padding: 15px 8px 15px 0;
+  padding: 10px 8px 10px 0;
   border: 0;
   background: transparent;
   color: inherit;
@@ -7414,7 +7413,7 @@ body {
 
 .note-contents__copy {
   display: grid;
-  gap: 4px;
+  gap: 3px;
   min-width: 0;
 }
 
@@ -7443,7 +7442,7 @@ body {
   display: flex;
   align-items: center;
   gap: 16px;
-  padding: 14px 0;
+  padding: 10px 0;
   color: var(--moon-gold);
   font-family: var(--font-sans);
   font-size: 10px;
@@ -7560,10 +7559,10 @@ body {
 }
 
 @media (max-width: 880px) {
-  /* Give the leaf as much width as the phone has; the turns overlay its edges. */
+  /* Give the leaf the whole phone; the turns overlay its edges. */
   .view--notes-book .notes-stage {
-    right: 18px;
-    left: 18px;
+    right: 0;
+    left: 0;
   }
 
   .view--notes-book .publication-turn {
@@ -7600,6 +7599,16 @@ body {
 
   .view--notes-book .publication-reader__hint {
     display: none;
+  }
+}
+
+@media (max-width: 880px) {
+  .view--notes-book {
+    grid-template-rows: 48px minmax(0, 1fr) 46px;
+  }
+
+  .view--notes-book::before {
+    inset: 48px 0;
   }
 }
 

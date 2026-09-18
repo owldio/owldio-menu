@@ -1,5 +1,6 @@
 import { buildNoteFlow } from "./domain/notes-flow.js";
 import { buildSpreads, packAtoms } from "./domain/notes-pagination.js";
+import { PAGE_HEIGHT_BOUNDS, resolvePageHeight, spreadWidth } from "./domain/notes-geometry.js";
 import { PAGE, renderPage } from "./notes-book-render.js";
 import { createMeasurer } from "./notes-book-measure.js";
 import { bindNotesGestures } from "./notes-book-gestures.js";
@@ -9,8 +10,9 @@ const MIN_ZOOM = 1;
 const MAX_ZOOM = 4;
 const ZOOM_STEP = 0.5;
 const TWO_UP_MIN_WIDTH = 900;
-const GUTTER = 2;
 const TURN_THRESHOLD = 0.18;
+const RELAYOUT_DELAY = 180;
+const HEIGHT_TOLERANCE = 24;
 
 function clamp(value, minimum, maximum) {
   return Math.min(Math.max(value, minimum), maximum);
@@ -45,8 +47,11 @@ export function createNotesBook(root, { onRoute, onError, onPageChange } = {}) {
   let pan = { x: 0, y: 0 };
   let fitScale = 1;
   let runningHead = "樂曲解說";
+  let pageHeight = PAGE_HEIGHT_BOUNDS.minimum;
   let active = false;
+  let paginated = false;
   let resizeObserver = null;
+  let relayoutTimer = 0;
 
   function stageBox() {
     const rect = stage.getBoundingClientRect();
@@ -66,16 +71,16 @@ export function createNotesBook(root, { onRoute, onError, onPageChange } = {}) {
   }
 
   function bookWidth() {
-    return twoUp ? PAGE.width * 2 + GUTTER : PAGE.width;
+    return spreadWidth(twoUp);
   }
 
   function applyTransform() {
     book.style.width = `${bookWidth()}px`;
-    book.style.height = `${PAGE.height}px`;
+    book.style.height = `${pageHeight}px`;
     if (!stageIsLaidOut()) return;
 
     const { width, height } = stageBox();
-    fitScale = Math.min(width / bookWidth(), height / PAGE.height);
+    fitScale = Math.min(width / bookWidth(), height / pageHeight);
     const scale = fitScale * zoom;
     book.style.transform = `translate(-50%, -50%) translate(${pan.x}px, ${pan.y}px) scale(${scale})`;
     stage.dataset.zoomed = zoom > MIN_ZOOM ? "true" : "false";
@@ -88,7 +93,7 @@ export function createNotesBook(root, { onRoute, onError, onPageChange } = {}) {
     }
     const { width, height } = stageBox();
     const scaledWidth = bookWidth() * fitScale * zoom;
-    const scaledHeight = PAGE.height * fitScale * zoom;
+    const scaledHeight = pageHeight * fitScale * zoom;
     const slackX = Math.max(0, (scaledWidth - width) / 2);
     const slackY = Math.max(0, (scaledHeight - height) / 2);
     pan = { x: clamp(pan.x, -slackX, slackX), y: clamp(pan.y, -slackY, slackY) };
@@ -237,14 +242,28 @@ export function createNotesBook(root, { onRoute, onError, onPageChange } = {}) {
 
   function renderPages() {
     book.replaceChildren();
-    pageElements = pages.map((page) => renderPage(page, { total: pages.length, runningHead }));
+    pageElements = pages.map((page) =>
+      renderPage(page, { total: pages.length, runningHead, height: pageHeight }),
+    );
     for (const element of pageElements) book.append(element);
     buildThumbnails();
   }
 
+  /** The atom a reader is looking at, so a reflow can put them back on it. */
+  function anchorAtomId() {
+    const first = currentSpread()[0];
+    return pages[first]?.atoms[0]?.id ?? null;
+  }
+
+  function pageHolding(atomId) {
+    if (!atomId) return 0;
+    const page = pages.findIndex((candidate) => candidate.atoms.some((atom) => atom.id === atomId));
+    return Math.max(0, page);
+  }
+
   function paginate() {
-    // Measured outside the view: it is still hidden when the book is prepared.
-    const measurer = createMeasurer(document.body);
+    // Measured outside the view: the stage carries a transform of its own.
+    const measurer = createMeasurer(document.body, { height: pageHeight });
     try {
       pages = packAtoms(atoms, {
         capacity: measurer.capacity,
@@ -257,24 +276,56 @@ export function createNotesBook(root, { onRoute, onError, onPageChange } = {}) {
     }
 
     renderPages();
-    twoUp = shouldUseTwoUp();
-    book.dataset.spread = twoUp ? "two-up" : "single";
-    spreads = buildSpreads(pages.length, twoUp);
-    goToSpread(0);
+    paginated = true;
   }
 
-  function relayout() {
-    const nextTwoUp = shouldUseTwoUp();
-    if (nextTwoUp !== twoUp) {
-      const anchor = currentSpread()[0] ?? 0;
-      twoUp = nextTwoUp;
-      book.dataset.spread = twoUp ? "two-up" : "single";
-      spreads = buildSpreads(pages.length, twoUp);
-      spreadIndex = Math.max(0, spreads.findIndex((spread) => spread.includes(anchor)));
-      updateSlots();
-      updateChrome();
-    }
+  function applyShape(anchorPage) {
+    book.dataset.spread = twoUp ? "two-up" : "single";
+    spreads = buildSpreads(pages.length, twoUp);
+    spreadIndex = Math.max(0, spreads.findIndex((spread) => spread.includes(anchorPage)));
+    updateSlots();
     applyTransform();
+    updateChrome();
+  }
+
+  /**
+   * The page is as tall as the screen allows, so a resize changes how much text
+   * a leaf holds. Re-measure, then put the reader back on the atom they were on.
+   */
+  function relayout() {
+    if (!atoms.length || !stageIsLaidOut()) {
+      applyTransform();
+      return;
+    }
+
+    const nextTwoUp = shouldUseTwoUp();
+    const { width, height } = stageBox();
+    const nextHeight = resolvePageHeight({
+      stageWidth: width,
+      stageHeight: height,
+      twoUp: nextTwoUp,
+    });
+    const heightChanged = Math.abs(nextHeight - pageHeight) > HEIGHT_TOLERANCE;
+
+    if (paginated && !heightChanged && nextTwoUp === twoUp) {
+      applyTransform();
+      return;
+    }
+
+    const anchor = paginated ? anchorAtomId() : null;
+    twoUp = nextTwoUp;
+    pageHeight = nextHeight;
+
+    if (heightChanged || !paginated) paginate();
+    applyShape(pageHolding(anchor));
+
+    if (loading) loading.hidden = true;
+  }
+
+  function scheduleRelayout() {
+    window.clearTimeout(relayoutTimer);
+    applyTransform();
+    relayoutTimer = window.setTimeout(relayout, RELAYOUT_DELAY);
   }
 
   /**
@@ -312,23 +363,23 @@ export function createNotesBook(root, { onRoute, onError, onPageChange } = {}) {
       .slice(0, 400);
     await loadBookFonts(sample || runningHead);
 
-    try {
-      paginate();
-    } catch (error) {
-      onError?.(error);
-      return;
-    }
-
-    if (loading) loading.hidden = true;
+    // Pagination waits for a laid-out stage; activate() performs it.
+    if (active) relayout();
   }
 
   function activate() {
     active = true;
     root.dataset.active = "true";
-    relayout();
+
+    try {
+      relayout();
+    } catch (error) {
+      onError?.(error);
+    }
+
     if (!resizeObserver && typeof ResizeObserver === "function") {
       resizeObserver = new ResizeObserver(() => {
-        if (active) relayout();
+        if (active) scheduleRelayout();
       });
       resizeObserver.observe(stage);
     }
@@ -336,6 +387,7 @@ export function createNotesBook(root, { onRoute, onError, onPageChange } = {}) {
 
   function deactivate() {
     active = false;
+    window.clearTimeout(relayoutTimer);
     root.dataset.active = "false";
     resizeObserver?.disconnect();
     resizeObserver = null;

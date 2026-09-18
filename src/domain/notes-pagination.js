@@ -1,13 +1,7 @@
 const FULL_PAGE_KINDS = new Set(["cover", "contents", "colophon"]);
 const MIN_LINES = 2;
 
-/**
- * A page belongs to the note that opens on it. Only when nothing opens there
- * does it belong to the note it is still carrying.
- */
 function pageNoteSlug(atoms) {
-  const lastBanner = [...atoms].reverse().find((atom) => atom.kind === "note-banner");
-  if (lastBanner) return lastBanner.noteSlug;
   return atoms.find((atom) => atom.noteSlug)?.noteSlug ?? null;
 }
 
@@ -42,22 +36,6 @@ function splitWithGuards(atom, available, { lineHeight, measure, splitParagraph 
   }
 
   return null;
-}
-
-/**
- * A banner that ends up as the last thing on a page reads as a heading with no
- * article under it. The reserve in packAtoms prevents almost every case; this
- * catches the rest, such as a banner followed by an unsplittable card.
- */
-function rescueStrandedBanners(pages) {
-  for (let index = 0; index < pages.length - 1; index += 1) {
-    const page = pages[index];
-    if (page.atoms.length < 2) continue;
-    if (page.atoms.at(-1)?.kind !== "note-banner") continue;
-
-    const banner = page.atoms.pop();
-    pages[index + 1].atoms.unshift(banner);
-  }
 }
 
 function labelPages(pages) {
@@ -103,12 +81,16 @@ export function packAtoms(atoms, { capacity, lineHeight, measure, splitParagraph
       continue;
     }
 
+    // Every note opens on its own page: two works sharing a leaf reads as a
+    // mistake, however much room the previous one left behind.
+    if (atom.kind === "note-banner" && current && current.atoms.length) {
+      closePage();
+    }
+
     const height = measure(atom);
     const remaining = current ? capacity - used : capacity;
-    // A banner must carry the opening lines of its note onto the same page.
-    const needed = atom.kind === "note-banner" ? height + lineHeight * MIN_LINES : height;
 
-    if (needed <= remaining) {
+    if (height <= remaining) {
       place(atom, height);
       continue;
     }
@@ -134,7 +116,6 @@ export function packAtoms(atoms, { capacity, lineHeight, measure, splitParagraph
     place(atom, height);
   }
 
-  rescueStrandedBanners(pages);
   labelPages(pages);
 
   return pages;
