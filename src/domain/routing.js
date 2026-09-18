@@ -119,8 +119,8 @@ export function resolveProgrammeReaderView({ requestedView, hash, defaultView })
 }
 
 export function resolveProgrammeLayoutView({ readerLayout, view }) {
-  // The notes book is the whole web edition, so every reader view lands there.
-  if (readerLayout === "notes-book") return "notes-book";
+  // The notes book is the whole web edition; only the printed leaflet sits beside it.
+  if (readerLayout === "notes-book") return view === "pdf" ? "pdf" : "notes-book";
   return validReaderView(view);
 }
 

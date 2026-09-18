@@ -20,7 +20,7 @@ function folio(index) {
   return String(index + 1).padStart(2, "0");
 }
 
-export function createNotesBook(root, { onRoute, onError } = {}) {
+export function createNotesBook(root, { onRoute, onError, onPageChange } = {}) {
   const stage = root.querySelector("#notes-stage");
   const book = root.querySelector("#notes-book");
   const loading = root.querySelector("#notes-loading");
@@ -50,13 +50,17 @@ export function createNotesBook(root, { onRoute, onError } = {}) {
 
   function stageBox() {
     const rect = stage.getBoundingClientRect();
-    return {
-      width: rect.width || stage.clientWidth || 1,
-      height: rect.height || stage.clientHeight || 1,
-    };
+    return { width: rect.width, height: rect.height };
+  }
+
+  /** A hidden stage measures zero; scaling to that would shrink the book away. */
+  function stageIsLaidOut() {
+    const { width, height } = stageBox();
+    return width > 1 && height > 1;
   }
 
   function shouldUseTwoUp() {
+    if (!stageIsLaidOut()) return twoUp;
     const { width, height } = stageBox();
     return width >= TWO_UP_MIN_WIDTH && width > height;
   }
@@ -66,11 +70,13 @@ export function createNotesBook(root, { onRoute, onError } = {}) {
   }
 
   function applyTransform() {
+    book.style.width = `${bookWidth()}px`;
+    book.style.height = `${PAGE.height}px`;
+    if (!stageIsLaidOut()) return;
+
     const { width, height } = stageBox();
     fitScale = Math.min(width / bookWidth(), height / PAGE.height);
     const scale = fitScale * zoom;
-    book.style.width = `${bookWidth()}px`;
-    book.style.height = `${PAGE.height}px`;
     book.style.transform = `translate(-50%, -50%) translate(${pan.x}px, ${pan.y}px) scale(${scale})`;
     stage.dataset.zoomed = zoom > MIN_ZOOM ? "true" : "false";
   }
@@ -150,6 +156,7 @@ export function createNotesBook(root, { onRoute, onError } = {}) {
     updateSlots({ direction: moved ? direction : 0 });
     applyTransform();
     updateChrome();
+    onPageChange?.(currentSpread()[0] ?? 0);
   }
 
   function goToPage(pageIndex) {
@@ -159,8 +166,8 @@ export function createNotesBook(root, { onRoute, onError } = {}) {
   }
 
   function goToNote(slug) {
-    const target = pages.findIndex(
-      (page) => page.noteSlug === slug && page.atoms.some((atom) => atom.kind === "note-banner"),
+    const target = pages.findIndex((page) =>
+      page.atoms.some((atom) => atom.kind === "note-banner" && atom.noteSlug === slug),
     );
     if (target >= 0) goToPage(target);
   }

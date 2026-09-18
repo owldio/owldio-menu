@@ -7560,9 +7560,46 @@ body {
 }
 
 @media (max-width: 880px) {
-  .notes-stage {
-    right: 40px;
-    left: 40px;
+  /* Give the leaf as much width as the phone has; the turns overlay its edges. */
+  .view--notes-book .notes-stage {
+    right: 18px;
+    left: 18px;
+  }
+
+  .view--notes-book .publication-turn {
+    width: 38px;
+    padding: 0;
+    justify-content: center;
+    background: rgb(7 22 36 / 0.55);
+    backdrop-filter: blur(6px);
+  }
+
+  .view--notes-book .publication-turn--prev { left: 2px; }
+  .view--notes-book .publication-turn--next { right: 2px; }
+
+  /* Zoom stays reachable: it is how the printed density is read on a phone. */
+  .view--notes-book .publication-toolbar__zoom {
+    display: inline-flex;
+  }
+
+  .view--notes-book .publication-toolbar__tools > button:first-child {
+    display: inline-flex;
+  }
+
+  /* The bottom rail already carries a thumbnails button on a phone. */
+  .view--notes-book #notes-fullscreen,
+  .view--notes-book #notes-open-pdf,
+  .view--notes-book #notes-thumbnails-toggle {
+    display: none;
+  }
+
+  .view--notes-book .publication-toolbar__tools > button {
+    min-width: 44px;
+    padding: 0 8px;
+  }
+
+  .view--notes-book .publication-reader__hint {
+    display: none;
   }
 }
 

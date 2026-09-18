@@ -115,6 +115,29 @@ describe("packAtoms page composition", () => {
     expect(pages[0].noteSlug).toBe("note-a");
   });
 
+  it("labels a page by the note that opens on it, not the one ending there", () => {
+    const atoms = [
+      paragraph("p1", repeat("甲", 40), "note-a"),
+      banner("note-b", 1),
+      paragraph("p2", repeat("乙", 40), "note-b"),
+    ];
+
+    const pages = packAtoms(atoms, options);
+
+    expect(pages).toHaveLength(1);
+    expect(pages[0].atoms.map((atom) => atom.id)).toEqual(["p1", "note-b:banner", "p2"]);
+    expect(pages[0].noteSlug).toBe("note-b");
+  });
+
+  it("carries the running note onto pages that only continue it", () => {
+    const atoms = [banner("note-a"), paragraph("p1", repeat("甲", 200), "note-a")];
+
+    const pages = packAtoms(atoms, options);
+
+    expect(pages.length).toBeGreaterThan(1);
+    for (const page of pages) expect(page.noteSlug).toBe("note-a");
+  });
+
   it("keeps every page within capacity when the content can fit", () => {
     const atoms = [
       banner("note-a"),

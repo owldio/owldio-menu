@@ -84,7 +84,7 @@ function sakuraDrift(className) {
   for (const petal of petals) {
     svg.append(
       svgElement("path", {
-        d: "M0 0 C 10 -14, 26 -12, 30 2 C 33 14, 20 24, 10 22 C 1 20, -4 10, 0 0 Z",
+        d: "M0 26 C -8 14, -6 0, 6 -8 C 12 -12, 14 -16, 15 -22 C 16 -16, 18 -12, 24 -8 C 36 0, 38 14, 30 26 C 24 22, 20 20, 15 20 C 10 20, 6 22, 0 26 Z",
         transform: `translate(${petal.x} ${petal.y}) rotate(${petal.rotate}) scale(${petal.scale})`,
         fill: "currentColor",
         opacity: 0.2,

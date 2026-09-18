@@ -1,7 +1,13 @@
 const FULL_PAGE_KINDS = new Set(["cover", "contents", "colophon"]);
 const MIN_LINES = 2;
 
-function firstNoteSlug(atoms) {
+/**
+ * A page belongs to the note that opens on it. Only when nothing opens there
+ * does it belong to the note it is still carrying.
+ */
+function pageNoteSlug(atoms) {
+  const lastBanner = [...atoms].reverse().find((atom) => atom.kind === "note-banner");
+  if (lastBanner) return lastBanner.noteSlug;
   return atoms.find((atom) => atom.noteSlug)?.noteSlug ?? null;
 }
 
@@ -50,10 +56,14 @@ function rescueStrandedBanners(pages) {
     if (page.atoms.at(-1)?.kind !== "note-banner") continue;
 
     const banner = page.atoms.pop();
-    const next = pages[index + 1];
-    next.atoms.unshift(banner);
-    page.noteSlug = firstNoteSlug(page.atoms);
-    next.noteSlug = firstNoteSlug(next.atoms);
+    pages[index + 1].atoms.unshift(banner);
+  }
+}
+
+function labelPages(pages) {
+  for (const page of pages) {
+    if (FULL_PAGE_KINDS.has(page.kind)) continue;
+    page.noteSlug = pageNoteSlug(page.atoms);
   }
 }
 
@@ -72,7 +82,6 @@ export function packAtoms(atoms, { capacity, lineHeight, measure, splitParagraph
     }
     current.atoms.push(atom);
     used += height;
-    if (!current.noteSlug && atom.noteSlug) current.noteSlug = atom.noteSlug;
   }
 
   function closePage() {
@@ -126,6 +135,7 @@ export function packAtoms(atoms, { capacity, lineHeight, measure, splitParagraph
   }
 
   rescueStrandedBanners(pages);
+  labelPages(pages);
 
   return pages;
 }

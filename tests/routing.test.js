@@ -129,19 +129,26 @@ describe("programme reader defaults", () => {
     })).toBe("/moonlight-promise#pdf");
   });
 
-  it("keeps a notes-book continuation on its own reading view", () => {
-    expect(resolveProgrammeLayoutView({
-      readerLayout: "notes-book",
-      view: "pdf",
-    })).toBe("notes-book");
-
+  it("folds every web view of a notes-book programme into the book itself", () => {
     expect(resolveProgrammeLayoutView({
       readerLayout: "notes-book",
       view: "contents",
     })).toBe("notes-book");
 
     expect(resolveProgrammeLayoutView({
+      readerLayout: "notes-book",
+      view: "chapter",
+    })).toBe("notes-book");
+
+    expect(resolveProgrammeLayoutView({
       readerLayout: "standard",
+      view: "pdf",
+    })).toBe("pdf");
+  });
+
+  it("still lets a notes-book programme open its printed leaflet", () => {
+    expect(resolveProgrammeLayoutView({
+      readerLayout: "notes-book",
       view: "pdf",
     })).toBe("pdf");
   });

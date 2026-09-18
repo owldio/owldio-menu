@@ -441,6 +441,13 @@ export async function mountReader({ root, repository, initialRoute }) {
       console.error("Unable to lay out the programme notes", error);
       showToast("樂曲解說暫時無法排版，請重新整理頁面。");
     },
+    onPageChange(pageIndex) {
+      if (currentProgramme?.reader_layout !== "notes-book") return;
+      const hash = pageIndex > 0 ? `#page/${pageIndex + 1}` : "";
+      const nextUrl = `${location.pathname}${hash}`;
+      if (`${location.pathname}${location.hash}` === nextUrl) return;
+      history.replaceState({ route: "notes-book", page: pageIndex + 1 }, "", nextUrl);
+    },
   });
 
   let toastTimer;
@@ -858,10 +865,22 @@ export async function mountReader({ root, repository, initialRoute }) {
       publicationViewer.deactivate();
     }
 
+    // Laid out synchronously: a throttled animation frame would leave the book
+    // sized from a hidden stage.
+    if (nextRoute === "notes-book") notesBook.activate();
+    else notesBook.deactivate();
+
+    // The notes book writes its own `#page/N` as the reader turns; rewriting the
+    // URL here would wipe the page a shared link points at.
     if (nextRoute === "notes-book") {
-      window.requestAnimationFrame(() => notesBook.activate());
-    } else {
-      notesBook.deactivate();
+      resetReadingPosition({
+        scrollingElement: document.scrollingElement,
+        body: document.body,
+        activeElement: document.activeElement,
+        scrollTo: (left, top) => window.scrollTo({ left, top, behavior: "instant" }),
+      });
+      animateView(views.get(nextRoute));
+      return;
     }
 
     const nextUrl = buildProgrammeViewUrl(location.pathname, {
@@ -1230,11 +1249,12 @@ export async function mountReader({ root, repository, initialRoute }) {
         view: resolvedInitialView,
       });
       const canonicalPath = buildProgrammePath(currentProgramme.slug);
-      const canonicalUrl = buildProgrammeViewUrl(canonicalPath, {
+      const notesAnchor = displayedInitialView === "notes-book" ? location.hash : "";
+      const canonicalUrl = `${buildProgrammeViewUrl(canonicalPath, {
         view: displayedInitialView,
         chapterSlug: initialRoute.chapterSlug,
         defaultView: currentProgramme.default_reader_view,
-      });
+      })}${notesAnchor}`;
       if (
         initialRoute.legacyPath
         || currentProgramme.slug !== initialRoute.programmeSlug
