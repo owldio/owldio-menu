@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { buildNoteFlow } from "../src/domain/notes-flow.js";
-import { packAtoms } from "../src/domain/notes-pagination.js";
+import { buildSpreads, packAtoms } from "../src/domain/notes-pagination.js";
 
 const LINE_HEIGHT = 30;
 const CAPACITY = 300;
@@ -191,6 +191,25 @@ describe("packAtoms typographic guards", () => {
 
     expect(pages[0].atoms.map((atom) => atom.id)).toEqual(["p1"]);
     expect(pages[1].atoms.map((atom) => atom.id)).toEqual(["p2"]);
+  });
+});
+
+describe("buildSpreads", () => {
+  it("opens with the cover alone, then pairs facing pages", () => {
+    expect(buildSpreads(6, true)).toEqual([[0], [1, 2], [3, 4], [5]]);
+  });
+
+  it("pairs evenly when the page count leaves no odd leaf", () => {
+    expect(buildSpreads(5, true)).toEqual([[0], [1, 2], [3, 4]]);
+  });
+
+  it("gives every page its own spread on a single-page reader", () => {
+    expect(buildSpreads(3, false)).toEqual([[0], [1], [2]]);
+  });
+
+  it("returns nothing for an empty book", () => {
+    expect(buildSpreads(0, true)).toEqual([]);
+    expect(buildSpreads(0, false)).toEqual([]);
   });
 });
 

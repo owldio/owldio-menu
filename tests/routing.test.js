@@ -6,6 +6,8 @@ import {
   buildProgrammeReaderPath,
   isProgrammeReaderHash,
   parseAppLocation,
+  parseReaderHash,
+  resolveNoteAnchor,
   resolveProgrammeLayoutView,
   resolveProgrammeReaderView,
 } from "../src/domain/routing.js";
@@ -127,15 +129,61 @@ describe("programme reader defaults", () => {
     })).toBe("/moonlight-promise#pdf");
   });
 
-  it("keeps a programme-notes continuation on its single clean reading view", () => {
+  it("keeps a notes-book continuation on its own reading view", () => {
     expect(resolveProgrammeLayoutView({
-      readerLayout: "programme-notes",
+      readerLayout: "notes-book",
       view: "pdf",
-    })).toBe("contents");
+    })).toBe("notes-book");
+
+    expect(resolveProgrammeLayoutView({
+      readerLayout: "notes-book",
+      view: "contents",
+    })).toBe("notes-book");
 
     expect(resolveProgrammeLayoutView({
       readerLayout: "standard",
       view: "pdf",
     })).toBe("pdf");
+  });
+
+  it("lets a notes-book programme open on its own default view", () => {
+    expect(resolveProgrammeReaderView({
+      requestedView: "notes-book",
+      hash: "",
+      defaultView: "notes-book",
+    })).toBe("notes-book");
+  });
+});
+
+describe("notes book deep links", () => {
+  it("reads a page hash as a page position", () => {
+    expect(parseReaderHash("#page/4")).toEqual({ view: "notes-book", page: 4 });
+    expect(parseReaderHash("#page/1")).toEqual({ view: "notes-book", page: 1 });
+  });
+
+  it("reads a note hash as a note anchor", () => {
+    expect(parseReaderHash("#note/faure-les-berceaux")).toEqual({
+      view: "notes-book",
+      noteSlug: "faure-les-berceaux",
+    });
+  });
+
+  it("resolves both note and chapter hashes to the same anchor", () => {
+    expect(resolveNoteAnchor("#note/faure-les-berceaux")).toBe("faure-les-berceaux");
+    expect(resolveNoteAnchor("#chapter/faure-les-berceaux")).toBe("faure-les-berceaux");
+    expect(resolveNoteAnchor("#page/3")).toBeNull();
+    expect(resolveNoteAnchor("")).toBeNull();
+  });
+
+  it("ignores a page hash that is not a positive number", () => {
+    expect(parseReaderHash("#page/0")).toEqual({ view: "entrance" });
+    expect(parseReaderHash("#page/abc")).toEqual({ view: "entrance" });
+  });
+
+  it("accepts the bare notes-book view", () => {
+    expect(parseReaderHash("#notes-book")).toEqual({ view: "notes-book" });
+    expect(isProgrammeReaderHash("#notes-book")).toBe(true);
+    expect(isProgrammeReaderHash("#page/3")).toBe(true);
+    expect(isProgrammeReaderHash("#note/debussy-clair-de-lune")).toBe(true);
   });
 });

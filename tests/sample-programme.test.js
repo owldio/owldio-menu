@@ -37,11 +37,12 @@ describe("sample programme catalogue", () => {
     });
   });
 
-  it("publishes the seven Moonlight Promise notes as a continuous programme insert", () => {
+  it("publishes the seven Moonlight Promise notes as a paged book", () => {
     expect(moonlightPromiseProgramme).toMatchObject({
-      default_reader_view: "contents",
-      reader_layout: "programme-notes",
+      default_reader_view: "notes-book",
+      reader_layout: "notes-book",
       show_pdf_in_contents: false,
+      intermission_after_position: 2,
     });
     expect(moonlightPromiseProgramme.chapters.map(({ title }) => title)).toEqual([
       "格蘭查尼：古典風格的詠嘆調",

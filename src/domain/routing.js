@@ -1,4 +1,4 @@
-const READER_VIEWS = new Set(["entrance", "contents", "chapter", "pdf"]);
+const READER_VIEWS = new Set(["entrance", "contents", "chapter", "pdf", "notes-book"]);
 
 function validReaderView(view, fallback = "pdf") {
   return READER_VIEWS.has(view) ? view : fallback;
@@ -26,6 +26,20 @@ export function parseReaderHash(hash) {
     const chapterSlug = decodeSegment(value.slice("chapter/".length));
     if (chapterSlug) {
       return { view: "chapter", chapterSlug };
+    }
+  }
+
+  if (value.startsWith("note/")) {
+    const noteSlug = decodeSegment(value.slice("note/".length));
+    if (noteSlug) {
+      return { view: "notes-book", noteSlug };
+    }
+  }
+
+  if (value.startsWith("page/")) {
+    const page = Number(decodeSegment(value.slice("page/".length)));
+    if (Number.isInteger(page) && page > 0) {
+      return { view: "notes-book", page };
     }
   }
 
@@ -85,8 +99,16 @@ export function isProgrammeReaderHash(hash) {
   const value = String(hash || "").replace(/^#/, "");
   if (!value) return true;
   if (READER_VIEWS.has(value)) return true;
-  if (!value.startsWith("chapter/")) return false;
-  return Boolean(decodeSegment(value.slice("chapter/".length)));
+
+  const prefix = ["chapter/", "note/", "page/"].find((candidate) => value.startsWith(candidate));
+  if (!prefix) return false;
+
+  const segment = decodeSegment(value.slice(prefix.length));
+  if (!segment) return false;
+  if (prefix !== "page/") return true;
+
+  const page = Number(segment);
+  return Number.isInteger(page) && page > 0;
 }
 
 export function resolveProgrammeReaderView({ requestedView, hash, defaultView }) {
@@ -97,8 +119,18 @@ export function resolveProgrammeReaderView({ requestedView, hash, defaultView })
 }
 
 export function resolveProgrammeLayoutView({ readerLayout, view }) {
-  const normalizedView = validReaderView(view);
-  return readerLayout === "programme-notes" ? "contents" : normalizedView;
+  // The notes book is the whole web edition, so every reader view lands there.
+  if (readerLayout === "notes-book") return "notes-book";
+  return validReaderView(view);
+}
+
+/**
+ * The note a hash points at. `#chapter/<slug>` predates the notes book and
+ * names the same material, so it resolves to the same anchor.
+ */
+export function resolveNoteAnchor(hash) {
+  const route = parseReaderHash(hash);
+  return route.noteSlug || route.chapterSlug || null;
 }
 
 export function buildProgrammeViewUrl(pathname, { view, chapterSlug, defaultView }) {

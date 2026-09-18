@@ -4,6 +4,7 @@ import {
   buildProgrammeViewUrl,
   isProgrammeReaderHash,
   parseReaderHash,
+  resolveNoteAnchor,
   resolveProgrammeLayoutView,
   resolveProgrammeReaderView,
 } from "./domain/routing.js";
@@ -27,8 +28,10 @@ import {
   normalizeReadingSize,
   resetReadingPosition,
 } from "./domain/reading.js";
+import { createElement } from "./lib/dom.js";
 import { sampleProgrammes } from "./data/sample-programme.js";
 import { createPublicationViewer } from "./publication-pdf.js";
+import { createNotesBook } from "./notes-book.js";
 
 const routeMeta = {
   shelf: { context: "公開節目冊", title: "公開節目冊｜OWLDIO MENU" },
@@ -36,10 +39,11 @@ const routeMeta = {
   contents: { context: "PROGRAMME INDEX", title: "目錄｜OWLDIO MENU" },
   chapter: { context: "WEB EDITION", title: "網頁版｜OWLDIO MENU" },
   pdf: { context: "IMMERSIVE PUBLICATION", title: "翻閱節目冊｜OWLDIO MENU" },
+  "notes-book": { context: "PROGRAMME NOTES", title: "樂曲解說｜OWLDIO MENU" },
   "not-found": { context: "NOT FOUND", title: "找不到節目冊｜OWLDIO MENU" },
 };
 
-const readerViews = new Set(["entrance", "contents", "chapter", "pdf"]);
+const readerViews = new Set(["entrance", "contents", "chapter", "pdf", "notes-book"]);
 
 function text(id, value) {
   const node = document.querySelector(`#${id}`);
@@ -165,93 +169,12 @@ function renderShelf(programmes) {
   });
 }
 
-function createElement(tagName, className, value) {
-  const node = document.createElement(tagName);
-  if (className) node.className = className;
-  if (value !== undefined && value !== null) node.textContent = value;
-  return node;
-}
-
-function programmeNoteList(block) {
-  const list = createElement("section", "programme-note__works");
-  (block.items || []).forEach(([number, title, detail]) => {
-    const item = createElement("section", "programme-note__work");
-    const detailLines = String(detail || "").split("\n");
-    const englishTitle = detailLines.shift();
-    const heading = createElement("header", "programme-note__work-heading");
-    heading.append(
-      createElement("span", "programme-note__work-number", number),
-      createElement("h3", "", title),
-    );
-    item.append(heading);
-    if (englishTitle) item.append(createElement("p", "programme-note__work-english", englishTitle));
-    detailLines.filter(Boolean).forEach((paragraph) => {
-      item.append(createElement("p", "programme-note__paragraph", paragraph));
-    });
-    list.append(item);
-  });
-  return list;
-}
-
-function renderProgrammeNotes(programme, index, chapters) {
-  index.classList.add("programme-notes");
-  index.removeAttribute("role");
-  index.setAttribute("aria-label", `${programme.title} 樂曲解說`);
-
-  chapters.forEach((chapter, chapterIndex) => {
-    const article = createElement("article", "programme-note");
-    article.id = `note-${chapter.slug}`;
-
-    const heading = createElement("header", "programme-note__heading");
-    const headingCopy = createElement("div", "programme-note__heading-copy");
-    headingCopy.append(
-      createElement("p", "programme-note__label", chapter.eyebrow || "樂曲解說"),
-      createElement("h2", "", chapter.title),
-    );
-    if (chapter.title_en) {
-      headingCopy.append(createElement("p", "programme-note__english", chapter.title_en));
-    }
-    if (chapter.author) {
-      headingCopy.append(createElement("p", "programme-note__author", chapter.author));
-    }
-    heading.append(
-      createElement("span", "programme-note__number", String(chapterIndex + 1).padStart(2, "0")),
-      headingCopy,
-    );
-
-    const body = createElement("div", "programme-note__body");
-    (chapter.blocks || []).forEach((block) => {
-      if (block.type === "prose") {
-        (block.paragraphs || []).filter(Boolean).forEach((paragraph) => {
-          body.append(createElement("p", "programme-note__paragraph", paragraph));
-        });
-      }
-      if (block.type === "programme-list") body.append(programmeNoteList(block));
-    });
-
-    const folio = createElement("footer", "programme-note__folio");
-    folio.append(
-      createElement("span", "", "月光下的約定 / 樂曲解說"),
-      createElement("span", "", String(chapterIndex + 1).padStart(2, "0")),
-    );
-    article.append(heading, body, folio);
-    index.append(article);
-  });
-}
-
 function renderContents(programme) {
   const index = document.querySelector("#editorial-index");
   const chapters = (programme.chapters || []).filter((chapter) => chapter.is_visible !== false);
   index.replaceChildren();
-  index.classList.remove("programme-notes");
   index.setAttribute("role", "navigation");
   index.setAttribute("aria-label", `${programme.title} 節目冊章節`);
-
-  if (programme.reader_layout === "programme-notes") {
-    text("contents-count", "PROGRAM NOTE");
-    renderProgrammeNotes(programme, index, chapters);
-    return;
-  }
 
   text("contents-count", programme.contents_title ? `${chapters.length} 篇` : `${chapters.length} / ${chapters.length}`);
 
@@ -507,6 +430,16 @@ export async function mountReader({ root, repository, initialRoute }) {
     onError(error) {
       console.error("Unable to render publication PDF", error);
       showToast("節目冊暫時無法展開，可先下載原始 PDF。");
+    },
+  });
+
+  const notesBook = createNotesBook(document.querySelector("#notes-book-view"), {
+    onRoute(route) {
+      showRoute(route);
+    },
+    onError(error) {
+      console.error("Unable to lay out the programme notes", error);
+      showToast("樂曲解說暫時無法排版，請重新整理頁面。");
     },
   });
 
@@ -879,6 +812,20 @@ export async function mountReader({ root, repository, initialRoute }) {
     return chapter;
   }
 
+  /** Deep links land on a page (`#page/3`) or a note (`#note/slug`, `#chapter/slug`). */
+  function applyNotesAnchor(hash) {
+    if (currentProgramme?.reader_layout !== "notes-book") return;
+
+    const route = parseReaderHash(hash);
+    if (route.page) {
+      notesBook.goToPage(route.page - 1);
+      return;
+    }
+
+    const slug = resolveNoteAnchor(hash);
+    if (slug) notesBook.goToNote(slug);
+  }
+
   function showRoute(route, { updateHash = true, chapterSlug } = {}) {
     let nextRoute = route;
     if (initialRoute.kind === "shelf") nextRoute = "shelf";
@@ -902,13 +849,19 @@ export async function mountReader({ root, repository, initialRoute }) {
     headerContext.textContent = routeMeta[nextRoute]?.context || routeMeta.shelf.context;
     headerIndex.hidden = nextRoute === "shelf"
       || !hasWebEdition(currentProgramme)
-      || currentProgramme?.reader_layout === "programme-notes";
+      || currentProgramme?.reader_layout === "notes-book";
     document.title = routeMeta[nextRoute]?.title || routeMeta.shelf.title;
 
     if (nextRoute === "pdf") {
       window.requestAnimationFrame(() => publicationViewer.activate());
     } else {
       publicationViewer.deactivate();
+    }
+
+    if (nextRoute === "notes-book") {
+      window.requestAnimationFrame(() => notesBook.activate());
+    } else {
+      notesBook.deactivate();
     }
 
     const nextUrl = buildProgrammeViewUrl(location.pathname, {
@@ -919,7 +872,7 @@ export async function mountReader({ root, repository, initialRoute }) {
     const routeUrlChanged = `${location.pathname}${location.hash}` !== nextUrl;
     if (
       initialRoute.kind === "programme"
-      && currentProgramme?.reader_layout === "programme-notes"
+      && currentProgramme?.reader_layout === "notes-book"
       && routeUrlChanged
     ) {
       history.replaceState({ route: nextRoute }, "", nextUrl);
@@ -1202,6 +1155,7 @@ export async function mountReader({ root, repository, initialRoute }) {
         defaultView: currentProgramme?.default_reader_view,
       });
       showRoute(resolvedView, { chapterSlug: readerRoute.chapterSlug, updateHash: false });
+      applyNotesAnchor(location.hash);
     }
   });
 
@@ -1214,6 +1168,7 @@ export async function mountReader({ root, repository, initialRoute }) {
         defaultView: currentProgramme?.default_reader_view,
       });
       showRoute(resolvedView, { chapterSlug: readerRoute.chapterSlug, updateHash: false });
+      applyNotesAnchor(location.hash);
     }
   });
 
@@ -1243,7 +1198,7 @@ export async function mountReader({ root, repository, initialRoute }) {
     if (
       initialRoute.view === "pdf"
       && location.hash
-      && localProgramme?.reader_layout !== "programme-notes"
+      && localProgramme?.reader_layout !== "notes-book"
     ) {
       publicationViewer.preload();
       showRoute("pdf", { updateHash: false });
@@ -1292,10 +1247,15 @@ export async function mountReader({ root, repository, initialRoute }) {
         );
       }
       hydrateProgramme(currentProgramme);
-      if (currentProgramme.reader_layout !== "programme-notes") {
-        await configurePdf(currentProgramme);
+      await configurePdf(currentProgramme);
+      if (currentProgramme.reader_layout === "notes-book") {
+        await notesBook.prepare({
+          programme: currentProgramme,
+          chapters: currentProgramme.chapters || [],
+        });
       }
       showRoute(displayedInitialView, { chapterSlug: initialRoute.chapterSlug, updateHash: false });
+      applyNotesAnchor(location.hash);
     }
   } else {
     showRoute("not-found", { updateHash: false });

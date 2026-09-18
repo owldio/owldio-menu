@@ -1,0 +1,115 @@
+import { createPageFrame, renderAtom } from "./notes-book-render.js";
+import { createElement } from "./lib/dom.js";
+
+const FULL_PAGE_KINDS = new Set(["cover", "contents", "colophon"]);
+const WORD_CHARACTER = /[A-Za-z0-9'’.\-–—]/;
+const CLOSING_PUNCTUATION = /[。，、；：！？」』）》】〉・·]/;
+const MINIMUM_SPLIT_LENGTH = 8;
+const BREAK_SEARCH_LIMIT = 24;
+
+function fragment(atom, text, continues) {
+  return { ...atom, payload: { ...atom.payload, text, continues } };
+}
+
+/**
+ * Nudge a cut away from places that read badly: never inside a run of Latin
+ * letters or digits, and never immediately before closing punctuation.
+ */
+function safeBreak(text, index) {
+  let cut = index;
+
+  while (cut < text.length && CLOSING_PUNCTUATION.test(text[cut])) {
+    cut += 1;
+  }
+
+  let steps = 0;
+  while (
+    cut > 1
+    && steps < BREAK_SEARCH_LIMIT
+    && WORD_CHARACTER.test(text[cut - 1])
+    && WORD_CHARACTER.test(text[cut])
+  ) {
+    cut -= 1;
+    steps += 1;
+  }
+
+  return cut;
+}
+
+/**
+ * Lays atoms out in a hidden page of identical geometry so the pagination
+ * engine can ask how tall each one really is. Fonts must already be ready.
+ *
+ * The host must be laid out: a `display: none` ancestor measures every atom as
+ * zero, which silently collapses the whole book onto one page.
+ */
+export function createMeasurer(host = document.body) {
+  const { article: frame, body } = createPageFrame({ runningHead: "量測", folioLabel: "00" });
+  frame.classList.add("note-page--measure");
+  frame.setAttribute("aria-hidden", "true");
+  host.append(frame);
+
+  // The body is what atoms actually get: the page minus its padding and folio.
+  const capacity = body.clientHeight;
+
+  // A sentinel keeps the measured node away from :last-child and :only-child,
+  // so a rule meant for the end of a page cannot shrink what we measure.
+  const sentinel = createElement("span", "note-page__sentinel");
+
+  function elementHeight(node) {
+    body.replaceChildren(node, sentinel);
+    const style = window.getComputedStyle(node);
+    const margins = Number.parseFloat(style.marginTop || "0")
+      + Number.parseFloat(style.marginBottom || "0");
+    return node.getBoundingClientRect().height + margins;
+  }
+
+  function measure(atom) {
+    if (FULL_PAGE_KINDS.has(atom.kind)) return capacity;
+    return elementHeight(renderAtom(atom));
+  }
+
+  function splitParagraph(atom, availableHeight) {
+    const { text } = atom.payload;
+    if (!text || text.length < MINIMUM_SPLIT_LENGTH) return null;
+
+    let low = 1;
+    let high = text.length - 1;
+    let best = 0;
+
+    while (low <= high) {
+      const middle = Math.floor((low + high) / 2);
+      const height = elementHeight(
+        renderAtom(fragment(atom, text.slice(0, middle), atom.payload.continues)),
+      );
+      if (height <= availableHeight) {
+        best = middle;
+        low = middle + 1;
+      } else {
+        high = middle - 1;
+      }
+    }
+
+    if (!best) return null;
+
+    const cut = safeBreak(text, best);
+    if (cut <= 0 || cut >= text.length) return null;
+
+    return {
+      head: fragment(atom, text.slice(0, cut), atom.payload.continues),
+      tail: fragment(atom, text.slice(cut), true),
+    };
+  }
+
+  function destroy() {
+    frame.remove();
+  }
+
+  const probe = elementHeight(createElement("p", "note-paragraph", "量測探針"));
+  if (!probe) {
+    destroy();
+    throw new Error("Notes measurer host is not laid out; every atom would measure zero.");
+  }
+
+  return { capacity, measure, splitParagraph, destroy };
+}

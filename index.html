@@ -223,6 +223,68 @@
           </nav>
         </article>
 
+        <section class="view view--notes-book" id="notes-book-view" aria-labelledby="notes-book-title" hidden>
+          <header class="publication-toolbar">
+            <button class="publication-toolbar__back" type="button" data-route="shelf">
+              <span aria-hidden="true">←</span><span>全部節目冊</span>
+            </button>
+            <div class="publication-toolbar__identity">
+              <span>OWLDIO MENU / PROGRAMME NOTES</span>
+              <strong id="notes-book-title">樂曲解說</strong>
+            </div>
+            <div class="publication-toolbar__tools">
+              <button type="button" id="notes-contents-jump"><span>目錄</span></button>
+              <button type="button" id="notes-thumbnails-toggle" aria-expanded="false" aria-controls="notes-thumbnails">
+                <span>頁面</span>
+              </button>
+              <span class="publication-toolbar__zoom" aria-label="縮放控制">
+                <button type="button" id="notes-zoom-out" aria-label="縮小">−</button>
+                <output id="notes-zoom-label" aria-live="polite">100%</output>
+                <button type="button" id="notes-zoom-in" aria-label="放大">＋</button>
+              </span>
+              <button type="button" id="notes-fullscreen" aria-label="進入全螢幕"><span>全螢幕</span></button>
+              <button type="button" id="notes-open-pdf" data-notes-route="pdf"><span>印刷節目單</span></button>
+            </div>
+          </header>
+
+          <div class="publication-reader" id="notes-reader">
+            <p class="publication-reader__hint">左右滑動 · 方向鍵翻頁 · 雙擊放大</p>
+            <button class="publication-turn publication-turn--prev" type="button" id="notes-prev" aria-label="上一頁">
+              <span aria-hidden="true">←</span><small>PREV.</small>
+            </button>
+
+            <div class="notes-stage" id="notes-stage" tabindex="0" aria-label="樂曲解說閱讀舞台">
+              <div class="notes-book" id="notes-book"></div>
+              <p class="publication-loading" id="notes-loading" role="status" aria-live="polite">正在排版樂曲解說…</p>
+            </div>
+
+            <button class="publication-turn publication-turn--next" type="button" id="notes-next" aria-label="下一頁">
+              <small>NEXT</small><span aria-hidden="true">→</span>
+            </button>
+          </div>
+
+          <p class="sr-only" id="notes-status" role="status" aria-live="polite"></p>
+
+          <aside class="publication-thumbnails" id="notes-thumbnails" aria-label="頁面縮圖" hidden>
+            <header>
+              <span>ALL PAGES</span>
+              <button type="button" id="notes-thumbnails-close" aria-label="關閉縮圖">關閉 ×</button>
+            </header>
+            <div class="publication-thumbnails__rail" id="notes-thumbnail-rail"></div>
+          </aside>
+
+          <nav class="publication-rail" aria-label="樂曲解說頁面導覽">
+            <button type="button" class="publication-rail__thumbs" id="notes-thumbnails-mobile" aria-label="開啟頁面縮圖">▦</button>
+            <span class="publication-rail__page" id="notes-page-label">01 / 01</span>
+            <label class="publication-rail__scrubber">
+              <span class="sr-only">前往頁面</span>
+              <input id="notes-scrubber" type="range" min="1" max="1" value="1" step="1" />
+              <i id="notes-progress"></i>
+            </label>
+            <p id="notes-caption">樂曲解說 · 節目單未印出的續頁</p>
+          </nav>
+        </section>
+
         <section class="view view--pdf" id="pdf-view" aria-labelledby="pdf-title" hidden>
           <header class="publication-toolbar">
             <button class="publication-toolbar__back" type="button" data-route="shelf">

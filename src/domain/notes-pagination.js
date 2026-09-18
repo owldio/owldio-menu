@@ -129,3 +129,15 @@ export function packAtoms(atoms, { capacity, lineHeight, measure, splitParagraph
 
   return pages;
 }
+
+/** Cover alone, then facing pairs — the way a bound book opens. */
+export function buildSpreads(total, twoUp) {
+  if (total <= 0) return [];
+  if (!twoUp) return Array.from({ length: total }, (_, index) => [index]);
+
+  const spreads = [[0]];
+  for (let index = 1; index < total; index += 2) {
+    spreads.push(index + 1 < total ? [index, index + 1] : [index]);
+  }
+  return spreads;
+}
