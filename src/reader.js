@@ -16,6 +16,11 @@ import {
   resolveOrbitPose,
   resolveOrbitTransition,
 } from "./domain/carousel.js";
+import {
+  formatDate,
+  programmeDateLabel,
+  programmeTimeLabel,
+} from "./domain/datetime.js";
 import { hasWebEdition, withEditorialFallback } from "./domain/programme.js";
 import {
   cycleReadingSize,
@@ -41,26 +46,6 @@ function text(id, value) {
   if (node && value !== null && value !== undefined && value !== "") {
     node.textContent = value;
   }
-}
-
-function formatDate(value, options) {
-  if (!value) return "待公告";
-  const date = new Date(value);
-  if (Number.isNaN(date.valueOf())) return "待公告";
-  return new Intl.DateTimeFormat("zh-TW", { timeZone: "Asia/Taipei", ...options }).format(date);
-}
-
-function dateLabel(programme) {
-  const start = formatDate(programme.starts_at, { year: "numeric", month: "2-digit", day: "2-digit" });
-  if (!programme.ends_at) return start;
-  const end = formatDate(programme.ends_at, { month: "2-digit", day: "2-digit" });
-  return `${start}—${end}`;
-}
-
-function timeLabel(programme) {
-  return programme.starts_at
-    ? formatDate(programme.starts_at, { weekday: "short", hour: "2-digit", minute: "2-digit", hour12: false })
-    : "待公告";
 }
 
 function performanceState(programme) {
@@ -461,13 +446,13 @@ function hydrateProgramme(programme) {
   text("programme-cover-edition", "DIGITAL PROGRAMME");
   text("programme-cover-title", programme.title);
   text("programme-cover-title-en", titleEnglish);
-  text("programme-cover-date", dateLabel(programme));
+  text("programme-cover-date", programmeDateLabel(programme));
   text("programme-type", [programme.production_type, titleEnglish].filter(Boolean).join(" · "));
   text("entrance-title", programme.title);
   text("programme-title-en", titleEnglish);
   text("programme-summary", programme.summary || "演出內容即將公開。 ");
-  text("programme-date", dateLabel(programme));
-  text("programme-time", timeLabel(programme));
+  text("programme-date", programmeDateLabel(programme));
+  text("programme-time", programmeTimeLabel(programme));
   text("programme-venue", programme.venue || "待公告");
   text(
     "programme-duration",
@@ -801,7 +786,7 @@ export async function mountReader({ root, repository, initialRoute }) {
     text("selected-programme-title", selected.title);
     text("selected-programme-title-en", selected.title_en || "DIGITAL PROGRAMME");
     text("selected-programme-summary", selected.summary || "演出內容即將公開。 ");
-    text("selected-programme-date", dateLabel(selected));
+    text("selected-programme-date", programmeDateLabel(selected));
     text("selected-programme-venue", selected.venue || "待公告");
 
     document.querySelectorAll("#carousel-track [data-carousel-index]").forEach((marker) => {
