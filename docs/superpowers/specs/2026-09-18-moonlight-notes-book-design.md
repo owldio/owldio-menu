@@ -57,7 +57,9 @@
 | 每頁行數 | 約 32 行 |
 | 每頁容量 | 約 1,250 字 |
 
-預估總頁數約 13 頁（桌機 7 個跨頁），與 6 頁 A4 原稿相當。實際頁數由分頁引擎決定，不寫死。
+頁腳位於頁面內，因此實際可用高度是版心高度扣掉頁腳。容量不寫成常數，而是在排版前量測一張真實頁面的版心高度（實測 910 px），避免常數與樣式各說各話。
+
+實際總頁數 14 頁（桌機 8 個跨頁），與 6 頁 A4 原稿相當。
 
 ## 頁面地圖
 
@@ -110,20 +112,25 @@ packAtoms(atoms, { capacity, measure, splitParagraph }) -> Page[]
 2. `note-banner` 後面至少要跟兩行內文；否則橫幅推到下一頁。
 3. `paragraph` 可跨頁，但兩側各至少保留兩行（避免孤行寡行）。當前頁剩餘高度不足兩行時，不切割，整段推到下一頁。
 4. `work-card` 不可分割；放不下就整張推到下一頁。
-5. 頁碼、頁腳不佔用容量計算（在留白區內）。
+5. 容量由量測器回報，已扣掉頁腳所佔的高度。
 6. 單一原子高度超過整頁容量時（理論上只可能是超長段落），強制切割並允許最後一段溢出，不得丟棄內容。
 
 `Page` 形狀：`{ index, kind, noteSlug, atoms }`。
 
+頁面的 `noteSlug` 取該頁**最後一個** `note-banner` 的曲目；沒有橫幅時才沿用它承接的曲目。以第一個原子判定會把「承接前一首尾段、並開啟下一首」的頁面標成上一首，頁眉與深層連結都會指錯。跳至某曲時直接尋找帶該曲橫幅的原子，不依賴頁面標籤。
+
 ### `src/notes-book.js`（DOM）
 
-- 建立離屏量測容器，套用與實際頁面完全相同的樣式，提供 `measure` 與 `splitParagraph`。
+- 建立離屏量測容器，與實際頁面共用同一個 `createPageFrame`，提供 `capacity`、`measure` 與 `splitParagraph`。
+- 量測容器掛在 `document.body`：排版發生在檢視區仍是 `hidden` 的時候，掛在檢視區內會讓每個原子都量到 0，整本書靜靜塌成一頁。量測器啟動時先跑一次探針，量不到就拋錯，讓失敗大聲而不是安靜。
+- 量測節點後面補一個零高度哨兵，避免 `:last-child` 之類的樣式改變被量測的對象。
+- 排版前以 `document.fonts.load()` 指名載入實際字面並帶入書中的取樣文字。`document.fonts.ready` 會在沒有任何元素用到該字型時提早 resolve，而 Google Fonts 以 unicode-range 分包提供中文；只等 ready 會量到 fallback 字寬，每一頁都會溢出。
 - 呼叫 `buildNoteFlow` → `packAtoms` → 渲染所有頁面。
-- 視窗尺寸變化不觸發重新分頁（版面固定），僅重算 fit-to-stage 縮放比例。
+- 視窗尺寸變化不觸發重新分頁（版面固定），僅重算 fit-to-stage 縮放比例與單頁／跨頁。
 
 ## 閱讀器外殼
 
-沿用 `#pdf-view` 既有的 DOM 與控制項，不另做一套：側邊 PREV/NEXT、底部頁碼與拖曳捲軸、縮圖面板、工具列縮放與全螢幕。差別只在舞台裡放的是 HTML 頁面而非 canvas。
+獨立的 `#notes-book-view`，但沿用 PDF 閱讀器的同一組 chrome class：`publication-toolbar`、`publication-turn`、`publication-rail`、`publication-thumbnails`。兩者共用外觀語彙，卻不共用 DOM —— `#pdf-view` 由 `createPublicationViewer` 綁定，兩個引擎搶同一批節點只會互相踩到。月光下的約定同時有印刷三折頁與樂曲解說，本來就需要兩個並存的檢視。
 
 互動：
 
@@ -159,14 +166,14 @@ packAtoms(atoms, { capacity, measure, splitParagraph }) -> Page[]
 | `--moon-gold` | `#d5b169` | 線、編號、橫幅 |
 | `--moon-rose` | `#bf7f89` | 點綴 |
 
-母題以 inline SVG `<symbol>` 定義一次，各頁面型別以 `<use>` 取用，不使用點陣圖：
+母題不使用點陣圖。純氛圍的部分交給 CSS 漸層，有形狀的部分才畫成 inline SVG：
 
-- `moon-halo`：左上月暈 radial glow
-- `harp-strings`：右緣垂直金線
-- `gold-swoosh`：底部金色流線
-- `sakura`：低透明度櫻花瓣，數量極少
+- 月暈：頁面與舞台的 `radial-gradient`
+- 豎琴弦：舞台的 `repeating-linear-gradient` 垂直金線
+- 金色流線：封面與尾頁的 inline SVG 貝茲曲線，出血後由頁面裁切
+- 櫻花瓣：封面的 inline SVG，四片、低不透明度
 
-跨頁中央加一道細書溝陰影。翻頁動畫在桌機為 3D `rotateY`，行動裝置為橫向位移。
+跨頁中央加一道細書溝陰影，只在真正並排兩頁時出現。翻頁為方向感的位移加淡入淡出：離場頁往行進方向退開，入場頁補上。不做 3D `rotateY` —— 在低對比的深色頁面上，翻轉的中間影格讀起來只是閃爍。
 
 字體維持 `Noto Serif TC`（中文）與 `Bodoni Moda`（西文曲名）。
 
@@ -174,11 +181,12 @@ packAtoms(atoms, { capacity, measure, splitParagraph }) -> Page[]
 
 - 路徑 `/moonlight-promise` 不變。
 - `src/domain/routing.js` 的 `READER_VIEWS` 新增 `notes-book`，使 `default_reader_view: "notes-book"` 通過 `validReaderView`。
-- `resolveProgrammeLayoutView` 改為：`reader_layout === "notes-book"` 時一律回傳 `notes-book`（取代原本 `programme-notes` → `contents` 的規則）。
+- `resolveProgrammeLayoutView` 改為：`reader_layout === "notes-book"` 時，`pdf` 仍回傳 `pdf`，其餘一律回傳 `notes-book`。印刷三折頁必須留得住，尾頁與工具列都有入口。
+- 網址的 hash 由書本自己維護：翻頁時 `replaceState` 寫入 `#page/N`，`showRoute` 不再改寫 notes-book 的網址。否則正規化網址會把訪客帶進來的 `#note/...` 洗掉。
 - `parseReaderHash` 新增兩個前綴：
   - `#page/<n>`：跳至第 n 頁。
   - `#note/<slug>`：跳至該曲標題橫幅所在頁。
-- 既有 `#chapter/<slug>` 在此 layout 下視為 `#note/<slug>` 的別名，維持相容。
+- 既有 `#chapter/<slug>` 在此 layout 下視為 `#note/<slug>` 的別名，由 `resolveNoteAnchor` 統一解析，`parseReaderHash` 的回傳形狀不變。
 - moonlight 的 `contents` 與 `chapter` 視圖不再有入口，但路由與 `[data-programme-theme="moonlight"]` 的既有樣式保留，作為深層連結的降級路徑。只刪除 `[data-reader-layout="programme-notes"]` 這一段。
 
 ## 無障礙
@@ -186,7 +194,7 @@ packAtoms(atoms, { capacity, measure, splitParagraph }) -> Page[]
 - 所有頁面常駐 DOM，不做虛擬化。螢幕報讀者得到一份連續可讀的文件，瀏覽器的頁內搜尋也能找到文字。
 - 每頁包成 `<article>` 並帶頁次標籤。
 - 翻頁時以 live region 播報目前頁次。
-- 已知邊緣情況：頁內搜尋命中非當前頁時，舞台可能被瀏覽器捲動。監聽舞台 `scroll` 事件，將頁索引同步到實際位置。
+- 頁內搜尋命中非當前頁時，瀏覽器會捲動舞台。監聽舞台 `scroll`，跟著選取範圍翻到該頁，再把舞台捲回原位。
 - `prefers-reduced-motion` 時，翻頁動畫改為淡入淡出。
 - 縮放控制項與翻頁鈕皆可鍵盤操作，focus ring 使用 `--moon-gold`。
 
@@ -194,9 +202,15 @@ packAtoms(atoms, { capacity, measure, splitParagraph }) -> Page[]
 
 | 檔案 | 動作 |
 | --- | --- |
-| `src/domain/notes-flow.js` | 新增 |
-| `src/domain/notes-pagination.js` | 新增 |
-| `src/notes-book.js` | 新增 |
+| `src/domain/notes-flow.js` | 新增：章節攤平成原子 |
+| `src/domain/notes-pagination.js` | 新增：裝箱與跨頁配對 |
+| `src/domain/datetime.js` | 新增：日期格式化，自 `reader.js` 抽出共用 |
+| `src/lib/dom.js` | 新增：`createElement`，自 `reader.js` 抽出共用 |
+| `src/notes-book.js` | 新增：書本狀態、導覽、縮放 |
+| `src/notes-book-render.js` | 新增：原子與頁面的 DOM |
+| `src/notes-book-measure.js` | 新增：離屏量測與段落切割 |
+| `src/notes-book-gestures.js` | 新增：指標手勢 |
+| `index.html` | 改：新增 `#notes-book-view` 區塊 |
 | `src/reader.js` | 改：`notes-book` layout 走新模組，移除 `renderProgrammeNotes` 與 `programmeNoteList` |
 | `src/domain/routing.js` | 改：認得 `notes-book`，支援 `#page/` 與 `#note/` |
 | `src/data/sample-programme.js` | 改：`reader_layout: "notes-book"`，`default_reader_view: "notes-book"` |
@@ -229,5 +243,5 @@ packAtoms(atoms, { capacity, measure, splitParagraph }) -> Page[]
 ## 風險
 
 - **手機可讀性**：初始字級很小，需放大。使用者已在了解此取捨後確認採用。
-- **分頁抖動**：字體載入完成前後量測結果可能不同。分頁需等 `document.fonts.ready` 後才執行，載入期間顯示既有的 `publication-placeholder`。
+- **分頁抖動**：字體載入完成前後量測結果不同。排版前以 `document.fonts.load()` 指名載入實際字面與取樣文字，不只等 `document.fonts.ready`。
 - **內容守恆**：由上述不變式測試防守。分頁引擎掉字是這個設計最嚴重的失敗模式。

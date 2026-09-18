@@ -7603,6 +7603,41 @@ body {
   }
 }
 
+@media (max-width: 480px) {
+  /* Zoom earns the last of the toolbar: the contents page is two taps away. */
+  .view--notes-book #notes-contents-jump {
+    display: none;
+  }
+
+  .view--notes-book .publication-toolbar {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+  }
+
+  .view--notes-book .publication-toolbar__back span:last-child {
+    display: none;
+  }
+
+  .view--notes-book .publication-toolbar__back {
+    gap: 0;
+    padding: 0 12px;
+  }
+
+  .view--notes-book .publication-toolbar__identity {
+    min-width: 0;
+    padding: 0 8px;
+  }
+
+  .view--notes-book .publication-toolbar__identity span {
+    display: none;
+  }
+
+  .view--notes-book .publication-toolbar__identity strong {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .notes-book,
   .note-page {

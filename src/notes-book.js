@@ -371,17 +371,40 @@ export function createNotesBook(root, { onRoute, onError, onPageChange } = {}) {
     else root.requestFullscreen?.();
   });
 
-  book.addEventListener("click", (event) => {
-    const noteLink = event.target.closest("button[data-note-slug]");
+  root.addEventListener("click", (event) => {
+    const noteLink = event.target?.closest?.("button[data-note-slug]");
     if (noteLink) {
       goToNote(noteLink.dataset.noteSlug);
       return;
     }
-    const route = event.target.closest("[data-notes-route]");
+    const route = event.target?.closest?.("[data-notes-route]");
     if (route) onRoute?.(route.dataset.notesRoute);
   });
 
-  stage.addEventListener("keydown", (event) => {
+  /**
+   * Every page stays in the DOM so find-in-page and screen readers see one
+   * continuous document. When the browser scrolls the stage to a hit on
+   * another page, follow it and put the stage back where it belongs.
+   */
+  stage.addEventListener("scroll", () => {
+    const selection = window.getSelection?.();
+    const node = selection?.anchorNode;
+    const element = node?.nodeType === Node.ELEMENT_NODE ? node : node?.parentElement;
+    const page = element?.closest?.(".note-page") ?? document.activeElement?.closest?.(".note-page");
+
+    stage.scrollTop = 0;
+    stage.scrollLeft = 0;
+
+    const index = Number(page?.dataset.pageIndex);
+    if (Number.isInteger(index) && !currentSpread().includes(index)) goToPage(index);
+  });
+
+  // Reading keys work wherever focus sits, the way they do in a book reader.
+  document.addEventListener("keydown", (event) => {
+    if (!active) return;
+    if (event.metaKey || event.ctrlKey || event.altKey) return;
+    if (event.target?.closest?.("input, textarea, select, [contenteditable]")) return;
+
     const actions = {
       ArrowRight: () => move(1),
       ArrowLeft: () => move(-1),
@@ -398,6 +421,7 @@ export function createNotesBook(root, { onRoute, onError, onPageChange } = {}) {
     event.preventDefault();
     action();
   });
+
 
   bindNotesGestures(stage, {
     move,

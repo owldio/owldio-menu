@@ -11,9 +11,13 @@
 - `/:clientSlug/:programmeSlug#entrance`：演出資訊入口
 - `/:clientSlug/:programmeSlug#contents`：章節目錄
 - `/:clientSlug/:programmeSlug#chapter/:chapterSlug`：可直接分享的原生網頁章節
+- `/:programmeSlug#page/:pageNumber`：翻頁式樂曲解說的指定頁
+- `/:programmeSlug#note/:noteSlug`：跳至指定曲目的樂曲解說
 - `/admin`：管理後台
 
 示範作品位於 `/yuan-chamber/sense-and-sensibility`；舊的 `/ours/tide-awake` 會自動轉址。
+
+當印刷節目單裝不下樂曲解說時，節目冊可改用 `reader_layout: "notes-book"`：內容在瀏覽器裡排成固定版面的書頁，以跨頁、翻頁、縮圖與縮放閱讀，文字仍是可選取、可搜尋的 HTML。`/moonlight-promise` 是這種續頁的示範。
 
 ## Local development
 
