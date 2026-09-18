@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { sampleProgrammes } from "../src/data/sample-programme.js";
+import { moonlightPromiseProgramme, sampleProgrammes } from "../src/data/sample-programme.js";
 
 describe("sample programme catalogue", () => {
   it("reads Moonlight Promise in the editorial sequence specified for its tri-fold", () => {
@@ -33,5 +33,30 @@ describe("sample programme catalogue", () => {
         backCoverPanelIndex: 1,
       },
     });
+  });
+
+  it("publishes all seven Moonlight Promise programme-note chapters for mobile reading", () => {
+    expect(moonlightPromiseProgramme.default_reader_view).toBe("contents");
+    expect(moonlightPromiseProgramme.chapters.map(({ title }) => title)).toEqual([
+      "格蘭查尼：古典風格的詠嘆調",
+      "布拉姆斯：第三號 C 小調鋼琴四重奏，作品 60",
+      "獻給月亮——心靈相通的歌聲",
+      "伊貝爾：《幕間曲》給小提琴與豎琴",
+      "佛瑞：《搖籃》作品 23，第 1 首",
+      "德布西／馬修・諾庭改編：《月光》",
+      "鄧雨賢／李哲藝改編：《碎心花》",
+    ]);
+
+    moonlightPromiseProgramme.chapters.forEach((chapter) => {
+      expect(chapter.is_visible).toBe(true);
+      expect(chapter.blocks.some(({ type }) => type === "listening-guide")).toBe(true);
+      expect(chapter.blocks.some(({ type }) => type === "prose")).toBe(true);
+    });
+
+    const publishedText = JSON.stringify(moonlightPromiseProgramme.chapters);
+    expect(publishedText).toContain("如何讓豎琴「唱歌」");
+    expect(publishedText).toContain("最嚴謹的古典形式");
+    expect(publishedText).toContain("整片夜色，只留下了那可以容納一切");
+    expect(publishedText.length).toBeGreaterThan(8_000);
   });
 });

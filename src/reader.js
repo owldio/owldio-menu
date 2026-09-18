@@ -1,7 +1,10 @@
 import {
   buildProgrammePath,
   buildProgrammeReaderPath,
+  buildProgrammeViewUrl,
+  isProgrammeReaderHash,
   parseReaderHash,
+  resolveProgrammeReaderView,
 } from "./domain/routing.js";
 import {
   advanceCarouselIndex,
@@ -12,7 +15,12 @@ import {
   resolveOrbitPose,
   resolveOrbitTransition,
 } from "./domain/carousel.js";
-import { hasWebEdition } from "./domain/programme.js";
+import { hasWebEdition, withEditorialFallback } from "./domain/programme.js";
+import {
+  cycleReadingSize,
+  normalizeReadingSize,
+  resetReadingPosition,
+} from "./domain/reading.js";
 import { sampleProgrammes } from "./data/sample-programme.js";
 import { createPublicationViewer } from "./publication-pdf.js";
 
@@ -182,7 +190,7 @@ function renderContents(programme) {
   const index = document.querySelector("#editorial-index");
   const chapters = (programme.chapters || []).filter((chapter) => chapter.is_visible !== false);
   index.replaceChildren();
-  text("contents-count", `${chapters.length} / ${chapters.length}`);
+  text("contents-count", programme.contents_title ? `${chapters.length} 篇` : `${chapters.length} / ${chapters.length}`);
 
   chapters.forEach((chapter, chapterIndex) => {
     const row = createElement("button", "index-row");
@@ -195,7 +203,13 @@ function renderContents(programme) {
       createElement("strong", "", chapter.title),
       createElement("small", "", chapter.title_en || chapter.eyebrow || `CHAPTER ${chapterIndex + 1}`),
     );
-    const folio = createElement("span", "index-row__folio", String(chapter.page_start || chapterIndex + 1).padStart(2, "0"));
+    const folioLabel = chapter.reading_minutes
+      ? `${chapter.reading_minutes}′`
+      : String(chapter.page_start || chapterIndex + 1).padStart(2, "0");
+    const folio = createElement("span", "index-row__folio", folioLabel);
+    if (chapter.reading_minutes) {
+      row.setAttribute("aria-label", `${chapter.title}，閱讀約 ${chapter.reading_minutes} 分鐘`);
+    }
     row.append(number, copy, folio);
     index.append(row);
   });
@@ -332,6 +346,11 @@ function renderChapterBlocks(chapter) {
     if (block.type === "lede") content.append(proseBlock([block.text], true));
     if (block.type === "prose") content.append(proseBlock(block.paragraphs || []));
     if (block.type === "score") content.append(scoreBlock(block));
+    if (block.type === "listening-guide") {
+      const guide = scoreBlock(block);
+      guide.classList.add("listening-guide");
+      content.append(guide);
+    }
     if (block.type === "quote") content.append(quoteBlock(block));
     if (block.type === "programme-list") content.append(programmeListBlock(block));
     if (block.type === "people-list") content.append(peopleListBlock(block));
@@ -354,6 +373,7 @@ function hydrateProgramme(programme) {
 
   entranceCover.dataset.theme = programme.cover_theme || "sage";
   document.querySelector("#entrance-view").dataset.theme = programme.cover_theme || "sage";
+  document.querySelector("#reader-shell").dataset.programmeTheme = programme.cover_theme || "sage";
 
   text("programme-cover-spine", `OWLDIO MENU / ${programme.production_type || "PERFORMING ARTS"}`);
   text("programme-cover-edition", "DIGITAL PROGRAMME");
@@ -378,6 +398,15 @@ function hydrateProgramme(programme) {
   }
   text("programme-status-copy", state.copy);
   text("pdf-title", programme.title);
+  text("contents-programme-title", programme.title);
+  text("entrance-folio-title", `OWLDIO MENU / ${programme.title_en || programme.title}`);
+  text("contents-folio-title", programme.title_en || programme.title);
+  text("contents-kicker", programme.contents_kicker || "CONTENTS / PROGRAMME INDEX");
+  text("contents-title", programme.contents_title || "目錄");
+  text(
+    "contents-description",
+    programme.contents_description || "依照現場閱讀順序編排。點選章節，即刻進入網頁版內容。",
+  );
 
   const webEditionAvailable = hasWebEdition(programme);
   document.querySelectorAll('[data-route="contents"]').forEach((control) => {
@@ -389,7 +418,10 @@ function hydrateProgramme(programme) {
   const firstChapter = programme.chapters?.[0];
 
   routeMeta.entrance = { context: titleEnglish, title: `${programme.title}｜電子節目冊` };
-  routeMeta.contents.title = `目錄｜${programme.title}`;
+  routeMeta.contents = {
+    context: programme.contents_title ? "LISTENING NOTES" : "PROGRAMME INDEX",
+    title: `${programme.contents_title || "目錄"}｜${programme.title}`,
+  };
   routeMeta.chapter.title = `${firstChapter?.title || "網頁版"}｜${programme.title}`;
   routeMeta.pdf.title = `翻閱節目冊｜${programme.title}`;
 }
@@ -432,6 +464,34 @@ export async function mountReader({ root, repository, initialRoute }) {
   let shelfQueuedOrbitSteps = 0;
   let currentProgramme = null;
   let currentChapterIndex = 0;
+  let readingSize = "standard";
+
+  try {
+    readingSize = normalizeReadingSize(window.localStorage.getItem("owldio-menu-reading-size"));
+  } catch {
+    readingSize = "standard";
+  }
+
+  function applyReadingSize(size) {
+    readingSize = normalizeReadingSize(size);
+    shell.dataset.readingSize = readingSize;
+    const labels = {
+      standard: "標準",
+      large: "大字",
+      "extra-large": "特大",
+    };
+    const label = labels[readingSize];
+    text("reading-size-label", label);
+    const control = document.querySelector("#reading-size-toggle");
+    control?.setAttribute("aria-label", `調整文章字級，目前為${label}`);
+    try {
+      window.localStorage.setItem("owldio-menu-reading-size", readingSize);
+    } catch {
+      // Private browsing can disable persistent preferences; the in-memory setting still works.
+    }
+  }
+
+  applyReadingSize(readingSize);
 
   function animateView(view) {
     view.classList.remove("view-enter");
@@ -778,15 +838,23 @@ export async function mountReader({ root, repository, initialRoute }) {
       publicationViewer.deactivate();
     }
 
-    const hashRoute = activeChapter ? `chapter/${encodeURIComponent(activeChapter.slug)}` : nextRoute;
-    const nextUrl = nextRoute === "pdf" ? location.pathname : `${location.pathname}#${hashRoute}`;
-    if (initialRoute.kind === "programme" && nextRoute === "pdf" && location.hash) {
-      history.replaceState({ route: nextRoute }, "", location.pathname);
-    } else if (updateHash && initialRoute.kind === "programme" && `${location.pathname}${location.hash}` !== nextUrl) {
+    const nextUrl = buildProgrammeViewUrl(location.pathname, {
+      view: nextRoute,
+      chapterSlug: activeChapter?.slug,
+      defaultView: currentProgramme?.default_reader_view,
+    });
+    if (updateHash && initialRoute.kind === "programme" && `${location.pathname}${location.hash}` !== nextUrl) {
       history.pushState({ route: nextRoute, chapterSlug: activeChapter?.slug }, "", nextUrl);
     }
 
-    window.scrollTo({ top: 0, behavior: "auto" });
+    const resetScroll = () => resetReadingPosition({
+      scrollingElement: document.scrollingElement,
+      body: document.body,
+      activeElement: document.activeElement,
+      scrollTo: (left, top) => window.scrollTo({ left, top, behavior: "instant" }),
+    });
+    resetScroll();
+    window.requestAnimationFrame(resetScroll);
     animateView(views.get(nextRoute));
   }
 
@@ -1023,6 +1091,10 @@ export async function mountReader({ root, repository, initialRoute }) {
     if (marker) showRoute("chapter", { chapterSlug: marker.dataset.chapterSlug });
   });
 
+  document.querySelector("#reading-size-toggle").addEventListener("click", () => {
+    applyReadingSize(cycleReadingSize(readingSize));
+  });
+
   document.querySelector("#chapter-prev").addEventListener("click", () => {
     const chapters = visibleChapters();
     if (currentChapterIndex === 0) {
@@ -1042,16 +1114,26 @@ export async function mountReader({ root, repository, initialRoute }) {
   });
 
   window.addEventListener("popstate", () => {
-    if (initialRoute.kind === "programme") {
+    if (initialRoute.kind === "programme" && isProgrammeReaderHash(location.hash)) {
       const readerRoute = parseReaderHash(location.hash);
-      showRoute(readerRoute.view, { chapterSlug: readerRoute.chapterSlug, updateHash: false });
+      const resolvedView = resolveProgrammeReaderView({
+        requestedView: readerRoute.view,
+        hash: location.hash,
+        defaultView: currentProgramme?.default_reader_view,
+      });
+      showRoute(resolvedView, { chapterSlug: readerRoute.chapterSlug, updateHash: false });
     }
   });
 
   window.addEventListener("hashchange", () => {
-    if (initialRoute.kind === "programme") {
+    if (initialRoute.kind === "programme" && isProgrammeReaderHash(location.hash)) {
       const readerRoute = parseReaderHash(location.hash);
-      showRoute(readerRoute.view, { chapterSlug: readerRoute.chapterSlug, updateHash: false });
+      const resolvedView = resolveProgrammeReaderView({
+        requestedView: readerRoute.view,
+        hash: location.hash,
+        defaultView: currentProgramme?.default_reader_view,
+      });
+      showRoute(resolvedView, { chapterSlug: readerRoute.chapterSlug, updateHash: false });
     }
   });
 
@@ -1068,7 +1150,17 @@ export async function mountReader({ root, repository, initialRoute }) {
     showRoute("shelf", { updateHash: false });
     startShelfMarquee();
   } else if (initialRoute.kind === "programme") {
-    if (initialRoute.view === "pdf") {
+    const localProgramme = sampleProgrammes.find(
+      (programme) => {
+        const slugMatches = programme.slug === initialRoute.programmeSlug
+          || programme.legacy_slugs?.includes(initialRoute.programmeSlug);
+        if (!initialRoute.legacyPath) return slugMatches;
+        return slugMatches && (programme.client_slug === initialRoute.clientSlug
+          || programme.legacy_client_slugs?.includes(initialRoute.clientSlug));
+      },
+    );
+
+    if (initialRoute.view === "pdf" && location.hash) {
       publicationViewer.preload();
       showRoute("pdf", { updateHash: false });
     }
@@ -1083,37 +1175,37 @@ export async function mountReader({ root, repository, initialRoute }) {
       console.error("Unable to load programme", error);
     }
 
-    if (!currentProgramme) {
-      currentProgramme = sampleProgrammes.find(
-        (programme) => {
-          const slugMatches = programme.slug === initialRoute.programmeSlug
-            || programme.legacy_slugs?.includes(initialRoute.programmeSlug);
-          if (!initialRoute.legacyPath) return slugMatches;
-          return slugMatches && (programme.client_slug === initialRoute.clientSlug
-            || programme.legacy_client_slugs?.includes(initialRoute.clientSlug));
-        },
-      );
-    }
+    currentProgramme = withEditorialFallback(currentProgramme, localProgramme);
 
     if (!currentProgramme) {
       initialRoute.kind = "not-found";
       showRoute("not-found", { updateHash: false });
     } else {
+      const resolvedInitialView = resolveProgrammeReaderView({
+        requestedView: initialRoute.view,
+        hash: location.hash,
+        defaultView: currentProgramme.default_reader_view,
+      });
+      const canonicalPath = buildProgrammePath(currentProgramme.slug);
+      const canonicalUrl = buildProgrammeViewUrl(canonicalPath, {
+        view: resolvedInitialView,
+        chapterSlug: initialRoute.chapterSlug,
+        defaultView: currentProgramme.default_reader_view,
+      });
       if (
         initialRoute.legacyPath
         || currentProgramme.slug !== initialRoute.programmeSlug
-        || (initialRoute.view === "pdf" && location.hash)
+        || `${location.pathname}${location.hash}` !== canonicalUrl
       ) {
-        const canonicalHash = initialRoute.view === "pdf" ? "" : location.hash;
         history.replaceState(
-          { route: initialRoute.view, chapterSlug: initialRoute.chapterSlug },
+          { route: resolvedInitialView, chapterSlug: initialRoute.chapterSlug },
           "",
-          `${buildProgrammePath(currentProgramme.slug)}${canonicalHash}`,
+          canonicalUrl,
         );
       }
       hydrateProgramme(currentProgramme);
       await configurePdf(currentProgramme);
-      showRoute(initialRoute.view, { chapterSlug: initialRoute.chapterSlug, updateHash: false });
+      showRoute(resolvedInitialView, { chapterSlug: initialRoute.chapterSlug, updateHash: false });
     }
   } else {
     showRoute("not-found", { updateHash: false });

@@ -742,6 +742,579 @@
   }
 }
 
+/* Moonlight Promise — contemporary classical editorial reading edition. */
+html[data-publication-boot-theme="moonlight"] .publication-boot {
+  background: #071624;
+}
+
+html[data-publication-boot-theme="moonlight"] .publication-placeholder--boot {
+  border-color: rgb(213 177 105 / 0.42);
+  background: #0b2031;
+  color: #f3ead5;
+  box-shadow: 0 24px 54px rgb(0 0 0 / 0.38);
+}
+
+.reader-shell[data-programme-theme="moonlight"] {
+  --moon-ink: #071624;
+  --moon-panel: #0b2031;
+  --moon-panel-raised: #102a3d;
+  --moon-ivory: #f3ead5;
+  --moon-copy: #e4dac4;
+  --moon-muted: #b9af9d;
+  --moon-gold: #d5b169;
+  --moon-rose: #bf7f89;
+  --moon-line: rgb(213 177 105 / 0.28);
+  --moon-copy-size: 18px;
+  --moon-lede-size: 21px;
+}
+
+.reader-shell[data-programme-theme="moonlight"][data-reading-size="large"] {
+  --moon-copy-size: 20px;
+  --moon-lede-size: 23px;
+}
+
+.reader-shell[data-programme-theme="moonlight"][data-reading-size="extra-large"] {
+  --moon-copy-size: 22px;
+  --moon-lede-size: 25px;
+}
+
+.reader-shell[data-programme-theme="moonlight"][data-view="contents"],
+.reader-shell[data-programme-theme="moonlight"][data-view="chapter"] {
+  background: var(--moon-ink);
+  color: var(--moon-ivory);
+  box-shadow: 0 0 78px rgb(0 0 0 / 0.45);
+}
+
+.reader-shell[data-programme-theme="moonlight"][data-view="contents"] .site-header,
+.reader-shell[data-programme-theme="moonlight"][data-view="chapter"] .site-header {
+  border-bottom-color: var(--moon-line);
+  background: rgb(7 22 36 / 0.94);
+  color: var(--moon-ivory);
+}
+
+.reader-shell[data-programme-theme="moonlight"] .site-header__context,
+.reader-shell[data-programme-theme="moonlight"] .brand__division,
+.reader-shell[data-programme-theme="moonlight"] .site-header__index span:first-child {
+  color: var(--moon-gold);
+}
+
+.reader-shell[data-programme-theme="moonlight"] .brand,
+.reader-shell[data-programme-theme="moonlight"] .site-header__index {
+  border-color: var(--moon-line);
+}
+
+.reader-shell[data-programme-theme="moonlight"] button:focus-visible,
+.reader-shell[data-programme-theme="moonlight"] a:focus-visible {
+  outline-color: var(--moon-gold);
+}
+
+.reader-shell[data-programme-theme="moonlight"] .view--contents,
+.reader-shell[data-programme-theme="moonlight"] .view--chapter {
+  position: relative;
+  isolation: isolate;
+  background: var(--moon-ink);
+  color: var(--moon-ivory);
+}
+
+.reader-shell[data-programme-theme="moonlight"] .view--contents::before,
+.reader-shell[data-programme-theme="moonlight"] .view--chapter::before {
+  position: absolute;
+  inset: 0 0 0 auto;
+  z-index: -1;
+  width: 12px;
+  background: repeating-linear-gradient(
+    90deg,
+    transparent 0 2px,
+    rgb(213 177 105 / 0.16) 2px 3px
+  );
+  content: "";
+  pointer-events: none;
+}
+
+.reader-shell[data-programme-theme="moonlight"] .contents-sheet,
+.reader-shell[data-programme-theme="moonlight"] .chapter-page {
+  position: relative;
+  z-index: 1;
+}
+
+.reader-shell[data-programme-theme="moonlight"] .eyebrow-row--navy {
+  border-color: var(--moon-line);
+  color: var(--moon-gold);
+}
+
+.reader-shell[data-programme-theme="moonlight"] .contents-heading {
+  grid-template-columns: 1fr;
+  gap: 18px;
+  padding: 37px 0 31px;
+}
+
+.reader-shell[data-programme-theme="moonlight"] .contents-heading__programme {
+  margin: 0 0 14px;
+  color: var(--moon-muted);
+  font-family: var(--font-serif);
+  font-size: 14px;
+  letter-spacing: 0.08em;
+}
+
+.reader-shell[data-programme-theme="moonlight"] .contents-heading .kicker {
+  color: var(--moon-gold);
+  font-size: 9px;
+}
+
+.reader-shell[data-programme-theme="moonlight"] .contents-heading h1 {
+  max-width: 7em;
+  margin-top: 13px;
+  color: var(--moon-ivory);
+  font-size: clamp(49px, 15vw, 68px);
+  font-weight: 500;
+  line-height: 1.05;
+  letter-spacing: -0.055em;
+}
+
+.reader-shell[data-programme-theme="moonlight"] .contents-heading > p {
+  max-width: 30em;
+  color: var(--moon-copy);
+  font-size: 14px;
+  line-height: 1.85;
+}
+
+.reader-shell[data-programme-theme="moonlight"] .editorial-index {
+  border-top-color: var(--moon-gold);
+}
+
+.reader-shell[data-programme-theme="moonlight"] .index-row {
+  grid-template-columns: 35px minmax(0, 1fr) 30px;
+  gap: 13px;
+  min-height: 92px;
+  padding: 15px 0;
+  border-bottom-color: var(--moon-line);
+  color: var(--moon-ivory);
+}
+
+.reader-shell[data-programme-theme="moonlight"] .index-row:hover,
+.reader-shell[data-programme-theme="moonlight"] .index-row:focus-visible {
+  background: linear-gradient(90deg, rgb(213 177 105 / 0.07), transparent 74%);
+}
+
+.reader-shell[data-programme-theme="moonlight"] .index-row__no {
+  color: var(--moon-gold);
+  font-size: 11px;
+}
+
+.reader-shell[data-programme-theme="moonlight"] .index-row__copy strong {
+  color: var(--moon-ivory);
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 1.55;
+  letter-spacing: -0.025em;
+}
+
+.reader-shell[data-programme-theme="moonlight"] .index-row__copy small {
+  color: var(--moon-muted);
+  font-size: 9px;
+  line-height: 1.5;
+  letter-spacing: 0.08em;
+}
+
+.reader-shell[data-programme-theme="moonlight"] .index-row__folio {
+  color: var(--moon-rose);
+  font-size: 10px;
+}
+
+.reader-shell[data-programme-theme="moonlight"] .index-row--pdf {
+  margin-top: 26px;
+  border-top-color: var(--moon-line);
+  border-bottom-color: var(--moon-gold);
+}
+
+.reader-shell[data-programme-theme="moonlight"] .index-row--pdf .index-row__no,
+.reader-shell[data-programme-theme="moonlight"] .index-row--pdf .index-row__copy strong {
+  color: var(--moon-gold);
+}
+
+.reader-shell[data-programme-theme="moonlight"] .folio {
+  border-color: var(--moon-line);
+  color: var(--moon-muted);
+}
+
+.reader-shell[data-programme-theme="moonlight"] .chapter-page {
+  padding-bottom: 58px;
+}
+
+.reader-shell[data-programme-theme="moonlight"] .chapter-running-head {
+  position: sticky;
+  top: 55px;
+  z-index: 18;
+  grid-template-columns: minmax(70px, 1fr) auto auto auto;
+  gap: 12px;
+  align-items: stretch;
+  min-height: 51px;
+  padding-top: 3px;
+  padding-bottom: 3px;
+  border-bottom: 1px solid var(--moon-line);
+  background: rgb(11 32 49 / 0.94);
+  color: var(--moon-muted);
+  backdrop-filter: blur(15px);
+}
+
+.reader-shell[data-programme-theme="moonlight"] .chapter-running-head > button {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+}
+
+.reader-shell[data-programme-theme="moonlight"] .chapter-running-head > button:first-child,
+.reader-shell[data-programme-theme="moonlight"] .chapter-running-head > span:nth-child(2) {
+  color: var(--moon-gold);
+}
+
+.reader-shell[data-programme-theme="moonlight"] .reading-size-toggle {
+  gap: 5px;
+  justify-content: center;
+  min-width: 52px;
+  padding: 3px 7px;
+  border: 1px solid var(--moon-line);
+  border-radius: 999px;
+  color: var(--moon-ivory);
+  text-align: center;
+}
+
+.reader-shell[data-programme-theme="moonlight"] .reading-size-toggle span:first-child {
+  font-family: var(--font-display);
+  font-size: 13px;
+  letter-spacing: 0;
+}
+
+.reader-shell[data-programme-theme="moonlight"] .reading-size-toggle span:last-child {
+  color: var(--moon-muted);
+  font-family: var(--font-sans);
+  font-size: 8px;
+  letter-spacing: 0.04em;
+}
+
+.reader-shell[data-programme-theme="moonlight"] .chapter-heading {
+  grid-template-columns: 54px minmax(0, 1fr);
+  gap: 17px;
+  padding: 36px 0 29px;
+}
+
+.reader-shell[data-programme-theme="moonlight"] .chapter-heading__number {
+  color: var(--moon-gold);
+  font-family: var(--font-display);
+  font-size: 43px;
+  font-variant-numeric: lining-nums;
+}
+
+.reader-shell[data-programme-theme="moonlight"] .chapter-heading .kicker {
+  color: var(--moon-rose);
+  font-size: 9px;
+  line-height: 1.6;
+}
+
+.reader-shell[data-programme-theme="moonlight"] .chapter-heading h1 {
+  color: var(--moon-ivory);
+  font-size: clamp(29px, 8.7vw, 39px);
+  font-weight: 500;
+  line-height: 1.38;
+  letter-spacing: -0.045em;
+}
+
+.reader-shell[data-programme-theme="moonlight"] .chapter-heading__english {
+  color: var(--moon-muted);
+  font-size: 10px;
+  line-height: 1.65;
+  letter-spacing: 0.07em;
+}
+
+.reader-shell[data-programme-theme="moonlight"] .chapter-layout {
+  border-top-color: var(--moon-gold);
+}
+
+.reader-shell[data-programme-theme="moonlight"] .chapter-prose {
+  padding: 0 2px;
+}
+
+.reader-shell[data-programme-theme="moonlight"] .chapter-prose p {
+  margin-top: 1.45em;
+  color: var(--moon-copy);
+  font-size: var(--moon-copy-size);
+  font-weight: 400;
+  line-height: 1.95;
+  text-align: start;
+  text-wrap: pretty;
+  word-break: normal;
+  line-break: strict;
+}
+
+.reader-shell[data-programme-theme="moonlight"] .chapter-prose .chapter-lede {
+  max-width: 24em;
+  margin-top: 31px;
+  color: var(--moon-ivory);
+  font-size: var(--moon-lede-size);
+  font-weight: 500;
+  line-height: 1.8;
+  letter-spacing: 0.01em;
+}
+
+.reader-shell[data-programme-theme="moonlight"] .score-note {
+  grid-template-columns: 52px minmax(0, 1fr);
+  gap: 16px;
+  margin: 42px 0 30px;
+  padding: 20px 0 22px;
+  border-top-color: var(--moon-line);
+  border-bottom-color: var(--moon-line);
+  color: var(--moon-copy);
+}
+
+.reader-shell[data-programme-theme="moonlight"] .score-note__number {
+  color: var(--moon-gold);
+  font-family: var(--font-display);
+  font-size: 43px;
+}
+
+.reader-shell[data-programme-theme="moonlight"] .score-note p {
+  color: var(--moon-rose);
+}
+
+.reader-shell[data-programme-theme="moonlight"] .score-note h2 {
+  color: var(--moon-ivory);
+  font-size: 21px;
+  font-weight: 500;
+  line-height: 1.55;
+}
+
+.reader-shell[data-programme-theme="moonlight"] .score-note dl {
+  color: var(--moon-copy);
+  font-family: var(--font-sans);
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+.reader-shell[data-programme-theme="moonlight"] .score-note dl div {
+  grid-template-columns: 82px minmax(0, 1fr);
+  gap: 12px;
+  padding: 8px 0;
+  border-top-color: var(--moon-line);
+}
+
+.reader-shell[data-programme-theme="moonlight"] .score-note dt {
+  color: var(--moon-gold);
+}
+
+.reader-shell[data-programme-theme="moonlight"] .score-note dd {
+  color: var(--moon-copy);
+}
+
+.reader-shell[data-programme-theme="moonlight"] .listening-guide {
+  margin-top: 12px;
+  padding: 23px 18px 25px;
+  border: 1px solid var(--moon-line);
+  background: var(--moon-panel-raised);
+}
+
+.reader-shell[data-programme-theme="moonlight"] .listening-guide h2 {
+  margin-bottom: 16px;
+}
+
+.reader-shell[data-programme-theme="moonlight"] .programme-list {
+  margin-top: 38px;
+  border-top-color: var(--moon-gold);
+}
+
+.reader-shell[data-programme-theme="moonlight"] .programme-item {
+  grid-template-columns: 35px minmax(0, 1fr);
+  align-items: start;
+  min-height: 0;
+  padding: 22px 0 24px;
+  border-bottom-color: var(--moon-line);
+}
+
+.reader-shell[data-programme-theme="moonlight"] .programme-item__number {
+  color: var(--moon-gold);
+}
+
+.reader-shell[data-programme-theme="moonlight"] .programme-item h2 {
+  color: var(--moon-ivory);
+  font-size: 18px;
+  font-weight: 500;
+  line-height: 1.55;
+}
+
+.reader-shell[data-programme-theme="moonlight"] .programme-item p {
+  margin-top: 9px;
+  color: var(--moon-copy);
+  font-family: var(--font-serif);
+  font-size: 15px;
+  line-height: 1.85;
+  white-space: pre-line;
+}
+
+.reader-shell[data-programme-theme="moonlight"] .programme-item time:empty {
+  display: none;
+}
+
+.reader-shell[data-programme-theme="moonlight"] .chapter-page blockquote {
+  margin: 38px 2px 12px;
+  padding: 20px 0 22px 22px;
+  border-left-color: var(--moon-gold);
+  color: var(--moon-ivory);
+  font-size: 21px;
+  font-weight: 500;
+  line-height: 1.85;
+}
+
+.reader-shell[data-programme-theme="moonlight"] .chapter-page blockquote cite {
+  color: var(--moon-rose);
+}
+
+.reader-shell[data-programme-theme="moonlight"] .chapter-rail {
+  border-top-color: var(--moon-line);
+  background: rgb(7 22 36 / 0.96);
+  color: var(--moon-ivory);
+  box-shadow: 0 -10px 30px rgb(0 0 0 / 0.25);
+  backdrop-filter: blur(16px);
+}
+
+.reader-shell[data-programme-theme="moonlight"] .chapter-rail > button:first-child,
+.reader-shell[data-programme-theme="moonlight"] .chapter-rail > button:last-child {
+  border-color: var(--moon-line);
+}
+
+.reader-shell[data-programme-theme="moonlight"] .chapter-rail > button span {
+  color: var(--moon-gold);
+}
+
+.reader-shell[data-programme-theme="moonlight"] .chapter-rail__progress button {
+  background: rgb(243 234 213 / 0.18);
+}
+
+.reader-shell[data-programme-theme="moonlight"] .chapter-rail__progress button.is-complete {
+  background: rgb(213 177 105 / 0.52);
+}
+
+.reader-shell[data-programme-theme="moonlight"] .chapter-rail__progress button.is-current {
+  background: var(--moon-rose);
+}
+
+.entrance-cover[data-theme="moonlight"] {
+  border-color: #d5b169;
+  background: #0b2031;
+  color: #f3ead5;
+}
+
+.entrance-cover[data-theme="moonlight"] .entrance-cover__title,
+.entrance-cover[data-theme="moonlight"] .entrance-cover__english {
+  color: #f3ead5;
+}
+
+.reader-shell[data-programme-theme="moonlight"][data-view="pdf"],
+.reader-shell[data-programme-theme="moonlight"][data-view="pdf"] .view--pdf {
+  background: #071624;
+}
+
+.reader-shell[data-programme-theme="moonlight"][data-view="pdf"] .view--pdf {
+  color: var(--moon-ivory);
+}
+
+.reader-shell[data-programme-theme="moonlight"][data-view="pdf"] .site-header,
+.reader-shell[data-programme-theme="moonlight"][data-view="pdf"] .publication-toolbar {
+  border-color: var(--moon-line);
+  background: rgb(7 22 36 / 0.94);
+}
+
+.reader-shell[data-programme-theme="moonlight"][data-view="pdf"] .publication-loading,
+.reader-shell[data-programme-theme="moonlight"][data-view="pdf"] .publication-placeholder {
+  background: var(--moon-panel);
+}
+
+@media (min-width: 700px) {
+  .reader-shell[data-programme-theme="moonlight"][data-view="contents"],
+  .reader-shell[data-programme-theme="moonlight"][data-view="chapter"] {
+    --reader-width: 920px;
+  }
+
+  .reader-shell[data-programme-theme="moonlight"] .contents-sheet,
+  .reader-shell[data-programme-theme="moonlight"] .chapter-page {
+    width: min(100%, 800px);
+  }
+
+  .reader-shell[data-programme-theme="moonlight"] .contents-heading {
+    grid-template-columns: minmax(0, 1fr) 260px;
+    gap: 70px;
+    padding-top: 54px;
+  }
+
+  .reader-shell[data-programme-theme="moonlight"] .contents-heading h1 {
+    font-size: 76px;
+  }
+
+  .reader-shell[data-programme-theme="moonlight"] .chapter-running-head {
+    margin-right: -42px;
+    margin-left: -42px;
+    padding-right: 42px;
+    padding-left: 42px;
+  }
+
+  .reader-shell[data-programme-theme="moonlight"] .chapter-heading {
+    grid-template-columns: 82px minmax(0, 1fr);
+    padding-top: 52px;
+    padding-bottom: 38px;
+  }
+
+  .reader-shell[data-programme-theme="moonlight"] .chapter-heading__number {
+    font-size: 58px;
+  }
+
+  .reader-shell[data-programme-theme="moonlight"] .chapter-heading h1 {
+    font-size: 48px;
+  }
+
+  .reader-shell[data-programme-theme="moonlight"] .chapter-prose,
+  .reader-shell[data-programme-theme="moonlight"] .score-note,
+  .reader-shell[data-programme-theme="moonlight"] .programme-list,
+  .reader-shell[data-programme-theme="moonlight"] .chapter-page blockquote {
+    width: min(100%, 650px);
+    margin-right: auto;
+    margin-left: auto;
+  }
+}
+
+@media (max-width: 360px) {
+  .reader-shell[data-programme-theme="moonlight"] {
+    --moon-copy-size: 17px;
+    --moon-lede-size: 20px;
+  }
+
+  .reader-shell[data-programme-theme="moonlight"][data-reading-size="large"] {
+    --moon-copy-size: 19px;
+    --moon-lede-size: 22px;
+  }
+
+  .reader-shell[data-programme-theme="moonlight"][data-reading-size="extra-large"] {
+    --moon-copy-size: 21px;
+    --moon-lede-size: 24px;
+  }
+
+  .reader-shell[data-programme-theme="moonlight"] .chapter-running-head {
+    gap: 7px;
+  }
+
+  .reader-shell[data-programme-theme="moonlight"] .chapter-running-head > span:nth-child(2) {
+    display: none;
+  }
+
+  .reader-shell[data-programme-theme="moonlight"] .listening-guide {
+    grid-template-columns: 42px minmax(0, 1fr);
+    padding-right: 13px;
+    padding-left: 13px;
+  }
+
+  .reader-shell[data-programme-theme="moonlight"] .score-note dl div {
+    grid-template-columns: 1fr;
+    gap: 3px;
+  }
+}
+
 /* Reader responsiveness: keep a meaningful cover on screen while PDF.js works off-stage. */
 .publication-boot {
   display: none;

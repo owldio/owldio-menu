@@ -14,6 +14,10 @@
         const hashRoute = location.hash.slice(1).split("/")[0];
         if (isProgrammePath && (!hashRoute || hashRoute === "pdf")) {
           document.documentElement.dataset.publicationBoot = "true";
+          if (location.pathname.replace(/\/+$/, "") === "/moonlight-promise") {
+            document.documentElement.dataset.publicationBootTheme = "moonlight";
+            document.querySelector('meta[name="theme-color"]')?.setAttribute("content", "#071624");
+          }
         }
       })();
     </script>
@@ -156,7 +160,7 @@
           </div>
 
           <footer class="folio page-gutter">
-            <span>OWLDIO MENU / PROGRAMME 001</span>
+            <span id="entrance-folio-title">OWLDIO MENU / PROGRAMME</span>
             <span>02</span>
           </footer>
         </section>
@@ -170,10 +174,11 @@
 
             <div class="contents-heading">
               <div>
-                <p class="kicker">CONTENTS / PROGRAMME 001</p>
+                <p class="contents-heading__programme" id="contents-programme-title">電子節目冊</p>
+                <p class="kicker" id="contents-kicker">CONTENTS / PROGRAMME 001</p>
                 <h1 id="contents-title">目錄</h1>
               </div>
-              <p>依照現場閱讀順序編排。<br />點選章節，即刻進入網頁版內容。</p>
+              <p id="contents-description">依照現場閱讀順序編排。點選章節，即刻進入網頁版內容。</p>
             </div>
 
             <nav class="editorial-index" id="editorial-index" aria-label="節目冊章節">
@@ -182,7 +187,7 @@
           </div>
 
           <footer class="folio page-gutter">
-            <span>THE TIDE STAYS AWAKE</span>
+            <span id="contents-folio-title">OWLDIO MENU / PROGRAMME</span>
             <span>03</span>
           </footer>
         </section>
@@ -192,6 +197,10 @@
             <div class="chapter-running-head">
               <button type="button" data-route="contents">← 目錄</button>
               <span>網頁版</span>
+              <button class="reading-size-toggle" type="button" id="reading-size-toggle" aria-label="調整文章字級">
+                <span aria-hidden="true">Aa</span>
+                <span id="reading-size-label">標準</span>
+              </button>
               <span id="chapter-folio">1 / 1</span>
             </div>
 

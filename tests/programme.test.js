@@ -6,6 +6,7 @@ import {
   isListedProgramme,
   isPubliclyReadable,
   listedProgrammes,
+  withEditorialFallback,
 } from "../src/domain/programme.js";
 
 describe("programme visibility", () => {
@@ -47,5 +48,48 @@ describe("programme editions", () => {
     expect(hasWebEdition({ chapters: [] })).toBe(false);
     expect(hasWebEdition({ chapters: [{ is_visible: false }] })).toBe(false);
     expect(hasWebEdition({ chapters: [{ is_visible: true }] })).toBe(true);
+  });
+
+  it("fills missing editorial fields without replacing backend programme data", () => {
+    const fallbackChapters = [{ slug: "listening-notes", is_visible: true }];
+    const merged = withEditorialFallback(
+      {
+        id: "database-id",
+        slug: "moonlight-promise",
+        title: "後台標題",
+        visibility: "unlisted",
+        pdf_path: "programmes/database-id/programme.pdf",
+        chapters: [],
+      },
+      {
+        id: "local-id",
+        slug: "moonlight-promise",
+        title: "內建標題",
+        visibility: "published",
+        default_reader_view: "contents",
+        contents_title: "樂曲解說",
+        chapters: fallbackChapters,
+      },
+    );
+
+    expect(merged).toMatchObject({
+      id: "database-id",
+      title: "後台標題",
+      visibility: "unlisted",
+      pdf_path: "programmes/database-id/programme.pdf",
+      default_reader_view: "contents",
+      contents_title: "樂曲解說",
+    });
+    expect(merged.chapters).toBe(fallbackChapters);
+  });
+
+  it("keeps backend-authored chapters when they exist", () => {
+    const backendChapters = [{ slug: "updated-notes", is_visible: true }];
+    const merged = withEditorialFallback(
+      { slug: "moonlight-promise", chapters: backendChapters },
+      { slug: "moonlight-promise", chapters: [{ slug: "local-notes", is_visible: true }] },
+    );
+
+    expect(merged.chapters).toBe(backendChapters);
   });
 });

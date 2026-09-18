@@ -4,6 +4,7 @@ import samplePreviewUrl from "../../assets/rational-sensual-preview-v2.webp?url"
 import moonlightPromisePdfUrl from "../../assets/moonlight-promise-programme-v1.pdf?url";
 import moonlightPromiseCoverUrl from "../../assets/moonlight-promise-cover-v1.jpg?url";
 import moonlightPromisePreviewUrl from "../../assets/moonlight-promise-preview-v2.webp?url";
+import { moonlightPromiseChapters } from "./moonlight-promise-notes.js";
 
 export const sampleProgramme = {
   id: "sample-sense-and-sensibility",
@@ -235,12 +236,16 @@ export const moonlightPromiseProgramme = {
   title_en: null,
   summary: "月光映心弦，臺日情意長；豎琴與弦樂的浪漫對話。",
   production_type: "豎琴與弦樂室內樂之夜",
+  contents_title: "樂曲解說",
+  contents_kicker: "MOONLIGHT PROMISE / LISTENING NOTES",
+  contents_description: "七組作品，依今晚演出順序編排。點選正在聆聽的曲目，先看重點，再讀完整解說。",
   venue: "國家兩廳院演奏廳",
   starts_at: "2026-09-25T19:30:00+08:00",
   ends_at: null,
   duration_minutes: null,
   visibility: "published",
-  cover_theme: "cobalt",
+  cover_theme: "moonlight",
+  default_reader_view: "contents",
   cover_image_url: moonlightPromiseCoverUrl,
   cover_format: "portrait",
   cover_aspect_ratio: 0.4691,
@@ -285,7 +290,7 @@ export const moonlightPromiseProgramme = {
     filename: "月光下的約定-節目單.pdf",
     forceDownload: true,
   },
-  chapters: [],
+  chapters: moonlightPromiseChapters,
 };
 
 function demoProgramme(overrides) {

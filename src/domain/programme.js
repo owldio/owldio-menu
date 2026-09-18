@@ -23,6 +23,19 @@ export function hasWebEdition(programme) {
   return programme?.chapters?.some((chapter) => chapter?.is_visible !== false) ?? false;
 }
 
+export function withEditorialFallback(programme, fallback) {
+  if (!programme) return fallback || null;
+  if (!fallback) return programme;
+
+  const backendChapters = Array.isArray(programme.chapters) ? programme.chapters : [];
+
+  return {
+    ...fallback,
+    ...programme,
+    chapters: backendChapters.length ? backendChapters : (fallback.chapters || []),
+  };
+}
+
 export function canTransitionVisibility(from, to) {
   if (from === to) {
     return true;

@@ -1,5 +1,9 @@
 const READER_VIEWS = new Set(["entrance", "contents", "chapter", "pdf"]);
 
+function validReaderView(view, fallback = "pdf") {
+  return READER_VIEWS.has(view) ? view : fallback;
+}
+
 function decodeSegment(segment) {
   try {
     return decodeURIComponent(segment);
@@ -75,4 +79,30 @@ export function buildProgrammePath(programmeSlug) {
 
 export function buildProgrammeReaderPath(programmeSlug) {
   return buildProgrammePath(programmeSlug);
+}
+
+export function isProgrammeReaderHash(hash) {
+  const value = String(hash || "").replace(/^#/, "");
+  if (!value) return true;
+  if (READER_VIEWS.has(value)) return true;
+  if (!value.startsWith("chapter/")) return false;
+  return Boolean(decodeSegment(value.slice("chapter/".length)));
+}
+
+export function resolveProgrammeReaderView({ requestedView, hash, defaultView }) {
+  const hashValue = String(hash || "").replace(/^#/, "");
+  if (hashValue && isProgrammeReaderHash(hash)) return validReaderView(requestedView);
+  if (hashValue) return validReaderView(defaultView);
+  return validReaderView(defaultView, validReaderView(requestedView));
+}
+
+export function buildProgrammeViewUrl(pathname, { view, chapterSlug, defaultView }) {
+  const normalizedView = validReaderView(view);
+  const normalizedDefault = validReaderView(defaultView);
+  if (normalizedView === normalizedDefault) return pathname;
+
+  const hash = normalizedView === "chapter" && chapterSlug
+    ? `chapter/${encodeURIComponent(chapterSlug)}`
+    : normalizedView;
+  return `${pathname}#${hash}`;
 }

@@ -1372,7 +1372,6 @@ export function createPublicationViewer(root, { onError } = {}) {
     download.hidden = !source?.url;
 
     if (source?.url) {
-      void loadPdfEngine().catch(() => {});
       download.href = source.downloadUrl || source.url;
       if (source.forceDownload) {
         download.setAttribute("download", source.filename || "programme.pdf");

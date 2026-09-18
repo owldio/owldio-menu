@@ -1,9 +1,12 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  buildProgrammeViewUrl,
   buildProgrammePath,
   buildProgrammeReaderPath,
+  isProgrammeReaderHash,
   parseAppLocation,
+  resolveProgrammeReaderView,
 } from "../src/domain/routing.js";
 
 describe("parseAppLocation", () => {
@@ -74,5 +77,52 @@ describe("buildProgrammePath", () => {
 
   it("builds the direct reading destination used by programme covers", () => {
     expect(buildProgrammeReaderPath("sense-and-sensibility")).toBe("/sense-and-sensibility");
+  });
+});
+
+describe("programme reader defaults", () => {
+  it("opens the configured native contents view from a clean QR-code URL", () => {
+    expect(resolveProgrammeReaderView({
+      requestedView: "pdf",
+      hash: "",
+      defaultView: "contents",
+    })).toBe("contents");
+  });
+
+  it("honours an explicit PDF deep link even when native contents are the default", () => {
+    expect(resolveProgrammeReaderView({
+      requestedView: "pdf",
+      hash: "#pdf",
+      defaultView: "contents",
+    })).toBe("pdf");
+  });
+
+  it("does not confuse an in-page accessibility anchor with a reader route", () => {
+    expect(isProgrammeReaderHash("")).toBe(true);
+    expect(isProgrammeReaderHash("#pdf")).toBe(true);
+    expect(isProgrammeReaderHash("#chapter/debussy-clair-de-lune")).toBe(true);
+    expect(isProgrammeReaderHash("#main-content")).toBe(false);
+    expect(resolveProgrammeReaderView({
+      requestedView: "entrance",
+      hash: "#main-content",
+      defaultView: "contents",
+    })).toBe("contents");
+    expect(resolveProgrammeReaderView({
+      requestedView: "entrance",
+      hash: "#main-content",
+      defaultView: undefined,
+    })).toBe("pdf");
+  });
+
+  it("keeps the native landing URL clean and gives the print edition its own hash", () => {
+    expect(buildProgrammeViewUrl("/moonlight-promise", {
+      view: "contents",
+      defaultView: "contents",
+    })).toBe("/moonlight-promise");
+
+    expect(buildProgrammeViewUrl("/moonlight-promise", {
+      view: "pdf",
+      defaultView: "contents",
+    })).toBe("/moonlight-promise#pdf");
   });
 });
