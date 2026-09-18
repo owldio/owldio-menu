@@ -1,9 +1,12 @@
 import { buildNoteFlow } from "./domain/notes-flow.js";
 import { buildSpreads, packAtoms } from "./domain/notes-pagination.js";
 import {
-  PAGE_HEIGHT_BOUNDS,
+  LINE_HEIGHT_RATIO,
+  TEXT_SIZES,
+  defaultTextSize,
+  nextTextSize,
   pageOffset,
-  resolvePageHeight,
+  resolveLayout,
   spreadWidth,
 } from "./domain/notes-geometry.js";
 import {
@@ -12,7 +15,7 @@ import {
   rubberBandZoom,
   settleZoom,
 } from "./domain/reader-gestures.js";
-import { PAGE, renderPage } from "./notes-book-render.js";
+import { renderPage } from "./notes-book-render.js";
 import { createMeasurer } from "./notes-book-measure.js";
 import { bindNotesGestures } from "./notes-book-gestures.js";
 import { createChromeController } from "./notes-book-chrome.js";
@@ -26,12 +29,31 @@ const ZOOMED = 1.01;
 const TWO_UP_MIN_WIDTH = 900;
 const RELAYOUT_DELAY = 180;
 const HEIGHT_TOLERANCE = 24;
-const MAX_GAP_EXTRA = 14;
-const ENDING_GAP_EXTRA = 26;
+const MAX_GAP_EXTRA_EMS = 0.8;
+const ENDING_GAP_EXTRA_EMS = 1.5;
 const CENTRE_THRESHOLD = 0.06;
 const FONT_TIMEOUT = 3500;
 const JUMP_FADE = 240;
 const MOUSE_WAKE_INTERVAL = 250;
+const TEXT_SIZE_KEY = "owldio-notes-text-size";
+const THUMB_HEIGHT = 80;
+
+function storedTextSize() {
+  try {
+    const value = Number(window.localStorage.getItem(TEXT_SIZE_KEY));
+    return TEXT_SIZES.includes(value) ? value : null;
+  } catch {
+    return null;
+  }
+}
+
+function rememberTextSize(value) {
+  try {
+    window.localStorage.setItem(TEXT_SIZE_KEY, String(value));
+  } catch {
+    // Without storage the reader's choice lasts for this visit only.
+  }
+}
 
 function clamp(value, minimum, maximum) {
   return Math.min(Math.max(value, minimum), maximum);
@@ -41,7 +63,7 @@ function folio(index) {
   return String(index + 1).padStart(2, "0");
 }
 
-export function createNotesBook(root, { onRoute, onError, onPageChange } = {}) {
+export function createNotesBook(root, { onError, onPageChange } = {}) {
   const stage = root.querySelector("#notes-stage");
   const book = root.querySelector("#notes-book");
   const status = root.querySelector("#notes-status");
@@ -54,6 +76,9 @@ export function createNotesBook(root, { onRoute, onError, onPageChange } = {}) {
   const thumbnails = root.querySelector("#notes-thumbnails");
   const thumbnailRail = root.querySelector("#notes-thumbnail-rail");
   const thumbnailsToggle = root.querySelector("#notes-thumbnails-toggle");
+  const textSizeLabel = root.querySelector("#notes-text-size");
+  const textSmaller = root.querySelector("#notes-text-smaller");
+  const textLarger = root.querySelector("#notes-text-larger");
 
   const chrome = createChromeController(root);
   const overlays = createOverlays(root);
@@ -71,9 +96,9 @@ export function createNotesBook(root, { onRoute, onError, onPageChange } = {}) {
   let fitScale = 1;
   let dragOffset = 0;
   let pinchStart = null;
-  let runningHead = "樂曲解說";
   let noteTitles = new Map();
-  let pageHeight = PAGE_HEIGHT_BOUNDS.minimum;
+  let layout = null;
+  let textSize = storedTextSize();
   let active = false;
   let paginated = false;
   let resizeObserver = null;
@@ -103,7 +128,11 @@ export function createNotesBook(root, { onRoute, onError, onPageChange } = {}) {
   }
 
   function bookWidth() {
-    return spreadWidth(twoUp);
+    return layout ? spreadWidth({ twoUp, pageWidth: layout.width }) : 1;
+  }
+
+  function pageHeight() {
+    return layout?.height ?? 1;
   }
 
   function currentSpread() {
@@ -124,17 +153,17 @@ export function createNotesBook(root, { onRoute, onError, onPageChange } = {}) {
     if (atZoom <= ZOOM_LIMITS.minimum) return { x: 0, y: 0 };
     const { width, height } = stageBox();
     const slackX = Math.max(0, (bookWidth() * fitScale * atZoom - width) / 2);
-    const slackY = Math.max(0, (pageHeight * fitScale * atZoom - height) / 2);
+    const slackY = Math.max(0, (pageHeight() * fitScale * atZoom - height) / 2);
     return { x: clamp(candidate.x, -slackX, slackX), y: clamp(candidate.y, -slackY, slackY) };
   }
 
   function applyBookTransform({ animate = false } = {}) {
     book.style.width = `${bookWidth()}px`;
-    book.style.height = `${pageHeight}px`;
-    if (!stageIsLaidOut()) return;
+    book.style.height = `${pageHeight()}px`;
+    if (!layout || !stageIsLaidOut()) return;
 
     const { width, height } = stageBox();
-    fitScale = Math.min(width / bookWidth(), height / pageHeight);
+    fitScale = Math.min(width / bookWidth(), height / pageHeight());
     book.dataset.motion = animate && !prefersReducedMotion() ? "settle" : "live";
     book.style.transform = `translate(-50%, -50%) translate(${pan.x}px, ${pan.y}px) scale(${fitScale * zoom})`;
     stage.dataset.zoomed = zoom > ZOOMED ? "true" : "false";
@@ -189,6 +218,7 @@ export function createNotesBook(root, { onRoute, onError, onPageChange } = {}) {
         slot: placement.slot,
         spreadLength: placement.length,
         twoUp,
+        pageWidth: layout.width,
       }) + dragLocal;
 
       element.style.transform = `translate3d(${x}px, 0, 0)`;
@@ -274,6 +304,11 @@ export function createNotesBook(root, { onRoute, onError, onPageChange } = {}) {
   function buildThumbnails() {
     if (!thumbnailRail) return;
     thumbnailRail.replaceChildren();
+    // Pages come in the screen's own shape, so the previews take it too, at a
+    // height the rail can hold.
+    const thumbScale = THUMB_HEIGHT / layout.height;
+    thumbnailRail.style.setProperty("--thumb-scale", String(thumbScale));
+    thumbnailRail.style.setProperty("--thumb-width", `${Math.round(layout.width * thumbScale)}px`);
 
     pages.forEach((page, index) => {
       const button = createElement("button", "notes-thumb");
@@ -304,22 +339,29 @@ export function createNotesBook(root, { onRoute, onError, onPageChange } = {}) {
    * between paragraphs, and whatever is still left over is split above and
    * below the text, so the page reads as composed rather than abandoned.
    */
-  function settleTextBlock(element) {
-    if (element.dataset.pageKind !== "note") return;
-
-    const body = element.querySelector(".note-page__body");
-    const children = [...body.children];
-    if (!children.length) return;
-
-    const content = children.reduce((total, child) => {
+  function stackHeight(children) {
+    return children.reduce((total, child) => {
       const style = window.getComputedStyle(child);
       return total
         + child.offsetHeight
         + Number.parseFloat(style.marginTop || "0")
         + Number.parseFloat(style.marginBottom || "0");
     }, 0);
+  }
 
-    const slack = body.clientHeight - content;
+  function settleTextBlock(element) {
+    if (element.dataset.pageKind !== "note") return;
+
+    const body = element.querySelector(".note-page__body");
+    // The end mark is ornament, not text: on a page the note already fills, it
+    // gives way rather than spill into the margin over the page number.
+    const endMark = body.querySelector(".note-page__endmark");
+    if (endMark && stackHeight([...body.children]) > body.clientHeight) endMark.remove();
+
+    const children = [...body.children];
+    if (!children.length) return;
+
+    const slack = body.clientHeight - stackHeight(children);
     if (slack <= 0) return;
 
     // Only gaps between blocks can open; space after the final block is unseen.
@@ -327,7 +369,7 @@ export function createNotesBook(root, { onRoute, onError, onPageChange } = {}) {
       (child, index) => index < children.length - 1 && child.matches(".note-paragraph, .note-work"),
     ).length;
     const endsNote = element.dataset.endsNote === "true";
-    const cap = endsNote ? ENDING_GAP_EXTRA : MAX_GAP_EXTRA;
+    const cap = (endsNote ? ENDING_GAP_EXTRA_EMS : MAX_GAP_EXTRA_EMS) * layout.font;
     const extra = growable ? Math.min(slack / growable, cap) : 0;
     if (extra > 0) element.style.setProperty("--note-gap-extra", `${extra.toFixed(2)}px`);
 
@@ -343,10 +385,9 @@ export function createNotesBook(root, { onRoute, onError, onPageChange } = {}) {
       const noteTitle = page.noteSlug ? noteTitles.get(page.noteSlug) : null;
       return renderPage(page, {
         total: pages.length,
-        runningHead: noteTitle || runningHead,
         continuedLabel: noteTitle ? `${noteTitle}（續）` : null,
         endsNote: Boolean(page.noteSlug) && pages[index + 1]?.noteSlug !== page.noteSlug,
-        height: pageHeight,
+        layout,
       });
     });
     for (const element of pageElements) book.append(element);
@@ -368,11 +409,11 @@ export function createNotesBook(root, { onRoute, onError, onPageChange } = {}) {
 
   function paginate() {
     // Measured outside the view: the stage carries a transform of its own.
-    const measurer = createMeasurer(document.body, { height: pageHeight });
+    const measurer = createMeasurer(document.body, { layout });
     try {
       pages = packAtoms(atoms, {
         capacity: measurer.capacity,
-        lineHeight: PAGE.lineHeight,
+        lineHeight: layout.font * LINE_HEIGHT_RATIO,
         measure: measurer.measure,
         splitParagraph: measurer.splitParagraph,
       });
@@ -397,9 +438,17 @@ export function createNotesBook(root, { onRoute, onError, onPageChange } = {}) {
     updateChrome();
   }
 
+  function layoutChanged(next) {
+    if (!layout) return true;
+    return next.width !== layout.width
+      || next.font !== layout.font
+      || Math.abs(next.height - layout.height) > HEIGHT_TOLERANCE;
+  }
+
   /**
-   * The page is as tall as the screen allows, so a resize changes how much text
-   * a leaf holds. Re-measure, then put the reader back on the atom they were on.
+   * A page is the screen it is read on, so turning the phone, resizing the
+   * window or changing the text size changes how much a page holds. Re-measure,
+   * then put the reader back on the passage they were reading.
    */
   function relayout({ force = false } = {}) {
     if (!atoms.length || !stageIsLaidOut()) {
@@ -407,29 +456,50 @@ export function createNotesBook(root, { onRoute, onError, onPageChange } = {}) {
       return;
     }
 
-    const nextTwoUp = shouldUseTwoUp();
     const { width, height } = stageBox();
-    const nextHeight = resolvePageHeight({ stageWidth: width, stageHeight: height, twoUp: nextTwoUp });
-    const heightChanged = Math.abs(nextHeight - pageHeight) > HEIGHT_TOLERANCE;
+    const nextTwoUp = shouldUseTwoUp();
+    const font = textSize ?? defaultTextSize(width);
+    const next = resolveLayout({ stageWidth: width, stageHeight: height, twoUp: nextTwoUp, textSize: font });
 
-    if (paginated && !force && !heightChanged && nextTwoUp === twoUp) {
+    if (paginated && !force && nextTwoUp === twoUp && !layoutChanged(next)) {
       applyBookTransform();
       return;
     }
 
-    const anchor = paginated ? anchorAtomId() : null;
+    const reflowing = paginated;
+    const anchor = reflowing ? anchorAtomId() : null;
     twoUp = nextTwoUp;
-    if (force || heightChanged || !paginated) {
-      pageHeight = nextHeight;
-      paginate();
-    }
+    layout = next;
+    paginate();
     applyShape(pageHolding(anchor));
+    updateTextSizeControls();
+    // The same passage now sits on another page number. That is not a turn, so
+    // the address follows it without adding a step to the history.
+    if (reflowing) onPageChange?.(currentSpread()[0] ?? 0, { reflow: true });
 
     if (!overlays.isReady()) {
       overlays.setReady(true);
       overlays.showHint();
       chrome.pin(false);
     }
+  }
+
+  function updateTextSizeControls() {
+    const current = layout?.font ?? textSize;
+    if (textSizeLabel && current) textSizeLabel.textContent = String(current);
+    if (textSmaller) textSmaller.disabled = current <= TEXT_SIZES[0];
+    if (textLarger) textLarger.disabled = current >= TEXT_SIZES.at(-1);
+  }
+
+  /** Larger or smaller type, re-set like a web page and kept on the same passage. */
+  function stepTextSize(direction) {
+    const current = layout?.font ?? textSize ?? defaultTextSize(stageBox().width);
+    const next = nextTextSize(current, direction);
+    if (next === current) return;
+    textSize = next;
+    rememberTextSize(next);
+    chrome.keepAlive();
+    safeRelayout({ force: true });
   }
 
   function safeRelayout(options) {
@@ -470,7 +540,6 @@ export function createNotesBook(root, { onRoute, onError, onPageChange } = {}) {
   }
 
   async function prepare({ programme, chapters }) {
-    runningHead = `${programme?.title ?? ""} · ${programme?.contents_title || "樂曲解說"}`;
     const loadingTitle = root.querySelector(".notes-loading__title");
     if (loadingTitle && programme?.title) loadingTitle.textContent = programme.title;
     atoms = buildNoteFlow({ programme, chapters });
@@ -488,7 +557,7 @@ export function createNotesBook(root, { onRoute, onError, onPageChange } = {}) {
 
     // A slow connection should not hold the book hostage: after a while, set it
     // with whatever faces have arrived, and set it again once the rest land.
-    const fonts = loadBookFonts(sample || runningHead);
+    const fonts = loadBookFonts(sample || programme?.title || "樂曲解說");
     const timeout = new Promise((resolve) => {
       window.setTimeout(() => resolve("timeout"), FONT_TIMEOUT);
     });
@@ -649,6 +718,8 @@ export function createNotesBook(root, { onRoute, onError, onPageChange } = {}) {
 
   root.querySelector("#notes-zoom-in")?.addEventListener("click", () => zoomTo(zoom + ZOOM_STEP));
   root.querySelector("#notes-zoom-out")?.addEventListener("click", () => zoomTo(zoom - ZOOM_STEP));
+  textSmaller?.addEventListener("click", () => stepTextSize(-1));
+  textLarger?.addEventListener("click", () => stepTextSize(1));
   root.querySelector("#notes-contents-jump")?.addEventListener("click", () => goToPage(1));
 
   root.querySelector("#notes-fullscreen")?.addEventListener("click", () => {
@@ -658,12 +729,7 @@ export function createNotesBook(root, { onRoute, onError, onPageChange } = {}) {
 
   root.addEventListener("click", (event) => {
     const noteLink = event.target?.closest?.("button[data-note-slug]");
-    if (noteLink) {
-      goToNote(noteLink.dataset.noteSlug);
-      return;
-    }
-    const route = event.target?.closest?.("[data-notes-route]");
-    if (route) onRoute?.(route.dataset.notesRoute);
+    if (noteLink) goToNote(noteLink.dataset.noteSlug);
   });
 
   // Using a control keeps the controls up; a mouse moving over the page calls them back.
@@ -710,9 +776,9 @@ export function createNotesBook(root, { onRoute, onError, onPageChange } = {}) {
       PageUp: () => move(-1),
       Home: () => goToSpread(0, { animate: false }),
       End: () => goToSpread(spreads.length - 1, { animate: false }),
-      "+": () => zoomTo(zoom + ZOOM_STEP),
-      "=": () => zoomTo(zoom + ZOOM_STEP),
-      "-": () => zoomTo(zoom - ZOOM_STEP),
+      "+": () => stepTextSize(1),
+      "=": () => stepTextSize(1),
+      "-": () => stepTextSize(-1),
       Escape: () => resetZoom({ animate: true }),
     };
     const action = actions[event.key];

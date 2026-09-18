@@ -1,16 +1,14 @@
-import { clauseBreak, sentenceBreak } from "./domain/text-breaks.js";
-import { PAGE, createPageFrame, renderAtom } from "./notes-book-render.js";
+import { LINE_HEIGHT_RATIO } from "./domain/notes-geometry.js";
+import { chooseCut, clauseBreak, sentenceBreak } from "./domain/text-breaks.js";
+import { createPageFrame, renderAtom } from "./notes-book-render.js";
 import { createElement } from "./lib/dom.js";
 
-const FULL_PAGE_KINDS = new Set(["cover", "contents", "colophon"]);
+const FULL_PAGE_KINDS = new Set(["cover", "colophon"]);
 const WORD_CHARACTER = /[A-Za-z0-9'’.\-–—]/;
 const CLOSING_PUNCTUATION = /[。，、；：！？」』）》】〉・·]/;
 const MINIMUM_SPLIT_LENGTH = 8;
 const BREAK_SEARCH_LIMIT = 24;
 const MIN_HEAD_LINES = 2;
-// How much of the room a cut may give up to land on a sentence or a clause.
-const SENTENCE_KEEP = 0.5;
-const CLAUSE_KEEP = 0.75;
 
 function fragment(atom, text, continues) {
   return { ...atom, payload: { ...atom.payload, text, continues } };
@@ -48,8 +46,8 @@ function safeBreak(text, index) {
  * The host must be laid out: a `display: none` ancestor measures every atom as
  * zero, which silently collapses the whole book onto one page.
  */
-export function createMeasurer(host = document.body, { height } = {}) {
-  const { article: frame, body } = createPageFrame({ runningHead: "量測", folioLabel: "00", height });
+export function createMeasurer(host = document.body, { layout } = {}) {
+  const { article: frame, body } = createPageFrame({ folioLabel: "00", layout });
   frame.classList.add("note-page--measure");
   frame.setAttribute("aria-hidden", "true");
   host.append(frame);
@@ -98,24 +96,28 @@ export function createMeasurer(host = document.body, { height } = {}) {
     if (!best) return null;
 
     // Prefer to end the page on a full sentence, then on a clause, and only
-    // then wherever the line happens to run out.
-    const sentence = sentenceBreak(text, best);
-    const clause = clauseBreak(text, best);
+    // then wherever the line happens to run out — each within a few lines of
+    // the foot, so the page still reads as full.
+    const lineHeight = layout.font * LINE_HEIGHT_RATIO;
     const candidates = [
-      sentence >= best * SENTENCE_KEEP ? sentence : 0,
-      clause >= best * CLAUSE_KEEP ? clause : 0,
-      safeBreak(text, best),
-    ];
-    const minimumHead = PAGE.lineHeight * MIN_HEAD_LINES;
+      { kind: "sentence", cut: sentenceBreak(text, best) },
+      { kind: "clause", cut: clauseBreak(text, best) },
+      { kind: "line", cut: safeBreak(text, best) },
+    ]
+      .filter(({ cut }) => cut > 0 && cut < text.length)
+      .map((candidate) => {
+        const head = fragment(atom, text.slice(0, candidate.cut), atom.payload.continues);
+        return { ...candidate, head, height: elementHeight(renderAtom(head)) };
+      });
 
-    for (const cut of candidates) {
-      if (cut <= 0 || cut >= text.length) continue;
-      const head = fragment(atom, text.slice(0, cut), atom.payload.continues);
-      if (elementHeight(renderAtom(head)) < minimumHead) continue;
-      return { head, tail: fragment(atom, text.slice(cut), true) };
-    }
+    const chosen = chooseCut(candidates, {
+      available: availableHeight,
+      lineHeight,
+      minimumHead: lineHeight * MIN_HEAD_LINES,
+    });
+    if (!chosen) return null;
 
-    return null;
+    return { head: chosen.head, tail: fragment(atom, text.slice(chosen.cut), true) };
   }
 
   function destroy() {

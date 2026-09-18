@@ -433,20 +433,25 @@ export async function mountReader({ root, repository, initialRoute }) {
     },
   });
 
+  // Once the reader starts turning pages, each turn is a history entry, so the
+  // phone's back button steps back a page instead of leaving the book. Before
+  // that — opening the book, following a deep link — the URL is only corrected.
+  let notesHistoryArmed = false;
+
   const notesBook = createNotesBook(document.querySelector("#notes-book-view"), {
-    onRoute(route) {
-      showRoute(route);
-    },
     onError(error) {
       console.error("Unable to lay out the programme notes", error);
       showToast("樂曲解說暫時無法排版，請重新整理頁面。");
     },
-    onPageChange(pageIndex) {
+    onPageChange(pageIndex, { reflow = false } = {}) {
       if (currentProgramme?.reader_layout !== "notes-book") return;
       const hash = pageIndex > 0 ? `#page/${pageIndex + 1}` : "";
       const nextUrl = `${location.pathname}${hash}`;
       if (`${location.pathname}${location.hash}` === nextUrl) return;
-      history.replaceState({ route: "notes-book", page: pageIndex + 1 }, "", nextUrl);
+      const state = { route: "notes-book", page: pageIndex + 1 };
+      // A page turn is a step back can undo; a reflow only renumbers the page.
+      if (notesHistoryArmed && !reflow) history.pushState(state, "", nextUrl);
+      else history.replaceState(state, "", nextUrl);
     },
   });
 
@@ -819,8 +824,11 @@ export async function mountReader({ root, repository, initialRoute }) {
     return chapter;
   }
 
-  /** Deep links land on a page (`#page/3`) or a note (`#note/slug`, `#chapter/slug`). */
-  function applyNotesAnchor(hash) {
+  /**
+   * Deep links land on a page (`#page/3`) or a note (`#note/slug`, `#chapter/slug`).
+   * Stepping back through history to the bare URL means the first page.
+   */
+  function applyNotesAnchor(hash, { toStart = false } = {}) {
     if (currentProgramme?.reader_layout !== "notes-book") return;
 
     const route = parseReaderHash(hash);
@@ -831,6 +839,7 @@ export async function mountReader({ root, repository, initialRoute }) {
 
     const slug = resolveNoteAnchor(hash);
     if (slug) notesBook.goToNote(slug);
+    else if (toStart) notesBook.goToPage(0);
   }
 
   function showRoute(route, { updateHash = true, chapterSlug } = {}) {
@@ -1165,31 +1174,30 @@ export async function mountReader({ root, repository, initialRoute }) {
     }
   });
 
-  window.addEventListener("popstate", () => {
-    if (initialRoute.kind === "programme" && isProgrammeReaderHash(location.hash)) {
-      const readerRoute = parseReaderHash(location.hash);
-      const resolvedView = resolveProgrammeReaderView({
-        requestedView: readerRoute.view,
-        hash: location.hash,
-        defaultView: currentProgramme?.default_reader_view,
-      });
-      showRoute(resolvedView, { chapterSlug: readerRoute.chapterSlug, updateHash: false });
-      applyNotesAnchor(location.hash);
-    }
-  });
+  function followLocation() {
+    if (initialRoute.kind !== "programme" || !isProgrammeReaderHash(location.hash)) return;
 
-  window.addEventListener("hashchange", () => {
-    if (initialRoute.kind === "programme" && isProgrammeReaderHash(location.hash)) {
-      const readerRoute = parseReaderHash(location.hash);
-      const resolvedView = resolveProgrammeReaderView({
-        requestedView: readerRoute.view,
-        hash: location.hash,
-        defaultView: currentProgramme?.default_reader_view,
-      });
+    const readerRoute = parseReaderHash(location.hash);
+    const resolvedView = resolveProgrammeReaderView({
+      requestedView: readerRoute.view,
+      hash: location.hash,
+      defaultView: currentProgramme?.default_reader_view,
+    });
+    const displayedView = resolveProgrammeLayoutView({
+      readerLayout: currentProgramme?.reader_layout,
+      view: resolvedView,
+    });
+
+    // Back and forward inside the notes book only turn its pages; re-entering
+    // the view would replay its entrance and reset the reading controls.
+    if (displayedView !== "notes-book" || shell.dataset.view !== "notes-book") {
       showRoute(resolvedView, { chapterSlug: readerRoute.chapterSlug, updateHash: false });
-      applyNotesAnchor(location.hash);
     }
-  });
+    applyNotesAnchor(location.hash, { toStart: true });
+  }
+
+  window.addEventListener("popstate", followLocation);
+  window.addEventListener("hashchange", followLocation);
 
   if (initialRoute.kind === "shelf") {
     try {
@@ -1276,6 +1284,7 @@ export async function mountReader({ root, repository, initialRoute }) {
       }
       showRoute(displayedInitialView, { chapterSlug: initialRoute.chapterSlug, updateHash: false });
       applyNotesAnchor(location.hash);
+      notesHistoryArmed = true;
     }
   } else {
     showRoute("not-found", { updateHash: false });

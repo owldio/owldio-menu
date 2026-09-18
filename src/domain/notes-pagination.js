@@ -1,12 +1,22 @@
-const FULL_PAGE_KINDS = new Set(["cover", "contents", "colophon"]);
+const FULL_PAGE_KINDS = new Set(["cover", "colophon"]);
+
+/** A note, or the contents, always starts on a page of its own. */
+const PAGE_OPENERS = new Set(["note-banner", "contents-heading"]);
+
+function pageKindFor(atom) {
+  return atom.kind.startsWith("contents-") ? "contents" : "note";
+}
 const MIN_LINES = 2;
 
 /**
  * A paragraph that would fit on a page of its own is only split when at least
- * this share of it fits where it stands. Below that, the few lines left behind
- * read as a fragment and the reader meets a sentence broken across a turn.
+ * this share of it, or at least MIN_SPLIT_LINES of it, fits where it stands.
+ * Below both, the few lines left behind read as a fragment and the reader meets
+ * a sentence broken across a turn. Above either, what stays is a passage — and
+ * moving a long paragraph on whole would leave a hole at the foot of the page.
  */
 const MIN_SPLIT_SHARE = 0.5;
+const MIN_SPLIT_LINES = 4;
 
 function pageNoteSlug(atoms) {
   return atoms.find((atom) => atom.noteSlug)?.noteSlug ?? null;
@@ -14,7 +24,9 @@ function pageNoteSlug(atoms) {
 
 /**
  * Cut a paragraph so that both halves keep at least MIN_LINES, shrinking the
- * budget until the tail is long enough. Returns null when no honest cut exists.
+ * budget until the tail is long enough — or until the measurer finds a cut it
+ * will take, which a line less of room can give it. Returns null when no honest
+ * cut exists.
  */
 function splitWithGuards(atom, available, { lineHeight, measure, splitParagraph }) {
   const minimum = lineHeight * MIN_LINES;
@@ -24,7 +36,10 @@ function splitWithGuards(atom, available, { lineHeight, measure, splitParagraph 
 
   for (let attempt = 0; attempt < 6 && budget >= minimum; attempt += 1) {
     const split = splitParagraph(atom, budget);
-    if (!split?.head || !split?.tail) return null;
+    if (!split?.head || !split?.tail) {
+      budget -= lineHeight;
+      continue;
+    }
 
     const headHeight = measure(split.head);
     const tailHeight = measure(split.tail);
@@ -61,7 +76,7 @@ export function packAtoms(atoms, { capacity, lineHeight, measure, splitParagraph
 
   function place(atom, height) {
     if (!current) {
-      current = { index: pages.length, kind: "note", noteSlug: null, atoms: [] };
+      current = { index: pages.length, kind: pageKindFor(atom), noteSlug: null, atoms: [] };
       pages.push(current);
       used = 0;
     }
@@ -90,7 +105,7 @@ export function packAtoms(atoms, { capacity, lineHeight, measure, splitParagraph
 
     // Every note opens on its own page: two works sharing a leaf reads as a
     // mistake, however much room the previous one left behind.
-    if (atom.kind === "note-banner" && current && current.atoms.length) {
+    if (PAGE_OPENERS.has(atom.kind) && current && current.atoms.length) {
       closePage();
     }
 
@@ -103,7 +118,9 @@ export function packAtoms(atoms, { capacity, lineHeight, measure, splitParagraph
     }
 
     // A paragraph longer than a whole page has to be split wherever it falls.
-    const worthSplitting = height > capacity || remaining >= height * MIN_SPLIT_SHARE;
+    const worthSplitting = height > capacity
+      || remaining >= height * MIN_SPLIT_SHARE
+      || remaining >= lineHeight * MIN_SPLIT_LINES;
 
     if (atom.splittable && worthSplitting) {
       const split = splitWithGuards(atom, remaining, { lineHeight, measure, splitParagraph });

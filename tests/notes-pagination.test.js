@@ -7,12 +7,13 @@ const LINE_HEIGHT = 30;
 const CAPACITY = 300;
 const CHARS_PER_LINE = 10;
 
-const FULL_PAGE_KINDS = new Set(["cover", "contents", "colophon"]);
+const FULL_PAGE_KINDS = new Set(["cover", "colophon"]);
 
 function measure(atom) {
   if (FULL_PAGE_KINDS.has(atom.kind)) return CAPACITY;
   if (atom.kind === "note-banner") return LINE_HEIGHT * 2;
   if (atom.kind === "work-card") return LINE_HEIGHT * 3;
+  if (atom.kind.startsWith("contents-")) return LINE_HEIGHT * 3;
   const length = atom.payload.text.length;
   return Math.max(1, Math.ceil(length / CHARS_PER_LINE)) * LINE_HEIGHT;
 }
@@ -58,6 +59,14 @@ function fullPage(kind) {
   return { id: kind, kind, noteSlug: null, noteIndex: null, splittable: false, payload: {} };
 }
 
+function contentsHeading() {
+  return { id: "contents", kind: "contents-heading", noteSlug: null, noteIndex: null, splittable: false, payload: {} };
+}
+
+function contentsEntry(id) {
+  return { id, kind: "contents-entry", noteSlug: null, noteIndex: null, splittable: false, payload: {} };
+}
+
 function repeat(char, count) {
   return char.repeat(count);
 }
@@ -83,10 +92,12 @@ function usedHeight(page) {
 }
 
 describe("packAtoms page composition", () => {
-  it("gives every full-page atom a page of its own", () => {
+  it("gives the cover and the colophon a page each, and opens the contents on its own", () => {
     const atoms = [
       fullPage("cover"),
-      fullPage("contents"),
+      contentsHeading(),
+      contentsEntry("c1"),
+      banner("note-a"),
       paragraph("p1", repeat("甲", 20)),
       fullPage("colophon"),
     ];
@@ -95,7 +106,18 @@ describe("packAtoms page composition", () => {
 
     expect(pages.map((page) => page.kind)).toEqual(["cover", "contents", "note", "colophon"]);
     expect(pages[0].atoms).toHaveLength(1);
+    expect(pages[1].atoms.map((atom) => atom.id)).toEqual(["contents", "c1"]);
     expect(pages[3].atoms).toHaveLength(1);
+  });
+
+  it("runs a long contents onto a second contents page", () => {
+    const entries = Array.from({ length: 6 }, (_, index) => contentsEntry(`c${index}`));
+    const atoms = [contentsHeading(), ...entries, banner("note-a"), paragraph("p1", repeat("甲", 20))];
+
+    const pages = packAtoms(atoms, options);
+
+    expect(pages.map((page) => page.kind)).toEqual(["contents", "contents", "contents", "note"]);
+    expect(flatten(pages)).toEqual(atoms);
   });
 
   it("numbers pages sequentially from zero", () => {
@@ -228,6 +250,38 @@ describe("packAtoms typographic guards", () => {
     expect(pages[1].atoms.map((atom) => atom.id)).toEqual(["p2"]);
   });
 
+  it("splits a long paragraph once four of its lines still fit", () => {
+    // Four lines are left; the paragraph needs ten. Less than half of it fits,
+    // but four lines are a passage rather than a sliver, and moving the whole
+    // paragraph on would leave a hole at the foot of the page instead.
+    const atoms = [
+      paragraph("p1", repeat("甲", 60), "note-a"),
+      paragraph("p2", repeat("乙", 100), "note-a"),
+    ];
+
+    const pages = packAtoms(atoms, options);
+
+    expect(pages.map((page) => page.atoms.map((atom) => atom.id))).toEqual([["p1", "p2"], ["p2"]]);
+    expect(flatten(pages)).toEqual(atoms);
+  });
+
+  it("asks for a shorter cut when none can end the page at full length", () => {
+    // In the full room the measurer finds no cut it will take — a closing mark
+    // would carry the head onto another line — but one line less works.
+    const fussy = (atom, availableHeight) => (
+      availableHeight >= LINE_HEIGHT * 4 ? null : splitParagraph(atom, availableHeight)
+    );
+    const atoms = [
+      paragraph("p1", repeat("甲", 60), "note-a"),
+      paragraph("p2", repeat("乙", 100), "note-a"),
+    ];
+
+    const pages = packAtoms(atoms, { ...options, splitParagraph: fussy });
+
+    expect(pages.map((page) => page.atoms.map((atom) => atom.id))).toEqual([["p1", "p2"], ["p2"]]);
+    expect(flatten(pages)).toEqual(atoms);
+  });
+
   it("moves a whole paragraph forward when fewer than two lines remain", () => {
     const atoms = [
       paragraph("p1", repeat("甲", 90), "note-a"),
@@ -264,7 +318,8 @@ describe("packAtoms content conservation", () => {
   it("returns every atom, in order, with no text lost", () => {
     const atoms = [
       fullPage("cover"),
-      fullPage("contents"),
+      contentsHeading(),
+      contentsEntry("c1"),
       banner("note-a"),
       paragraph("p1", repeat("甲", 235), "note-a"),
       paragraph("p2", repeat("乙", 71), "note-a"),

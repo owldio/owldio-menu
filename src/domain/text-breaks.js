@@ -33,3 +33,28 @@ export function sentenceBreak(text, limit) {
 export function clauseBreak(text, limit) {
   return lastBreakBefore(text, limit, CLAUSE_END);
 }
+
+/**
+ * How many lines a page may leave empty to end on a full sentence, or on a
+ * clause. Counted in lines rather than in characters, so larger type does not
+ * open ever larger holes at the foot of the page.
+ */
+export const BREAK_ALLOWANCE_LINES = Object.freeze({
+  sentence: 2,
+  clause: 1,
+  line: Number.POSITIVE_INFINITY,
+});
+
+/**
+ * The cut to end a page on. Candidates come in order of preference, each with
+ * the height its head would take; the first that fits the room, keeps at least
+ * the minimum head, and fills the page to within its allowance wins.
+ */
+export function chooseCut(candidates, { available, lineHeight, minimumHead = 0 }) {
+  return candidates.find(({ kind, cut, height }) => (
+    cut > 0
+    && height >= minimumHead
+    && height <= available
+    && available - height <= BREAK_ALLOWANCE_LINES[kind] * lineHeight
+  )) ?? null;
+}

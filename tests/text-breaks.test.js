@@ -1,6 +1,48 @@
 import { describe, expect, it } from "vitest";
 
-import { clauseBreak, sentenceBreak } from "../src/domain/text-breaks.js";
+import { chooseCut, clauseBreak, sentenceBreak } from "../src/domain/text-breaks.js";
+
+describe("chooseCut", () => {
+  const LINE = 30;
+  const room = { available: 300, lineHeight: LINE, minimumHead: LINE * 2 };
+
+  function candidates({ sentence, clause, line }) {
+    return [
+      { kind: "sentence", cut: 40, height: sentence },
+      { kind: "clause", cut: 52, height: clause },
+      { kind: "line", cut: 60, height: line },
+    ];
+  }
+
+  it("ends the page on a full sentence when that leaves no more than two lines empty", () => {
+    const chosen = chooseCut(candidates({ sentence: 300 - LINE * 2, clause: 300 - LINE, line: 300 }), room);
+
+    expect(chosen.kind).toBe("sentence");
+  });
+
+  it("passes over a sentence that would open a hole, for a clause near the foot", () => {
+    const chosen = chooseCut(candidates({ sentence: 300 - LINE * 3, clause: 300 - LINE, line: 300 }), room);
+
+    expect(chosen.kind).toBe("clause");
+  });
+
+  it("runs to the end of the line when no sentence or clause lands close enough", () => {
+    const chosen = chooseCut(candidates({ sentence: 300 - LINE * 3, clause: 300 - LINE * 2, line: 300 - 4 }), room);
+
+    expect(chosen.kind).toBe("line");
+  });
+
+  it("never leaves a head shorter than the minimum at the foot of a page", () => {
+    const tight = { ...room, available: LINE * 2.5 };
+    const chosen = chooseCut(candidates({ sentence: LINE, clause: LINE * 1.5, line: LINE * 2.5 }), tight);
+
+    expect(chosen.kind).toBe("line");
+  });
+
+  it("finds nothing when every head would overrun the room", () => {
+    expect(chooseCut(candidates({ sentence: 330, clause: 330, line: 330 }), room)).toBeNull();
+  });
+});
 
 describe("sentenceBreak", () => {
   it("cuts after the last full stop that still fits", () => {

@@ -8,6 +8,9 @@ const programme = {
   venue: "國家兩廳院演奏廳",
   starts_at: "2026-09-25T19:30:00+08:00",
   intermission_after_position: 2,
+  presenter: "主辦單位",
+  supporters: ["協辦單位"],
+  sponsors: ["贊助單位"],
 };
 
 const chapters = [
@@ -65,7 +68,7 @@ describe("buildNoteFlow", () => {
     const atoms = buildNoteFlow({ programme, chapters });
 
     expect(atoms.at(0).kind).toBe("cover");
-    expect(atoms.at(1).kind).toBe("contents");
+    expect(atoms.at(1).kind).toBe("contents-heading");
     expect(atoms.at(-1).kind).toBe("colophon");
   });
 
@@ -125,14 +128,23 @@ describe("buildNoteFlow", () => {
 
   it("lists every visible note in the contents, with the intermission in place", () => {
     const atoms = buildNoteFlow({ programme, chapters });
-    const contents = atoms.find((atom) => atom.kind === "contents");
+    const contents = atoms.filter((atom) => atom.kind.startsWith("contents-"));
 
-    expect(contents.payload.entries).toEqual([
-      { kind: "note", number: "01", title: "第一首", titleEn: "First Work", slug: "first-work" },
-      { kind: "note", number: "02", title: "第二首", titleEn: "Second Work", slug: "second-work" },
-      { kind: "intermission", title: "中場休息" },
-      { kind: "note", number: "03", title: "豎琴獨奏", titleEn: null, slug: "harp-solo" },
+    expect(contents.map((atom) => atom.kind)).toEqual([
+      "contents-heading",
+      "contents-entry",
+      "contents-entry",
+      "contents-intermission",
+      "contents-entry",
     ]);
+    expect(contents[1].payload).toEqual({
+      number: "01",
+      title: "第一首",
+      titleEn: "First Work",
+      slug: "first-work",
+    });
+    expect(contents[3].payload).toEqual({ title: "中場休息" });
+    expect(contents[4].payload.titleEn).toBeNull();
   });
 
   it("leaves the intermission out when the programme does not declare one", () => {
@@ -140,9 +152,19 @@ describe("buildNoteFlow", () => {
       programme: { ...programme, intermission_after_position: null },
       chapters,
     });
-    const contents = atoms.find((atom) => atom.kind === "contents");
 
-    expect(contents.payload.entries.every((entry) => entry.kind === "note")).toBe(true);
+    expect(atoms.some((atom) => atom.kind === "contents-intermission")).toBe(false);
+  });
+
+  it("credits co-organisers and sponsors separately on the colophon", () => {
+    const atoms = buildNoteFlow({ programme, chapters });
+    const colophon = atoms.find((atom) => atom.kind === "colophon");
+
+    expect(colophon.payload).toMatchObject({
+      presenter: "主辦單位",
+      supporters: ["協辦單位"],
+      sponsors: ["贊助單位"],
+    });
   });
 
   it("carries the scoring onto the banner so a note reads like a programme entry", () => {
@@ -187,6 +209,6 @@ describe("buildNoteFlow", () => {
   it("returns cover and colophon even when no chapter is visible", () => {
     const atoms = buildNoteFlow({ programme, chapters: [] });
 
-    expect(kindsOf(atoms)).toEqual(["cover", "contents", "colophon"]);
+    expect(kindsOf(atoms)).toEqual(["cover", "contents-heading", "colophon"]);
   });
 });

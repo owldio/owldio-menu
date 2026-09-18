@@ -3,17 +3,12 @@ import {
   programmeDateParts,
   programmeTimeLabel,
 } from "./domain/datetime.js";
-import { PAGE_WIDTH } from "./domain/notes-geometry.js";
 import { createElement } from "./lib/dom.js";
 
 const SVG_NS = "http://www.w3.org/2000/svg";
 
-/** Width and type are fixed; height comes from the stage. */
-export const PAGE = {
-  width: PAGE_WIDTH,
-  fontSize: 16,
-  lineHeight: 30.4,
-};
+/** Below this width the banner stacks its number above the title. */
+const NARROW_PAGE = 520;
 
 function folioNumber(index) {
   return String(index + 1).padStart(2, "0");
@@ -212,43 +207,35 @@ function coverDate({ year, monthDay, weekday, time }) {
   return node;
 }
 
-function contentsRow(entry) {
-  const item = createElement("li", "note-contents__item");
-
-  if (entry.kind === "intermission") {
-    item.classList.add("note-contents__item--intermission");
-    item.append(createElement("span", null, entry.title));
-    return item;
-  }
-
-  const button = createElement("button", "note-contents__link");
-  button.type = "button";
-  button.dataset.noteSlug = entry.slug;
-
-  const copy = createElement("span", "note-contents__copy");
-  copy.append(createElement("strong", null, entry.title));
-  if (entry.titleEn) copy.append(createElement("small", null, entry.titleEn));
-
-  button.append(
-    createElement("span", "note-contents__number", entry.number),
-    copy,
-    createElement("span", "note-contents__arrow", "→"),
-  );
-  item.append(button);
-  return item;
-}
-
-function renderContents(payload) {
-  const node = createElement("section", "note-contents");
+function renderContentsHeading(payload) {
+  const node = createElement("header", "note-contents");
   node.append(
     createElement("p", "note-contents__kicker", "CONTENTS"),
     createElement("h2", "note-contents__title", payload.title),
   );
+  return node;
+}
 
-  const list = createElement("ol", "note-contents__list");
-  for (const entry of payload.entries) list.append(contentsRow(entry));
-  node.append(list);
+function renderContentsEntry(payload) {
+  const button = createElement("button", "note-contents__link");
+  button.type = "button";
+  button.dataset.noteSlug = payload.slug;
 
+  const copy = createElement("span", "note-contents__copy");
+  copy.append(createElement("strong", null, payload.title));
+  if (payload.titleEn) copy.append(createElement("small", null, payload.titleEn));
+
+  button.append(
+    createElement("span", "note-contents__number", payload.number),
+    copy,
+    createElement("span", "note-contents__arrow", "→"),
+  );
+  return button;
+}
+
+function renderContentsIntermission(payload) {
+  const node = createElement("p", "note-contents__intermission");
+  node.append(createElement("span", null, payload.title));
   return node;
 }
 
@@ -336,15 +323,9 @@ function renderColophon(payload) {
       ["場地", payload.venue],
       ["主辦", payload.presenter],
       ["協辦", payload.supporters?.join("、") || null],
+      ["贊助", payload.sponsors?.join("、") || null],
     ]),
   );
-
-  const actions = createElement("div", "note-colophon__actions");
-  const printed = createElement("button", "note-colophon__action", "翻閱印刷節目單");
-  printed.type = "button";
-  printed.dataset.notesRoute = "pdf";
-  actions.append(printed);
-  copy.append(actions);
 
   node.append(copy);
   return node;
@@ -354,8 +335,12 @@ export function renderAtom(atom) {
   switch (atom.kind) {
     case "cover":
       return renderCover(atom.payload);
-    case "contents":
-      return renderContents(atom.payload);
+    case "contents-heading":
+      return renderContentsHeading(atom.payload);
+    case "contents-entry":
+      return renderContentsEntry(atom.payload);
+    case "contents-intermission":
+      return renderContentsIntermission(atom.payload);
     case "note-banner":
       return renderBanner(atom.payload);
     case "paragraph":
@@ -370,19 +355,35 @@ export function renderAtom(atom) {
 }
 
 /**
+ * Page size, margins and type size travel as custom properties, so every rule
+ * in the stylesheet can be written in proportion to the page it sits on.
+ */
+function applyPageLayout(article, layout) {
+  article.style.width = `${layout.width}px`;
+  article.style.height = `${layout.height}px`;
+  article.style.setProperty("--page-width", `${layout.width}px`);
+  article.style.setProperty("--page-height", `${layout.height}px`);
+  article.style.setProperty("--page-pad-x", `${layout.padX}px`);
+  article.style.setProperty("--page-pad-top", `${layout.padTop}px`);
+  article.style.setProperty("--page-pad-bottom", `${layout.padBottom}px`);
+  article.style.setProperty("--note-font", `${layout.font}px`);
+  article.dataset.narrow = layout.width < NARROW_PAGE ? "true" : "false";
+}
+
+/**
  * An empty page with its body and folio in place. The measurer builds one too,
  * so the height it reports for the body is the height atoms actually get.
+ *
+ * The folio is only the page number, set in the bottom margin as a reading app
+ * sets it; the running head at the top already says which note this is.
  */
-export function createPageFrame({ runningHead = "", folioLabel = "00", height } = {}) {
+export function createPageFrame({ folioLabel = "00", layout } = {}) {
   const article = createElement("article", "note-page");
-  if (height) article.style.height = `${height}px`;
+  if (layout) applyPageLayout(article, layout);
   const body = createElement("div", "note-page__body");
 
   const folio = createElement("footer", "note-page__folio");
-  folio.append(
-    createElement("span", null, runningHead),
-    createElement("span", "note-page__folio-number", folioLabel),
-  );
+  folio.append(createElement("span", "note-page__folio-number", folioLabel));
 
   article.append(body, folio);
   return { article, body };
@@ -400,11 +401,10 @@ function endMark() {
   return node;
 }
 
-export function renderPage(page, { total, runningHead, continuedLabel, endsNote, height }) {
+export function renderPage(page, { total, continuedLabel, endsNote, layout }) {
   const { article, body } = createPageFrame({
-    runningHead,
     folioLabel: folioNumber(page.index),
-    height,
+    layout,
   });
 
   article.dataset.pageKind = page.kind;

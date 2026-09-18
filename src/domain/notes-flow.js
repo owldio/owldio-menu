@@ -19,26 +19,44 @@ function atom(kind, { id, noteSlug = null, noteIndex = null, payload = {} }) {
   };
 }
 
-function contentsEntries(programme, notes) {
+/**
+ * The contents flows like any other text: a heading, then one line per work,
+ * so a long programme or a large type size simply runs onto a second page.
+ */
+function contentsAtoms(programme, notes) {
   const intermissionAfter = Number(programme?.intermission_after_position) || 0;
-  const entries = [];
+  const atoms = [
+    atom("contents-heading", {
+      id: "contents",
+      payload: { title: programme?.contents_title ?? "樂曲解說" },
+    }),
+  ];
 
   notes.forEach((chapter, index) => {
-    entries.push({
-      kind: "note",
-      number: noteNumber(index),
-      title: chapter.title,
-      titleEn: chapter.title_en ?? null,
-      slug: chapter.slug,
-    });
+    atoms.push(
+      atom("contents-entry", {
+        id: `contents:${chapter.slug}`,
+        payload: {
+          number: noteNumber(index),
+          title: chapter.title,
+          titleEn: chapter.title_en ?? null,
+          slug: chapter.slug,
+        },
+      }),
+    );
 
     const isLast = index === notes.length - 1;
     if (intermissionAfter && chapter.position === intermissionAfter && !isLast) {
-      entries.push({ kind: "intermission", title: INTERMISSION_TITLE });
+      atoms.push(
+        atom("contents-intermission", {
+          id: "contents:intermission",
+          payload: { title: INTERMISSION_TITLE },
+        }),
+      );
     }
   });
 
-  return entries;
+  return atoms;
 }
 
 function workCardPayload(item) {
@@ -125,13 +143,7 @@ export function buildNoteFlow({ programme, chapters }) {
         presenter: programme?.presenter ?? null,
       },
     }),
-    atom("contents", {
-      id: "contents",
-      payload: {
-        title: programme?.contents_title ?? "樂曲解說",
-        entries: contentsEntries(programme, notes),
-      },
-    }),
+    ...contentsAtoms(programme, notes),
     ...notes.flatMap((chapter, index) => noteAtoms(chapter, index)),
     atom("colophon", {
       id: "colophon",
@@ -142,6 +154,7 @@ export function buildNoteFlow({ programme, chapters }) {
         productionType: programme?.production_type ?? null,
         presenter: programme?.presenter ?? null,
         supporters: programme?.supporters ?? [],
+        sponsors: programme?.sponsors ?? [],
       },
     }),
   ];

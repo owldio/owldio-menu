@@ -237,13 +237,17 @@
               <button type="button" id="notes-thumbnails-toggle" aria-expanded="false" aria-controls="notes-thumbnails">
                 <span>頁面</span>
               </button>
+              <span class="publication-toolbar__textsize" aria-label="文字大小">
+                <button type="button" id="notes-text-smaller" aria-label="縮小文字">A<small>−</small></button>
+                <output id="notes-text-size" aria-live="polite">17</output>
+                <button type="button" id="notes-text-larger" aria-label="放大文字">A<small>＋</small></button>
+              </span>
               <span class="publication-toolbar__zoom" aria-label="縮放控制">
                 <button type="button" id="notes-zoom-out" aria-label="縮小">−</button>
                 <output id="notes-zoom-label" aria-live="polite">100%</output>
                 <button type="button" id="notes-zoom-in" aria-label="放大">＋</button>
               </span>
               <button type="button" id="notes-fullscreen" aria-label="進入全螢幕"><span>全螢幕</span></button>
-              <button type="button" id="notes-open-pdf" data-notes-route="pdf"><span>印刷節目單</span></button>
             </div>
           </header>
 
