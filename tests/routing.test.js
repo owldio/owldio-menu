@@ -6,6 +6,7 @@ import {
   buildProgrammeReaderPath,
   isProgrammeReaderHash,
   parseAppLocation,
+  resolveProgrammeLayoutView,
   resolveProgrammeReaderView,
 } from "../src/domain/routing.js";
 
@@ -124,5 +125,17 @@ describe("programme reader defaults", () => {
       view: "pdf",
       defaultView: "contents",
     })).toBe("/moonlight-promise#pdf");
+  });
+
+  it("keeps a programme-notes continuation on its single clean reading view", () => {
+    expect(resolveProgrammeLayoutView({
+      readerLayout: "programme-notes",
+      view: "pdf",
+    })).toBe("contents");
+
+    expect(resolveProgrammeLayoutView({
+      readerLayout: "standard",
+      view: "pdf",
+    })).toBe("pdf");
   });
 });

@@ -96,6 +96,11 @@ export function resolveProgrammeReaderView({ requestedView, hash, defaultView })
   return validReaderView(defaultView, validReaderView(requestedView));
 }
 
+export function resolveProgrammeLayoutView({ readerLayout, view }) {
+  const normalizedView = validReaderView(view);
+  return readerLayout === "programme-notes" ? "contents" : normalizedView;
+}
+
 export function buildProgrammeViewUrl(pathname, { view, chapterSlug, defaultView }) {
   const normalizedView = validReaderView(view);
   const normalizedDefault = validReaderView(defaultView);

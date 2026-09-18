@@ -6933,3 +6933,426 @@ body {
     backface-visibility: hidden;
   }
 }
+
+/* Moonlight Promise — the unprinted programme-note continuation. */
+.reader-shell[data-reader-layout="programme-notes"][data-view="contents"] {
+  --notes-bg: #071726;
+  --notes-bg-raised: #0a1d2f;
+  --notes-paper: #f3eee3;
+  --notes-copy: #ebe5d9;
+  --notes-muted: #b8b2a8;
+  --notes-gold: #d4b76f;
+  --notes-rose: #d9a1a9;
+  --notes-rule: rgb(212 183 111 / 0.34);
+  width: 100%;
+  overflow: clip;
+  background: var(--notes-bg);
+  color: var(--notes-paper);
+  box-shadow: none;
+  color-scheme: dark;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+.reader-shell[data-reader-layout="programme-notes"][data-view="contents"] > .site-header {
+  display: none;
+}
+
+.reader-shell[data-reader-layout="programme-notes"][data-view="contents"] .view--contents {
+  position: relative;
+  min-height: 100dvh;
+  overflow: clip;
+  background: var(--notes-bg);
+  color: var(--notes-paper);
+  isolation: isolate;
+}
+
+.reader-shell[data-reader-layout="programme-notes"][data-view="contents"] .view--contents::before {
+  position: absolute;
+  inset: 0 clamp(22px, 5vw, 84px) 0 auto;
+  z-index: -1;
+  width: clamp(56px, 7vw, 104px);
+  opacity: 0.14;
+  background: repeating-linear-gradient(
+    90deg,
+    transparent 0 10px,
+    var(--notes-gold) 10px 11px
+  );
+  content: "";
+  pointer-events: none;
+}
+
+.reader-shell[data-reader-layout="programme-notes"][data-view="contents"] .contents-sheet {
+  width: min(100%, 1380px);
+  margin: 0 auto;
+  padding: 0 clamp(22px, 5vw, 84px);
+}
+
+.reader-shell[data-reader-layout="programme-notes"][data-view="contents"] .eyebrow-row {
+  min-height: 54px;
+  padding: 0;
+  border-top: 0;
+  border-bottom: 1px solid var(--notes-rule);
+  color: var(--notes-gold);
+  font-size: 9px;
+  letter-spacing: 0.18em;
+}
+
+.reader-shell[data-reader-layout="programme-notes"][data-view="contents"] .eyebrow-row::before {
+  color: var(--notes-paper);
+  content: "OWLDIO MENU";
+}
+
+.reader-shell[data-reader-layout="programme-notes"][data-view="contents"] .eyebrow-row button {
+  display: none;
+}
+
+.reader-shell[data-reader-layout="programme-notes"][data-view="contents"] .contents-heading {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  min-height: clamp(210px, 24vw, 330px);
+  align-items: end;
+  padding: clamp(52px, 7vw, 94px) 0 clamp(42px, 6vw, 76px);
+  border-bottom: 1px solid var(--notes-gold);
+}
+
+.reader-shell[data-reader-layout="programme-notes"][data-view="contents"] .contents-heading::after {
+  position: absolute;
+  right: 0;
+  bottom: -1px;
+  width: clamp(74px, 11vw, 150px);
+  height: 7px;
+  background: var(--notes-gold);
+  content: "";
+}
+
+.reader-shell[data-reader-layout="programme-notes"][data-view="contents"] .contents-heading__programme {
+  margin: 0 0 22px;
+  color: var(--notes-muted);
+  font-family: var(--font-serif);
+  font-size: 13px;
+  font-weight: 400;
+  letter-spacing: 0.12em;
+}
+
+.reader-shell[data-reader-layout="programme-notes"][data-view="contents"] .contents-heading .kicker {
+  color: var(--notes-gold);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+}
+
+.reader-shell[data-reader-layout="programme-notes"][data-view="contents"] .contents-heading h1 {
+  max-width: none;
+  margin: 16px 0 0;
+  color: var(--notes-paper);
+  font-family: var(--font-serif);
+  font-size: clamp(40px, 5.2vw, 70px);
+  font-weight: 500;
+  line-height: 1.18;
+  letter-spacing: 0.06em;
+}
+
+.reader-shell[data-reader-layout="programme-notes"][data-view="contents"] #contents-description {
+  display: none;
+}
+
+.reader-shell[data-reader-layout="programme-notes"][data-view="contents"] .editorial-index.programme-notes {
+  border: 0;
+}
+
+.reader-shell[data-reader-layout="programme-notes"][data-view="contents"] .programme-note {
+  position: relative;
+  padding: clamp(58px, 7vw, 92px) 0 clamp(46px, 6vw, 76px);
+  border-bottom: 1px solid var(--notes-rule);
+}
+
+.reader-shell[data-reader-layout="programme-notes"][data-view="contents"] .programme-note::before {
+  position: absolute;
+  top: 0;
+  right: calc(50% - 50vw);
+  bottom: 0;
+  left: calc(50% - 50vw);
+  z-index: -1;
+  background: var(--notes-bg);
+  content: "";
+}
+
+.reader-shell[data-reader-layout="programme-notes"][data-view="contents"] .programme-note:nth-child(even)::before {
+  background: var(--notes-bg-raised);
+}
+
+.reader-shell[data-reader-layout="programme-notes"][data-view="contents"] .programme-note__heading,
+.reader-shell[data-reader-layout="programme-notes"][data-view="contents"] .programme-note__body,
+.reader-shell[data-reader-layout="programme-notes"][data-view="contents"] .programme-note__folio {
+  width: min(100%, 1120px);
+  margin-right: auto;
+  margin-left: auto;
+}
+
+.reader-shell[data-reader-layout="programme-notes"][data-view="contents"] .programme-note__heading {
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr);
+  gap: clamp(18px, 2.6vw, 38px);
+  align-items: start;
+  margin-bottom: clamp(34px, 4vw, 56px);
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--notes-rule);
+}
+
+.reader-shell[data-reader-layout="programme-notes"][data-view="contents"] .programme-note__number {
+  padding-top: 2px;
+  color: var(--notes-gold);
+  font-family: var(--font-latin);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+}
+
+.reader-shell[data-reader-layout="programme-notes"][data-view="contents"] .programme-note__heading-copy {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  column-gap: 24px;
+  align-items: baseline;
+}
+
+.reader-shell[data-reader-layout="programme-notes"][data-view="contents"] .programme-note__label {
+  grid-column: 1 / -1;
+  margin: 0 0 12px;
+  color: var(--notes-rose);
+  font-family: var(--font-latin);
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+}
+
+.reader-shell[data-reader-layout="programme-notes"][data-view="contents"] .programme-note__heading h2 {
+  margin: 0;
+  color: var(--notes-paper);
+  font-family: var(--font-serif);
+  font-size: clamp(24px, 2.25vw, 34px);
+  font-weight: 500;
+  line-height: 1.48;
+  letter-spacing: 0.025em;
+  text-wrap: balance;
+}
+
+.reader-shell[data-reader-layout="programme-notes"][data-view="contents"] .programme-note__english {
+  grid-column: 1 / -1;
+  margin: 10px 0 0;
+  color: var(--notes-muted);
+  font-family: var(--font-latin);
+  font-size: 11px;
+  line-height: 1.6;
+  letter-spacing: 0.075em;
+}
+
+.reader-shell[data-reader-layout="programme-notes"][data-view="contents"] .programme-note__author {
+  grid-column: 2;
+  grid-row: 2;
+  margin: 0;
+  color: var(--notes-gold);
+  font-family: var(--font-serif);
+  font-size: 13px;
+  letter-spacing: 0.12em;
+  white-space: nowrap;
+}
+
+.reader-shell[data-reader-layout="programme-notes"][data-view="contents"] .programme-note__body {
+  column-count: 2;
+  column-gap: clamp(42px, 5.8vw, 86px);
+  column-rule: 1px solid var(--notes-rule);
+}
+
+.reader-shell[data-reader-layout="programme-notes"][data-view="contents"] .programme-note__paragraph {
+  margin: 0 0 1.25em;
+  color: var(--notes-copy);
+  font-family: var(--font-serif);
+  font-size: clamp(15px, 1.16vw, 16.5px);
+  font-weight: 400;
+  line-height: 2;
+  text-align: justify;
+  text-justify: inter-ideograph;
+  text-wrap: pretty;
+  word-break: normal;
+  line-break: strict;
+  orphans: 3;
+  widows: 3;
+}
+
+.reader-shell[data-reader-layout="programme-notes"][data-view="contents"] .programme-note__works {
+  display: block;
+}
+
+.reader-shell[data-reader-layout="programme-notes"][data-view="contents"] .programme-note__work {
+  margin: 0 0 30px;
+  padding-top: 16px;
+  border-top: 1px solid var(--notes-rule);
+  break-inside: avoid;
+}
+
+.reader-shell[data-reader-layout="programme-notes"][data-view="contents"] .programme-note__work-heading {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  gap: 10px;
+  align-items: baseline;
+}
+
+.reader-shell[data-reader-layout="programme-notes"][data-view="contents"] .programme-note__work-number {
+  color: var(--notes-gold);
+  font-family: var(--font-latin);
+  font-size: 9px;
+  letter-spacing: 0.1em;
+}
+
+.reader-shell[data-reader-layout="programme-notes"][data-view="contents"] .programme-note__work h3 {
+  margin: 0;
+  color: var(--notes-paper);
+  font-family: var(--font-serif);
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 1.65;
+}
+
+.reader-shell[data-reader-layout="programme-notes"][data-view="contents"] .programme-note__work-english {
+  margin: 5px 0 10px 38px;
+  color: var(--notes-muted);
+  font-family: var(--font-latin);
+  font-size: 10px;
+  line-height: 1.55;
+  letter-spacing: 0.045em;
+}
+
+.reader-shell[data-reader-layout="programme-notes"][data-view="contents"] .programme-note__folio {
+  display: flex;
+  justify-content: space-between;
+  margin-top: clamp(34px, 5vw, 62px);
+  padding-top: 12px;
+  border-top: 1px solid var(--notes-rule);
+  color: var(--notes-muted);
+  font-family: var(--font-latin);
+  font-size: 8px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.reader-shell[data-reader-layout="programme-notes"][data-view="contents"] .view--contents > .folio {
+  display: none;
+}
+
+@media (max-width: 760px) {
+  .reader-shell[data-reader-layout="programme-notes"][data-view="contents"] .view--contents::before {
+    right: 18px;
+    width: 44px;
+    opacity: 0.08;
+    background-size: auto;
+  }
+
+  .reader-shell[data-reader-layout="programme-notes"][data-view="contents"] .contents-sheet {
+    padding-right: 22px;
+    padding-left: 22px;
+  }
+
+  .reader-shell[data-reader-layout="programme-notes"][data-view="contents"] .eyebrow-row {
+    min-height: 48px;
+  }
+
+  .reader-shell[data-reader-layout="programme-notes"][data-view="contents"] .contents-heading {
+    min-height: 210px;
+    padding: 46px 0 38px;
+  }
+
+  .reader-shell[data-reader-layout="programme-notes"][data-view="contents"] .contents-heading__programme {
+    margin-bottom: 18px;
+    font-size: 12px;
+  }
+
+  .reader-shell[data-reader-layout="programme-notes"][data-view="contents"] .contents-heading .kicker {
+    max-width: 25em;
+    font-size: 9px;
+    line-height: 1.7;
+  }
+
+  .reader-shell[data-reader-layout="programme-notes"][data-view="contents"] .contents-heading h1 {
+    margin-top: 12px;
+    font-size: 38px;
+    letter-spacing: 0.08em;
+  }
+
+  .reader-shell[data-reader-layout="programme-notes"][data-view="contents"] .programme-note {
+    padding: 42px 0 38px;
+  }
+
+  .reader-shell[data-reader-layout="programme-notes"][data-view="contents"] .programme-note__heading {
+    grid-template-columns: 30px minmax(0, 1fr);
+    gap: 12px;
+    margin-bottom: 28px;
+    padding-bottom: 20px;
+  }
+
+  .reader-shell[data-reader-layout="programme-notes"][data-view="contents"] .programme-note__heading-copy {
+    display: block;
+  }
+
+  .reader-shell[data-reader-layout="programme-notes"][data-view="contents"] .programme-note__heading h2 {
+    font-size: 22px;
+    line-height: 1.55;
+    letter-spacing: 0.015em;
+  }
+
+  .reader-shell[data-reader-layout="programme-notes"][data-view="contents"] .programme-note__english {
+    margin-top: 9px;
+    font-size: 9.5px;
+    line-height: 1.7;
+  }
+
+  .reader-shell[data-reader-layout="programme-notes"][data-view="contents"] .programme-note__author {
+    margin-top: 12px;
+    font-size: 12px;
+  }
+
+  .reader-shell[data-reader-layout="programme-notes"][data-view="contents"] .programme-note__body {
+    column-count: 1;
+    column-gap: 0;
+    column-rule: 0;
+  }
+
+  .reader-shell[data-reader-layout="programme-notes"][data-view="contents"] .programme-note__paragraph {
+    margin-bottom: 1.35em;
+    font-size: 17px;
+    line-height: 1.95;
+    text-align: start;
+  }
+
+  .reader-shell[data-reader-layout="programme-notes"][data-view="contents"] .programme-note__work {
+    margin-bottom: 28px;
+    padding-top: 15px;
+  }
+
+  .reader-shell[data-reader-layout="programme-notes"][data-view="contents"] .programme-note__work h3 {
+    font-size: 16px;
+  }
+
+  .reader-shell[data-reader-layout="programme-notes"][data-view="contents"] .programme-note__work-english {
+    margin-left: 38px;
+    font-size: 9.5px;
+  }
+}
+
+@media (max-width: 360px) {
+  .reader-shell[data-reader-layout="programme-notes"][data-view="contents"] .contents-sheet {
+    padding-right: 18px;
+    padding-left: 18px;
+  }
+
+  .reader-shell[data-reader-layout="programme-notes"][data-view="contents"] .programme-note__paragraph {
+    font-size: 16.5px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reader-shell[data-reader-layout="programme-notes"][data-view="contents"] .view--contents.view-enter {
+    animation: none;
+  }
+}
