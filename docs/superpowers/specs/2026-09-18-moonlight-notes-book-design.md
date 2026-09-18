@@ -148,6 +148,20 @@ packAtoms(atoms, { capacity, measure, splitParagraph }) -> Page[]
 
 判斷邏輯（點擊區、雙擊、滑動速度、翻頁判定、邊緣阻尼、縮放回彈）全部放在 `src/domain/reader-gestures.js` 的純函式，有單元測試。
 
+### 段落與空白頁（第二輪手機回饋）
+
+- **不硬拆段落**：一段文字放得進一整頁時，只有目前這頁能容納一半以上才切分，否則整段移到下一頁，讓下一頁從完整段落開始。比整頁還長的段落照樣切分。
+- **切在句子上**：必須切分時，先找句號（。！？，連同後面的收尾引號），其次找逗號、頓號，最後才退回字元切分。句號切點最多可以犧牲一半的可用空間，逗號切點最多犧牲四分之一，避免為了句子完整留下大片空白。規則在 `src/domain/text-breaks.js`。
+- **曲末短頁**：某曲最後一頁的段距上限放寬到 26 px，剩餘空白超過版心 6% 就把內容置中；有標題帶的頁面，內容置中在標題帶下方。
+
+### 線條
+
+全站的直線格線換成流動的曲線，以 SVG data URI 放在 CSS 變數（`--harp-strings`、`--harp-water`、`--harp-ripple`）：
+
+- 頁面背景：頁頂一道 S 形豎琴頸，十四條弦從琴頸垂下、微微向外彎並逐漸淡出，其中兩條為淡玫瑰色（呼應豎琴的 C 弦）；頁底三道水波與淡淡的水面光。跨頁時左頁鏡像，以書脊對稱。
+- 標題帶漸層融進頁面，下緣是一道細波浪線；導言線、作品卡、頁腳線、書眉線、目錄分隔線都改為兩端漸淡。
+- 載入畫面上的豎琴弦緩慢明暗呼吸（尊重 `prefers-reduced-motion`）。
+
 ## 閱讀器外殼
 
 獨立的 `#notes-book-view`，但沿用 PDF 閱讀器的同一組 chrome class：`publication-toolbar`、`publication-turn`、`publication-rail`、`publication-thumbnails`。兩者共用外觀語彙，卻不共用 DOM —— `#pdf-view` 由 `createPublicationViewer` 綁定，兩個引擎搶同一批節點只會互相踩到。月光下的約定同時有印刷三折頁與樂曲解說，本來就需要兩個並存的檢視。
@@ -246,6 +260,7 @@ packAtoms(atoms, { capacity, measure, splitParagraph }) -> Page[]
 | `src/notes-book-chrome.js` | 新增：浮動控制列的顯示與自動收起 |
 | `src/notes-book-overlays.js` | 新增：載入畫面與首次提示 |
 | `src/domain/reader-gestures.js` | 新增：手勢判斷純函式 |
+| `src/domain/text-breaks.js` | 新增：句號／逗號切點 |
 | `index.html` | 改：新增 `#notes-book-view` 區塊 |
 | `src/reader.js` | 改：`notes-book` layout 走新模組，移除 `renderProgrammeNotes` 與 `programmeNoteList` |
 | `src/domain/routing.js` | 改：認得 `notes-book`，支援 `#page/` 與 `#note/` |

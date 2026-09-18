@@ -1,4 +1,5 @@
-import { createPageFrame, renderAtom } from "./notes-book-render.js";
+import { clauseBreak, sentenceBreak } from "./domain/text-breaks.js";
+import { PAGE, createPageFrame, renderAtom } from "./notes-book-render.js";
 import { createElement } from "./lib/dom.js";
 
 const FULL_PAGE_KINDS = new Set(["cover", "contents", "colophon"]);
@@ -6,6 +7,10 @@ const WORD_CHARACTER = /[A-Za-z0-9'’.\-–—]/;
 const CLOSING_PUNCTUATION = /[。，、；：！？」』）》】〉・·]/;
 const MINIMUM_SPLIT_LENGTH = 8;
 const BREAK_SEARCH_LIMIT = 24;
+const MIN_HEAD_LINES = 2;
+// How much of the room a cut may give up to land on a sentence or a clause.
+const SENTENCE_KEEP = 0.5;
+const CLAUSE_KEEP = 0.75;
 
 function fragment(atom, text, continues) {
   return { ...atom, payload: { ...atom.payload, text, continues } };
@@ -92,13 +97,25 @@ export function createMeasurer(host = document.body, { height } = {}) {
 
     if (!best) return null;
 
-    const cut = safeBreak(text, best);
-    if (cut <= 0 || cut >= text.length) return null;
+    // Prefer to end the page on a full sentence, then on a clause, and only
+    // then wherever the line happens to run out.
+    const sentence = sentenceBreak(text, best);
+    const clause = clauseBreak(text, best);
+    const candidates = [
+      sentence >= best * SENTENCE_KEEP ? sentence : 0,
+      clause >= best * CLAUSE_KEEP ? clause : 0,
+      safeBreak(text, best),
+    ];
+    const minimumHead = PAGE.lineHeight * MIN_HEAD_LINES;
 
-    return {
-      head: fragment(atom, text.slice(0, cut), atom.payload.continues),
-      tail: fragment(atom, text.slice(cut), true),
-    };
+    for (const cut of candidates) {
+      if (cut <= 0 || cut >= text.length) continue;
+      const head = fragment(atom, text.slice(0, cut), atom.payload.continues);
+      if (elementHeight(renderAtom(head)) < minimumHead) continue;
+      return { head, tail: fragment(atom, text.slice(cut), true) };
+    }
+
+    return null;
   }
 
   function destroy() {

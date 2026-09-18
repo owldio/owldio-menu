@@ -27,7 +27,8 @@ const TWO_UP_MIN_WIDTH = 900;
 const RELAYOUT_DELAY = 180;
 const HEIGHT_TOLERANCE = 24;
 const MAX_GAP_EXTRA = 14;
-const CLOSING_PAGE_RATIO = 0.55;
+const ENDING_GAP_EXTRA = 26;
+const CENTRE_THRESHOLD = 0.06;
 const FONT_TIMEOUT = 3500;
 const JUMP_FADE = 240;
 const MOUSE_WAKE_INTERVAL = 250;
@@ -297,15 +298,18 @@ export function createNotesBook(root, { onRoute, onError, onPageChange } = {}) {
   /**
    * Books sit flush at the foot of the page. Pagination cannot land exactly on
    * the last line, so the leftover is shared between the paragraph gaps — up to
-   * a cap, which keeps a note's short final page from being stretched open.
+   * a cap, which keeps a page from being stretched open.
+   *
+   * The last page of a note usually ends short. It gets a little more air
+   * between paragraphs, and whatever is still left over is split above and
+   * below the text, so the page reads as composed rather than abandoned.
    */
   function settleTextBlock(element) {
     if (element.dataset.pageKind !== "note") return;
 
     const body = element.querySelector(".note-page__body");
     const children = [...body.children];
-    const gaps = children.length - 1;
-    if (gaps < 1) return;
+    if (!children.length) return;
 
     const content = children.reduce((total, child) => {
       const style = window.getComputedStyle(child);
@@ -318,21 +322,19 @@ export function createNotesBook(root, { onRoute, onError, onPageChange } = {}) {
     const slack = body.clientHeight - content;
     if (slack <= 0) return;
 
-    // A note whose last page carries only a little text reads as a broken page.
-    // Centre it instead, so it becomes a deliberate closing page. A page that
-    // also opens the note keeps its banner pinned to the top edge.
-    const opensNote = Boolean(body.querySelector(".note-banner"));
-    if (
-      !opensNote
-      && element.dataset.endsNote === "true"
-      && content < body.clientHeight * CLOSING_PAGE_RATIO
-    ) {
-      element.dataset.closing = "true";
-      return;
-    }
+    // Only gaps between blocks can open; space after the final block is unseen.
+    const growable = children.filter(
+      (child, index) => index < children.length - 1 && child.matches(".note-paragraph, .note-work"),
+    ).length;
+    const endsNote = element.dataset.endsNote === "true";
+    const cap = endsNote ? ENDING_GAP_EXTRA : MAX_GAP_EXTRA;
+    const extra = growable ? Math.min(slack / growable, cap) : 0;
+    if (extra > 0) element.style.setProperty("--note-gap-extra", `${extra.toFixed(2)}px`);
 
-    const extra = Math.min(slack / gaps, MAX_GAP_EXTRA);
-    element.style.setProperty("--note-gap-extra", `${extra.toFixed(2)}px`);
+    const remaining = slack - extra * growable;
+    if (endsNote && remaining > body.clientHeight * CENTRE_THRESHOLD) {
+      element.dataset.closing = "true";
+    }
   }
 
   function renderPages() {

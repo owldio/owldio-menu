@@ -202,6 +202,32 @@ describe("packAtoms typographic guards", () => {
     }
   });
 
+  it("moves a paragraph whole rather than leave a sliver of it behind", () => {
+    // Three lines are left; the paragraph needs eight. Splitting would strand
+    // its opening lines at the foot of the page, so it starts the next page.
+    const atoms = [
+      paragraph("p1", repeat("甲", 70), "note-a"),
+      paragraph("p2", repeat("乙", 80), "note-a"),
+    ];
+
+    const pages = packAtoms(atoms, options);
+
+    expect(pages.map((page) => page.atoms.map((atom) => atom.id))).toEqual([["p1"], ["p2"]]);
+  });
+
+  it("still splits a paragraph when most of it fits on the page", () => {
+    const atoms = [
+      paragraph("p1", repeat("甲", 40), "note-a"),
+      paragraph("p2", repeat("乙", 80), "note-a"),
+    ];
+
+    const pages = packAtoms(atoms, options);
+
+    expect(pages).toHaveLength(2);
+    expect(pages[0].atoms.map((atom) => atom.id)).toEqual(["p1", "p2"]);
+    expect(pages[1].atoms.map((atom) => atom.id)).toEqual(["p2"]);
+  });
+
   it("moves a whole paragraph forward when fewer than two lines remain", () => {
     const atoms = [
       paragraph("p1", repeat("甲", 90), "note-a"),

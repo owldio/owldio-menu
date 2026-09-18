@@ -1,6 +1,13 @@
 const FULL_PAGE_KINDS = new Set(["cover", "contents", "colophon"]);
 const MIN_LINES = 2;
 
+/**
+ * A paragraph that would fit on a page of its own is only split when at least
+ * this share of it fits where it stands. Below that, the few lines left behind
+ * read as a fragment and the reader meets a sentence broken across a turn.
+ */
+const MIN_SPLIT_SHARE = 0.5;
+
 function pageNoteSlug(atoms) {
   return atoms.find((atom) => atom.noteSlug)?.noteSlug ?? null;
 }
@@ -95,7 +102,10 @@ export function packAtoms(atoms, { capacity, lineHeight, measure, splitParagraph
       continue;
     }
 
-    if (atom.splittable) {
+    // A paragraph longer than a whole page has to be split wherever it falls.
+    const worthSplitting = height > capacity || remaining >= height * MIN_SPLIT_SHARE;
+
+    if (atom.splittable && worthSplitting) {
       const split = splitWithGuards(atom, remaining, { lineHeight, measure, splitParagraph });
       if (split) {
         place(split.head, measure(split.head));
