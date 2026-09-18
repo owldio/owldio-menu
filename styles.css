@@ -7090,12 +7090,30 @@ body {
     radial-gradient(circle at 88% 6%, rgb(213 177 105 / 0.12), transparent 34%),
     linear-gradient(176deg, #102a3d 0%, #0b2031 46%, #08192a 100%);
   overflow: hidden;
-  box-shadow: 0 0 0 1px rgb(213 177 105 / 0.17), 0 34px 68px rgb(2 8 15 / 0.56);
+  box-shadow: 0 0 0 1px rgb(213 177 105 / 0.2), 0 34px 68px rgb(2 8 15 / 0.56);
   color: var(--moon-copy);
   font-family: var(--font-serif);
   font-size: 16px;
   line-height: 1.9;
   transition: transform 420ms cubic-bezier(0.2, 0.8, 0.2, 1), opacity 260ms ease;
+}
+
+/* Harp strings behind the type, and a vignette that settles the page edges. */
+.note-page::before {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  opacity: 0.6;
+  background:
+    repeating-linear-gradient(90deg, transparent 0 79px, rgb(213 177 105 / 0.05) 79px 80px),
+    radial-gradient(120% 78% at 50% 34%, transparent 58%, rgb(2 8 15 / 0.42) 100%);
+  content: "";
+  pointer-events: none;
+}
+
+.note-page > * {
+  position: relative;
+  z-index: 1;
 }
 
 .note-page[data-slot="single"] {
@@ -7135,9 +7153,35 @@ body {
   pointer-events: none;
 }
 
+.note-page__running {
+  position: absolute;
+  top: 40px;
+  right: 80px;
+  left: 80px;
+  z-index: 1;
+  margin: 0;
+  padding-bottom: 9px;
+  border-bottom: 1px solid rgb(213 177 105 / 0.2);
+  color: rgb(185 175 157 / 0.66);
+  font-family: var(--font-sans);
+  font-size: 9.5px;
+  letter-spacing: 0.22em;
+}
+
 .note-page__body {
   flex: 1;
   min-height: 0;
+}
+
+/* A note that ends in a few lines closes the page rather than trailing off. */
+.note-page[data-closing="true"] .note-page__body {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.note-page[data-closing="true"] .note-page__endmark {
+  margin-top: 46px;
 }
 
 .note-page__folio {
@@ -7160,7 +7204,7 @@ body {
 }
 
 .note-paragraph {
-  margin: 0 0 15px;
+  margin: 0 0 calc(15px + var(--note-gap-extra, 0px));
   text-indent: 2em;
   text-align: justify;
   text-justify: inter-ideograph;
@@ -7170,36 +7214,120 @@ body {
   text-indent: 0;
 }
 
+/*
+ * The way into a note: larger, brighter, unindented, on a gold rule. Set ragged
+ * rather than justified — at this size a long Latin name opens rivers between
+ * the characters.
+ */
+.note-paragraph[data-lede="true"] {
+  margin-bottom: calc(22px + var(--note-gap-extra, 0px));
+  padding-left: 22px;
+  border-left: 2px solid rgb(213 177 105 / 0.55);
+  color: var(--moon-ivory);
+  font-size: 17.5px;
+  line-height: 1.95;
+  text-align: start;
+  text-indent: 0;
+}
+
 .note-page__sentinel {
   display: block;
   height: 0;
+}
+
+/*
+ * The banner is the head of the page, not a box inside it: negative margins
+ * cancel the page padding so the gold band runs edge to edge, and the padding
+ * puts the type back on the text column. Every note opens a page, so the band
+ * always sits at the top.
+ */
+.note-page__endmark {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin: 30px 0 0;
+  color: rgb(213 177 105 / 0.62);
+  font-size: 10px;
+  letter-spacing: 0.3em;
+}
+
+.note-page__endmark i {
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgb(213 177 105 / 0.34), transparent);
 }
 
 .note-banner {
   display: grid;
   grid-template-columns: 62px minmax(0, 1fr);
   gap: 20px;
-  margin: 0 0 30px;
-  padding: 20px 22px 22px;
-  border-top: 2px solid var(--moon-gold);
-  background: linear-gradient(180deg, rgb(213 177 105 / 0.13), rgb(213 177 105 / 0.02));
+  margin: -92px -80px 32px;
+  padding: 34px 80px 28px;
+  border-bottom: 1px solid rgb(213 177 105 / 0.34);
+  background: linear-gradient(180deg, rgb(213 177 105 / 0.16), rgb(213 177 105 / 0.03));
 }
 
 .note-banner__number {
+  align-self: start;
   color: var(--moon-gold);
   font-family: var(--font-display);
-  font-size: 40px;
-  line-height: 1;
-  letter-spacing: -0.02em;
+  font-size: 58px;
+  line-height: 0.82;
+  letter-spacing: -0.04em;
 }
 
 .note-banner__eyebrow {
-  margin: 0 0 9px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 10px;
+  margin: 0 0 11px;
   color: var(--moon-gold);
   font-family: var(--font-sans);
-  font-size: 9px;
+  font-size: 9.5px;
   line-height: 1.4;
   letter-spacing: 0.2em;
+}
+
+.note-banner__eyebrow i {
+  color: rgb(185 175 157 / 0.6);
+  font-style: normal;
+  font-size: 8.5px;
+  letter-spacing: 0.16em;
+}
+
+.note-banner__eyebrow i::before {
+  margin-right: 10px;
+  content: "／";
+}
+
+.note-banner__performers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px 20px;
+  margin: 16px 0 0;
+  padding: 13px 0 0;
+  border-top: 1px solid rgb(213 177 105 / 0.24);
+  list-style: none;
+}
+
+.note-banner__performers li {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+}
+
+.note-banner__role {
+  color: rgb(213 177 105 / 0.82);
+  font-family: var(--font-sans);
+  font-size: 9px;
+  letter-spacing: 0.14em;
+}
+
+.note-banner__name {
+  color: var(--moon-copy);
+  font-size: 13.5px;
+  letter-spacing: 0.04em;
 }
 
 .note-banner__title {
@@ -7229,7 +7357,7 @@ body {
 }
 
 .note-work {
-  margin: 0 0 20px;
+  margin: 0 0 calc(20px + var(--note-gap-extra, 0px));
   padding: 0 0 18px 20px;
   border-left: 1px solid var(--moon-line);
 }
@@ -7321,40 +7449,102 @@ body {
 
 .note-cover__sakura {
   position: absolute;
-  top: -40px;
-  right: -44px;
+  top: -30px;
+  right: -40px;
   z-index: -1;
-  width: 240px;
-  height: 300px;
-  color: var(--moon-rose);
+  width: 260px;
+  height: 360px;
+  color: #e7a9b2;
   pointer-events: none;
 }
 
+/* The moon, cropped by the page edge the way the leaflet crops its harp. */
+.note-cover__moon {
+  position: absolute;
+  top: -210px;
+  right: -210px;
+  z-index: -2;
+  width: 520px;
+  height: 520px;
+  color: var(--moon-gold);
+  pointer-events: none;
+}
+
+.note-cover__strings {
+  position: absolute;
+  top: -92px;
+  right: -80px;
+  bottom: -84px;
+  z-index: -2;
+  width: 300px;
+  height: calc(100% + 176px);
+  color: var(--moon-gold);
+  pointer-events: none;
+}
+
+.note-cover__copy {
+  max-width: 440px;
+}
+
 .note-cover__kicker {
-  margin: 0 0 26px;
+  margin: 0 0 28px;
   color: var(--moon-gold);
   font-family: var(--font-sans);
   font-size: 10.5px;
   letter-spacing: 0.34em;
 }
 
+/* Stacked as on the poster: 月光下 / 的約定. */
 .note-cover__title {
-  max-width: 6em;
+  max-width: 3.2em;
   margin: 0;
   color: var(--moon-ivory);
-  font-size: 68px;
+  font-size: 88px;
   font-weight: 500;
-  line-height: 1.12;
-  letter-spacing: -0.045em;
+  line-height: 1.08;
+  letter-spacing: 0.02em;
 }
 
 .note-cover__summary {
   max-width: 22em;
-  margin: 26px 0 0;
+  margin: 30px 0 0;
+  padding-left: 18px;
+  border-left: 1px solid rgb(213 177 105 / 0.5);
   color: var(--moon-copy);
-  font-size: 16px;
+  font-size: 15.5px;
   line-height: 2;
+  letter-spacing: 0.06em;
+}
+
+.note-cover__date {
+  display: grid;
+  grid-template-columns: auto auto;
+  align-items: baseline;
+  justify-content: start;
+  gap: 0 14px;
+  margin: 44px 0 0;
+  color: var(--moon-gold);
+  font-family: var(--font-display);
+}
+
+.note-cover__year {
+  grid-column: 1 / -1;
+  font-size: 30px;
+  line-height: 1;
   letter-spacing: 0.02em;
+}
+
+.note-cover__day {
+  font-size: 84px;
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
+.note-cover__time {
+  font-family: var(--font-serif);
+  font-size: 20px;
+  letter-spacing: 0.04em;
 }
 
 .note-contents__kicker {

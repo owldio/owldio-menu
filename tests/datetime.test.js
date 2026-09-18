@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { formatDate, programmeDateLabel, programmeTimeLabel } from "../src/domain/datetime.js";
+import {
+  formatDate,
+  programmeDateLabel,
+  programmeDateParts,
+  programmeTimeLabel,
+} from "../src/domain/datetime.js";
 
 describe("formatDate", () => {
   it("formats in Taipei time regardless of the offset written in the source", () => {
@@ -39,5 +44,29 @@ describe("programmeTimeLabel", () => {
 
   it("falls back to a placeholder when no start time is known", () => {
     expect(programmeTimeLabel({ starts_at: null })).toBe("待公告");
+  });
+});
+
+describe("programmeDateParts", () => {
+  it("splits a curtain time into the pieces a poster sets separately", () => {
+    expect(programmeDateParts({ starts_at: "2026-09-25T19:30:00+08:00" })).toEqual({
+      year: "2026",
+      monthDay: "9.25",
+      weekday: "五",
+      time: "19:30",
+    });
+  });
+
+  it("reads the parts in Taipei time", () => {
+    expect(programmeDateParts({ starts_at: "2026-09-25T16:00:00Z" })).toMatchObject({
+      monthDay: "9.26",
+      weekday: "六",
+      time: "00:00",
+    });
+  });
+
+  it("returns nothing when the date is unknown", () => {
+    expect(programmeDateParts({ starts_at: null })).toBeNull();
+    expect(programmeDateParts({ starts_at: "not a date" })).toBeNull();
   });
 });

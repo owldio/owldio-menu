@@ -13,6 +13,8 @@ const TWO_UP_MIN_WIDTH = 900;
 const TURN_THRESHOLD = 0.18;
 const RELAYOUT_DELAY = 180;
 const HEIGHT_TOLERANCE = 24;
+const MAX_GAP_EXTRA = 14;
+const CLOSING_PAGE_RATIO = 0.55;
 
 function clamp(value, minimum, maximum) {
   return Math.min(Math.max(value, minimum), maximum);
@@ -47,6 +49,7 @@ export function createNotesBook(root, { onRoute, onError, onPageChange } = {}) {
   let pan = { x: 0, y: 0 };
   let fitScale = 1;
   let runningHead = "樂曲解說";
+  let noteTitles = new Map();
   let pageHeight = PAGE_HEIGHT_BOUNDS.minimum;
   let active = false;
   let paginated = false;
@@ -242,11 +245,60 @@ export function createNotesBook(root, { onRoute, onError, onPageChange } = {}) {
 
   function renderPages() {
     book.replaceChildren();
-    pageElements = pages.map((page) =>
-      renderPage(page, { total: pages.length, runningHead, height: pageHeight }),
-    );
+    pageElements = pages.map((page, index) => {
+      const noteTitle = page.noteSlug ? noteTitles.get(page.noteSlug) : null;
+      return renderPage(page, {
+        total: pages.length,
+        runningHead: noteTitle || runningHead,
+        continuedLabel: noteTitle ? `${noteTitle}（續）` : null,
+        endsNote: Boolean(page.noteSlug) && pages[index + 1]?.noteSlug !== page.noteSlug,
+        height: pageHeight,
+      });
+    });
     for (const element of pageElements) book.append(element);
+    for (const element of pageElements) settleTextBlock(element);
     buildThumbnails();
+  }
+
+  /**
+   * Books sit flush at the foot of the page. Pagination cannot land exactly on
+   * the last line, so the leftover is shared between the paragraph gaps — up to
+   * a cap, which keeps a note's short final page from being stretched open.
+   */
+  function settleTextBlock(element) {
+    if (element.dataset.pageKind !== "note") return;
+
+    const body = element.querySelector(".note-page__body");
+    const children = [...body.children];
+    const gaps = children.length - 1;
+    if (gaps < 1) return;
+
+    const content = children.reduce((total, child) => {
+      const style = window.getComputedStyle(child);
+      return total
+        + child.offsetHeight
+        + Number.parseFloat(style.marginTop || "0")
+        + Number.parseFloat(style.marginBottom || "0");
+    }, 0);
+
+    const slack = body.clientHeight - content;
+    if (slack <= 0) return;
+
+    // A note whose last page carries only a little text reads as a broken page.
+    // Centre it instead, so it becomes a deliberate closing page. A page that
+    // also opens the note keeps its banner pinned to the top edge.
+    const opensNote = Boolean(body.querySelector(".note-banner"));
+    if (
+      !opensNote
+      && element.dataset.endsNote === "true"
+      && content < body.clientHeight * CLOSING_PAGE_RATIO
+    ) {
+      element.dataset.closing = "true";
+      return;
+    }
+
+    const extra = Math.min(slack / gaps, MAX_GAP_EXTRA);
+    element.style.setProperty("--note-gap-extra", `${extra.toFixed(2)}px`);
   }
 
   /** The atom a reader is looking at, so a reflow can put them back on it. */
@@ -355,6 +407,11 @@ export function createNotesBook(root, { onRoute, onError, onPageChange } = {}) {
   async function prepare({ programme, chapters }) {
     runningHead = `${programme?.title ?? ""} · ${programme?.contents_title || "樂曲解說"}`;
     atoms = buildNoteFlow({ programme, chapters });
+    noteTitles = new Map(
+      atoms
+        .filter((atom) => atom.kind === "note-banner")
+        .map((atom) => [atom.noteSlug, `${atom.payload.number}　${atom.payload.title}`]),
+    );
 
     const sample = atoms
       .filter((atom) => atom.kind === "paragraph")

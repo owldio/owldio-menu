@@ -244,6 +244,8 @@ export const moonlightPromiseProgramme = {
   ends_at: null,
   duration_minutes: null,
   visibility: "published",
+  presenter: "中原風雅頌室內樂集樂團",
+  supporters: ["臺北市政府文化局", "上海商業儲蓄銀行文教基金會", "台灣豎琴中心"],
   cover_theme: "moonlight",
   default_reader_view: "notes-book",
   reader_layout: "notes-book",

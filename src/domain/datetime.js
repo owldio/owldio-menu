@@ -21,3 +21,32 @@ export function programmeDateLabel(programme) {
 export function programmeTimeLabel(programme) {
   return formatDate(programme?.starts_at, TIME_OPTIONS);
 }
+
+const PARTS_FORMAT = new Intl.DateTimeFormat("zh-TW", {
+  timeZone: TIME_ZONE,
+  year: "numeric",
+  month: "numeric",
+  day: "numeric",
+  weekday: "narrow",
+  hour: "2-digit",
+  minute: "2-digit",
+  hourCycle: "h23",
+});
+
+/** The curtain time split the way a poster sets it: 2026 / 9.25（五）19:30. */
+export function programmeDateParts(programme) {
+  if (!programme?.starts_at) return null;
+  const date = new Date(programme.starts_at);
+  if (Number.isNaN(date.valueOf())) return null;
+
+  const parts = Object.fromEntries(
+    PARTS_FORMAT.formatToParts(date).map(({ type, value }) => [type, value]),
+  );
+
+  return {
+    year: parts.year,
+    monthDay: `${parts.month}.${parts.day}`,
+    weekday: parts.weekday,
+    time: `${parts.hour}:${parts.minute}`,
+  };
+}

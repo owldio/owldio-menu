@@ -7,6 +7,14 @@ export const moonlightPromiseChapters = [
     eyebrow: "樂曲解說 / PROGRAMME NOTE",
     title: "格蘭查尼：古典風格的詠嘆調",
     title_en: "Marcel Grandjany: Aria in Classic Style",
+    ensemble: "弦樂四重奏與豎琴",
+    performers: [
+      ["豎琴", "彩愛玲"],
+      ["小提琴 I", "李季"],
+      ["小提琴 II", "詹青青"],
+      ["中提琴", "楊瑞瑟"],
+      ["大提琴", "黃韻宇"],
+    ],
     page_start: 1,
     is_visible: true,
     blocks: [
@@ -49,6 +57,13 @@ export const moonlightPromiseChapters = [
     eyebrow: "樂曲解說 / PROGRAMME NOTE",
     title: "布拉姆斯：第三號 C 小調鋼琴四重奏，作品 60",
     title_en: "Johannes Brahms: Piano Quartet No. 3 in C Minor, Op. 60",
+    ensemble: "鋼琴四重奏",
+    performers: [
+      ["鋼琴", "陳文婉"],
+      ["小提琴", "詹青青"],
+      ["中提琴", "楊瑞瑟"],
+      ["大提琴", "黃韻宇"],
+    ],
     page_start: 2,
     is_visible: true,
     blocks: [
@@ -91,6 +106,8 @@ export const moonlightPromiseChapters = [
     title: "豎琴獨奏：獻給月亮－心靈相通的歌聲",
     title_en: null,
     author: "彩愛玲",
+    ensemble: "豎琴獨奏",
+    performers: [["豎琴", "彩愛玲"]],
     page_start: 3,
     is_visible: true,
     blocks: [
@@ -120,6 +137,11 @@ export const moonlightPromiseChapters = [
     eyebrow: "樂曲解說 / PROGRAMME NOTE",
     title: "伊貝爾：《幕間曲》給小提琴與豎琴",
     title_en: "Jacques Ibert: Entr’acte for Violin and Harp",
+    ensemble: "小提琴與豎琴二重奏",
+    performers: [
+      ["豎琴", "彩愛玲"],
+      ["小提琴", "詹青青"],
+    ],
     page_start: 4,
     is_visible: true,
     blocks: [
@@ -150,6 +172,11 @@ export const moonlightPromiseChapters = [
     eyebrow: "樂曲解說 / PROGRAMME NOTE",
     title: "佛瑞：《搖籃》作品23，第 1 首",
     title_en: "Gabriel Faure: Les Berceaux, Op. 23, No. 1",
+    ensemble: "大提琴與豎琴二重奏",
+    performers: [
+      ["豎琴", "彩愛玲"],
+      ["大提琴", "黃韻宇"],
+    ],
     page_start: 5,
     is_visible: true,
     blocks: [
@@ -169,6 +196,14 @@ export const moonlightPromiseChapters = [
     eyebrow: "樂曲解說 / PROGRAMME NOTE",
     title: "德布西／馬修諾庭 改編：《月光》",
     title_en: "Claude Debussy／arr. Matthew Naughtin: Clair de Lune",
+    ensemble: "弦樂四重奏與豎琴",
+    performers: [
+      ["豎琴", "彩愛玲"],
+      ["小提琴 I", "李季"],
+      ["小提琴 II", "詹青青"],
+      ["中提琴", "楊瑞瑟"],
+      ["大提琴", "黃韻宇"],
+    ],
     page_start: 6,
     is_visible: true,
     blocks: [
@@ -192,6 +227,14 @@ export const moonlightPromiseChapters = [
     eyebrow: "樂曲解說 / PROGRAMME NOTE",
     title: "鄧雨賢∕李哲藝 改編：《碎心花》",
     title_en: "Yu-Hsain Tung /arr. Che-Yi Lee: Broken Hearted Flower",
+    ensemble: "弦樂四重奏與豎琴",
+    performers: [
+      ["豎琴", "彩愛玲"],
+      ["小提琴 I", "李季"],
+      ["小提琴 II", "詹青青"],
+      ["中提琴", "楊瑞瑟"],
+      ["大提琴", "黃韻宇"],
+    ],
     page_start: 7,
     is_visible: true,
     blocks: [

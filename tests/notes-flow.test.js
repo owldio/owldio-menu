@@ -16,6 +16,8 @@ const chapters = [
     position: 1,
     title: "第一首",
     title_en: "First Work",
+    ensemble: "弦樂四重奏與豎琴",
+    performers: [["豎琴", "甲"], ["小提琴 I", "乙"]],
     is_visible: true,
     blocks: [{ type: "prose", paragraphs: ["甲段落。", "乙段落。"] }],
   },
@@ -141,6 +143,30 @@ describe("buildNoteFlow", () => {
     const contents = atoms.find((atom) => atom.kind === "contents");
 
     expect(contents.payload.entries.every((entry) => entry.kind === "note")).toBe(true);
+  });
+
+  it("carries the scoring onto the banner so a note reads like a programme entry", () => {
+    const atoms = buildNoteFlow({ programme, chapters });
+    const banner = atoms.find((atom) => atom.kind === "note-banner" && atom.noteSlug === "first-work");
+
+    expect(banner.payload.ensemble).toBe("弦樂四重奏與豎琴");
+    expect(banner.payload.performers).toEqual([["豎琴", "甲"], ["小提琴 I", "乙"]]);
+  });
+
+  it("leaves the scoring empty when a note does not declare one", () => {
+    const atoms = buildNoteFlow({ programme, chapters });
+    const banner = atoms.find((atom) => atom.kind === "note-banner" && atom.noteSlug === "second-work");
+
+    expect(banner.payload.ensemble).toBeNull();
+    expect(banner.payload.performers).toEqual([]);
+  });
+
+  it("marks the opening paragraph of each note as its lede", () => {
+    const atoms = buildNoteFlow({ programme, chapters });
+    const ledes = atoms.filter((atom) => atom.kind === "paragraph" && atom.payload.lede);
+
+    expect(ledes.map((atom) => atom.noteSlug)).toEqual(["first-work", "second-work", "harp-solo"]);
+    expect(ledes[0].payload.text).toBe("甲段落。");
   });
 
   it("marks only paragraphs as splittable", () => {

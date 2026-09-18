@@ -67,6 +67,8 @@ function noteAtoms(chapter, index) {
         title: chapter.title,
         titleEn: chapter.title_en ?? null,
         author: chapter.author ?? null,
+        ensemble: chapter.ensemble ?? null,
+        performers: chapter.performers ?? [],
       },
     }),
   ];
@@ -83,7 +85,8 @@ function noteAtoms(chapter, index) {
             id: `${chapter.slug}:p${paragraphCount}`,
             noteSlug: chapter.slug,
             noteIndex: index,
-            payload: { text },
+            // The opening paragraph is the note's way in, and is set as a lede.
+            payload: { text, lede: paragraphCount === 1 },
           }),
         );
       }
@@ -119,6 +122,7 @@ export function buildNoteFlow({ programme, chapters }) {
         summary: programme?.summary ?? null,
         venue: programme?.venue ?? null,
         startsAt: programme?.starts_at ?? null,
+        presenter: programme?.presenter ?? null,
       },
     }),
     atom("contents", {
@@ -136,6 +140,8 @@ export function buildNoteFlow({ programme, chapters }) {
         venue: programme?.venue ?? null,
         startsAt: programme?.starts_at ?? null,
         productionType: programme?.production_type ?? null,
+        presenter: programme?.presenter ?? null,
+        supporters: programme?.supporters ?? [],
       },
     }),
   ];

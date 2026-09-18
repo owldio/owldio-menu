@@ -1,4 +1,8 @@
-import { programmeDateLabel, programmeTimeLabel } from "./domain/datetime.js";
+import {
+  programmeDateLabel,
+  programmeDateParts,
+  programmeTimeLabel,
+} from "./domain/datetime.js";
 import { PAGE_WIDTH } from "./domain/notes-geometry.js";
 import { createElement } from "./lib/dom.js";
 
@@ -60,25 +64,93 @@ function goldSwoosh(className) {
 function sakuraDrift(className) {
   const svg = svgElement("svg", {
     class: className,
-    viewBox: "0 0 240 300",
+    viewBox: "0 0 260 360",
     "aria-hidden": "true",
     focusable: "false",
   });
 
   const petals = [
-    { x: 24, y: 40, rotate: -18, scale: 1 },
-    { x: 148, y: 18, rotate: 26, scale: 0.72 },
-    { x: 86, y: 132, rotate: 8, scale: 0.55 },
-    { x: 186, y: 212, rotate: -34, scale: 0.86 },
+    { x: 30, y: 44, rotate: -22, scale: 1, opacity: 0.4 },
+    { x: 162, y: 20, rotate: 28, scale: 0.7, opacity: 0.3 },
+    { x: 96, y: 138, rotate: 6, scale: 0.52, opacity: 0.24 },
+    { x: 206, y: 186, rotate: -38, scale: 0.84, opacity: 0.34 },
+    { x: 52, y: 250, rotate: 48, scale: 0.46, opacity: 0.2 },
+    { x: 150, y: 306, rotate: -12, scale: 0.62, opacity: 0.26 },
   ];
 
   for (const petal of petals) {
     svg.append(
       svgElement("path", {
-        d: "M0 26 C -8 14, -6 0, 6 -8 C 12 -12, 14 -16, 15 -22 C 16 -16, 18 -12, 24 -8 C 36 0, 38 14, 30 26 C 24 22, 20 20, 15 20 C 10 20, 6 22, 0 26 Z",
+        d: "M0 24 C -7 12, -5 -1, 6 -9 C 11 -13, 13 -17, 14 -23 C 15 -17, 17 -13, 22 -9 C 33 -1, 35 12, 28 24 C 22 20, 18 18, 14 18 C 10 18, 6 20, 0 24 Z",
         transform: `translate(${petal.x} ${petal.y}) rotate(${petal.rotate}) scale(${petal.scale})`,
         fill: "currentColor",
-        opacity: 0.2,
+        opacity: petal.opacity,
+      }),
+    );
+  }
+
+  return svg;
+}
+
+/** The moon the programme is named for, cropped by the page edge. */
+function moonDisc(className) {
+  const svg = svgElement("svg", {
+    class: className,
+    viewBox: "0 0 300 300",
+    "aria-hidden": "true",
+    focusable: "false",
+  });
+
+  svg.append(
+    svgElement("circle", {
+      cx: 150,
+      cy: 150,
+      r: 118,
+      fill: "none",
+      stroke: "currentColor",
+      "stroke-width": 1.2,
+      opacity: 0.55,
+    }),
+    svgElement("circle", {
+      cx: 150,
+      cy: 150,
+      r: 132,
+      fill: "none",
+      stroke: "currentColor",
+      "stroke-width": 0.6,
+      opacity: 0.24,
+    }),
+    svgElement("circle", {
+      cx: 150,
+      cy: 150,
+      r: 104,
+      fill: "currentColor",
+      opacity: 0.07,
+    }),
+  );
+
+  return svg;
+}
+
+/** Harp strings: the instrument that carries this programme, drawn as light. */
+function harpStrings(className) {
+  const svg = svgElement("svg", {
+    class: className,
+    viewBox: "0 0 260 900",
+    preserveAspectRatio: "none",
+    "aria-hidden": "true",
+    focusable: "false",
+  });
+
+  for (let index = 0; index < 11; index += 1) {
+    const x = 18 + index * 22;
+    svg.append(
+      svgElement("path", {
+        d: `M${x} 0 C ${x + 14} 260, ${x + 26} 560, ${x + 52} 900`,
+        fill: "none",
+        stroke: "currentColor",
+        "stroke-width": index % 3 === 0 ? 0.9 : 0.5,
+        opacity: index % 3 === 0 ? 0.34 : 0.18,
       }),
     );
   }
@@ -99,7 +171,12 @@ function ledger(rows) {
 
 function renderCover(payload) {
   const node = createElement("section", "note-cover");
-  node.append(goldSwoosh("note-cover__swoosh"), sakuraDrift("note-cover__sakura"));
+  node.append(
+    moonDisc("note-cover__moon"),
+    harpStrings("note-cover__strings"),
+    goldSwoosh("note-cover__swoosh"),
+    sakuraDrift("note-cover__sakura"),
+  );
 
   const copy = createElement("div", "note-cover__copy");
   copy.append(
@@ -109,15 +186,29 @@ function renderCover(payload) {
   if (payload.summary) {
     copy.append(createElement("p", "note-cover__summary", payload.summary));
   }
+
+  const parts = programmeDateParts({ starts_at: payload.startsAt });
+  if (parts) copy.append(coverDate(parts));
+
   copy.append(
     ledger([
-      ["日期", programmeDateLabel({ starts_at: payload.startsAt })],
-      ["時間", programmeTimeLabel({ starts_at: payload.startsAt })],
       ["場地", payload.venue],
+      ["主辦", payload.presenter],
     ]),
   );
 
   node.append(copy);
+  return node;
+}
+
+/** The date set large, as on the printed leaflet: 2026 / 9.25（五）19:30. */
+function coverDate({ year, monthDay, weekday, time }) {
+  const node = createElement("p", "note-cover__date");
+  node.append(
+    createElement("span", "note-cover__year", year),
+    createElement("strong", "note-cover__day", monthDay),
+    createElement("span", "note-cover__time", `（${weekday}）${time}`),
+  );
   return node;
 }
 
@@ -161,19 +252,39 @@ function renderContents(payload) {
   return node;
 }
 
+function performerLine(performers) {
+  const list = createElement("ul", "note-banner__performers");
+  for (const [role, name] of performers) {
+    const item = createElement("li");
+    item.append(
+      createElement("span", "note-banner__role", role),
+      createElement("span", "note-banner__name", name),
+    );
+    list.append(item);
+  }
+  return list;
+}
+
 function renderBanner(payload) {
   const node = createElement("header", "note-banner");
   const copy = createElement("div", "note-banner__copy");
 
-  if (payload.eyebrow) {
-    copy.append(createElement("p", "note-banner__eyebrow", payload.eyebrow));
+  const eyebrow = createElement("p", "note-banner__eyebrow");
+  eyebrow.append(createElement("span", null, payload.ensemble || payload.eyebrow || "樂曲解說"));
+  if (payload.ensemble && payload.eyebrow) {
+    eyebrow.append(createElement("i", null, payload.eyebrow));
   }
+  copy.append(eyebrow);
+
   copy.append(createElement("h2", "note-banner__title", payload.title));
   if (payload.titleEn) {
     copy.append(createElement("p", "note-banner__english", payload.titleEn));
   }
   if (payload.author) {
     copy.append(createElement("p", "note-banner__author", payload.author));
+  }
+  if (payload.performers?.length) {
+    copy.append(performerLine(payload.performers));
   }
 
   node.append(createElement("span", "note-banner__number", payload.number), copy);
@@ -183,6 +294,7 @@ function renderBanner(payload) {
 function renderParagraph(atom) {
   const node = createElement("p", "note-paragraph", atom.payload.text);
   if (atom.payload.continues) node.dataset.continues = "true";
+  if (atom.payload.lede) node.dataset.lede = "true";
   return node;
 }
 
@@ -222,6 +334,8 @@ function renderColophon(payload) {
       ["日期", programmeDateLabel({ starts_at: payload.startsAt })],
       ["時間", programmeTimeLabel({ starts_at: payload.startsAt })],
       ["場地", payload.venue],
+      ["主辦", payload.presenter],
+      ["協辦", payload.supporters?.join("、") || null],
     ]),
   );
 
@@ -274,7 +388,19 @@ export function createPageFrame({ runningHead = "", folioLabel = "00", height } 
   return { article, body };
 }
 
-export function renderPage(page, { total, runningHead, height }) {
+/** The mark that closes a note, so a short final page ends rather than stops. */
+function endMark() {
+  const node = createElement("p", "note-page__endmark");
+  node.setAttribute("aria-hidden", "true");
+  node.append(
+    createElement("i"),
+    createElement("span", null, "✦"),
+    createElement("i"),
+  );
+  return node;
+}
+
+export function renderPage(page, { total, runningHead, continuedLabel, endsNote, height }) {
   const { article, body } = createPageFrame({
     runningHead,
     folioLabel: folioNumber(page.index),
@@ -287,6 +413,19 @@ export function renderPage(page, { total, runningHead, height }) {
   article.setAttribute("aria-label", `第 ${page.index + 1} 頁，共 ${total} 頁`);
 
   for (const atom of page.atoms) body.append(renderAtom(atom));
+  if (endsNote) {
+    article.dataset.endsNote = "true";
+    body.append(endMark());
+  }
+
+  // A continuing page needs a head of its own. It lives in the page margin, so
+  // it costs the text block nothing and the measured capacity stays honest.
+  const opensANote = page.atoms.some((atom) => atom.kind === "note-banner");
+  if (continuedLabel && !opensANote) {
+    const running = createElement("p", "note-page__running", continuedLabel);
+    running.setAttribute("aria-hidden", "true");
+    article.prepend(running);
+  }
 
   return article;
 }
