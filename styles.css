@@ -6934,6 +6934,22 @@ body {
   }
 }
 
+/*
+ * iOS Safari enlarges text in blocks it judges too wide for the screen. The
+ * notes book lays pages out 800px wide and scales them down, so without this
+ * the text on a phone grows past the size it was measured at and spills over
+ * the folio and the rail.
+ */
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+html:has(.reader-shell[data-view="notes-book"]),
+html:has(.reader-shell[data-view="notes-book"]) body {
+  overscroll-behavior: none;
+}
+
 /* Moonlight Promise — the programme notes bound as a book. */
 .reader-shell[data-view="notes-book"] {
   background: #071624;
@@ -6954,10 +6970,10 @@ body {
   --moon-rose: #bf7f89;
   --moon-line: rgb(213 177 105 / 0.26);
 
-  display: grid;
-  grid-template-rows: 58px minmax(0, 1fr) 58px;
+  position: relative;
+  display: block;
   height: 100dvh;
-  min-height: 620px;
+  min-height: 0;
   overflow: hidden;
   background:
     radial-gradient(circle at 16% 8%, rgb(213 177 105 / 0.17), transparent 38%),
@@ -6970,7 +6986,7 @@ body {
 /* Harp strings drawn across the reading room, as on the printed leaflet. */
 .view--notes-book::before {
   position: absolute;
-  inset: 58px 0;
+  inset: 0;
   z-index: -1;
   opacity: 0.5;
   background:
@@ -6980,9 +6996,52 @@ body {
   pointer-events: none;
 }
 
+/*
+ * The chrome floats over the page and steps aside while reading, as in a video
+ * player or a book app. Overlaid rather than stacked, so showing and hiding it
+ * never changes the page size and never reflows the book.
+ */
+.view--notes-book .publication-reader {
+  position: absolute;
+  inset: 0;
+}
+
+.view--notes-book .publication-toolbar,
+.view--notes-book .publication-rail {
+  position: absolute;
+  right: 0;
+  left: 0;
+  z-index: 30;
+  transition: transform 280ms cubic-bezier(0.2, 0.8, 0.2, 1), opacity 220ms ease;
+}
+
 .view--notes-book .publication-toolbar {
+  top: 0;
+  height: 58px;
   border-bottom-color: var(--moon-line);
-  background: rgb(7 22 36 / 0.88);
+  background: rgb(7 22 36 / 0.9);
+}
+
+.view--notes-book .publication-turn {
+  z-index: 25;
+  transition: opacity 220ms ease, background 160ms ease;
+}
+
+.view--notes-book[data-chrome="hidden"] .publication-toolbar {
+  opacity: 0;
+  transform: translateY(-100%);
+  pointer-events: none;
+}
+
+.view--notes-book[data-chrome="hidden"] .publication-rail {
+  opacity: 0;
+  transform: translateY(100%);
+  pointer-events: none;
+}
+
+.view--notes-book[data-chrome="hidden"] .publication-turn {
+  opacity: 0;
+  pointer-events: none;
 }
 
 .view--notes-book .publication-toolbar__back {
@@ -6997,8 +7056,10 @@ body {
 }
 
 .view--notes-book .publication-rail {
+  bottom: 0;
+  height: 58px;
   border-top-color: var(--moon-line);
-  background: rgb(7 22 36 / 0.9);
+  background: rgb(7 22 36 / 0.92);
 }
 
 .view--notes-book .publication-rail__scrubber i {
@@ -7020,11 +7081,6 @@ body {
   cursor: default;
 }
 
-.view--notes-book .publication-loading {
-  background: rgb(7 22 36 / 0.84);
-  color: rgb(243 234 213 / 0.7);
-}
-
 .view--notes-book button:focus-visible,
 .view--notes-book [tabindex]:focus-visible {
   outline: 1px solid var(--moon-gold);
@@ -7033,12 +7089,21 @@ body {
 
 .notes-stage {
   position: absolute;
-  inset: 0 clamp(10px, 3.4vw, 76px);
+  inset: 0;
   min-width: 0;
   overflow: hidden;
   outline: none;
-  cursor: grab;
+  cursor: default;
   touch-action: none;
+}
+
+/* On a touch screen a long press should not select text mid-swipe. */
+@media (pointer: coarse) {
+  .notes-stage {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+  }
 }
 
 .notes-stage[data-zoomed="true"] {
@@ -7056,32 +7121,36 @@ body {
   top: 50%;
   left: 50%;
   transform-origin: center center;
-  transition: transform 420ms cubic-bezier(0.2, 0.8, 0.2, 1);
   will-change: transform;
 }
 
-.notes-book[data-dragging="true"] {
-  transition: none;
+/* Zoom and pan follow the fingers live, and only ease when they settle. */
+.notes-book[data-motion="settle"] {
+  transition: transform 320ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
-/* The gutter shadow that makes two leaves read as one bound spread. */
-.notes-book[data-spread="two-up"][data-pages="2"]::after {
-  position: absolute;
-  top: 0;
-  left: 50%;
-  z-index: 4;
-  width: 46px;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgb(3 10 18 / 0.5) 46%, rgb(3 10 18 / 0.5) 54%, transparent);
-  transform: translateX(-50%);
-  content: "";
-  pointer-events: none;
+.view--notes-book:not([data-ready="true"]) .notes-book {
+  opacity: 0;
+}
+
+.notes-book.is-jumping {
+  animation: notes-jump 240ms ease-out;
+}
+
+@keyframes notes-jump {
+  from {
+    opacity: 0.15;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 .note-page {
   position: absolute;
   top: 0;
-  left: 50%;
+  left: 0;
   display: flex;
   flex-direction: column;
   width: 800px;
@@ -7095,7 +7164,36 @@ body {
   font-family: var(--font-serif);
   font-size: 16px;
   line-height: 1.9;
-  transition: transform 420ms cubic-bezier(0.2, 0.8, 0.2, 1), opacity 260ms ease;
+}
+
+.notes-book[data-turn="slide"] .note-page {
+  transition: transform 360ms cubic-bezier(0.22, 0.8, 0.2, 1);
+}
+
+.note-page[data-near="true"] {
+  will-change: transform;
+}
+
+/* The gutter shading travels with each leaf, so it stays put while dragging. */
+.note-page[data-slot="left"]::after,
+.note-page[data-slot="right"]::after {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  z-index: 2;
+  width: 40px;
+  content: "";
+  pointer-events: none;
+}
+
+.note-page[data-slot="left"]::after {
+  right: 0;
+  background: linear-gradient(270deg, rgb(3 10 18 / 0.5), transparent);
+}
+
+.note-page[data-slot="right"]::after {
+  left: 0;
+  background: linear-gradient(90deg, rgb(3 10 18 / 0.5), transparent);
 }
 
 /* Harp strings behind the type, and a vignette that settles the page edges. */
@@ -7114,32 +7212,6 @@ body {
 .note-page > * {
   position: relative;
   z-index: 1;
-}
-
-.note-page[data-slot="single"] {
-  transform: translateX(-50%);
-}
-
-.note-page[data-slot="left"] {
-  transform: translateX(-100%) translateX(-1px);
-}
-
-.note-page[data-slot="right"] {
-  transform: translateX(1px);
-}
-
-.note-page[data-slot="off"] {
-  opacity: 0;
-  transform: translateX(-50%) scale(0.97);
-  pointer-events: none;
-}
-
-.notes-book[data-direction="forward"] .note-page[data-slot="off"] {
-  transform: translateX(-50%) translateX(-72px) scale(0.97);
-}
-
-.notes-book[data-direction="back"] .note-page[data-slot="off"] {
-  transform: translateX(-50%) translateX(72px) scale(0.97);
 }
 
 .note-page--measure {
@@ -7287,18 +7359,6 @@ body {
   font-size: 9.5px;
   line-height: 1.4;
   letter-spacing: 0.2em;
-}
-
-.note-banner__eyebrow i {
-  color: rgb(185 175 157 / 0.6);
-  font-style: normal;
-  font-size: 8.5px;
-  letter-spacing: 0.16em;
-}
-
-.note-banner__eyebrow i::before {
-  margin-right: 10px;
-  content: "／";
 }
 
 .note-banner__performers {
@@ -7748,23 +7808,169 @@ body {
   border-color: var(--moon-gold);
 }
 
+.view--notes-book .publication-thumbnails {
+  bottom: 58px;
+}
+
+/* ---- Loading: the book stays veiled until every page is set. ---- */
+.notes-loading {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  display: grid;
+  place-items: center;
+  background:
+    radial-gradient(circle at 50% 44%, rgb(213 177 105 / 0.12), transparent 46%),
+    #071624;
+  transition: opacity 380ms ease, visibility 0s linear 380ms;
+}
+
+.view--notes-book[data-ready="true"] .notes-loading {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.notes-loading__plate {
+  display: grid;
+  justify-items: center;
+  gap: 12px;
+  padding: 34px 42px 30px;
+  border-top: 1px solid rgb(213 177 105 / 0.5);
+  border-bottom: 1px solid rgb(213 177 105 / 0.2);
+  text-align: center;
+}
+
+.notes-loading__kicker {
+  color: var(--moon-gold);
+  font-family: var(--font-sans);
+  font-size: 9px;
+  letter-spacing: 0.34em;
+}
+
+.notes-loading__title {
+  color: var(--moon-ivory);
+  font-family: var(--font-serif);
+  font-size: 26px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+}
+
+.notes-loading__copy {
+  color: var(--moon-muted);
+  font-family: var(--font-sans);
+  font-size: 12px;
+  letter-spacing: 0.14em;
+}
+
+.notes-loading__bar {
+  position: relative;
+  width: 140px;
+  height: 1px;
+  margin-top: 6px;
+  overflow: hidden;
+  background: rgb(213 177 105 / 0.2);
+}
+
+.notes-loading__bar::after {
+  position: absolute;
+  inset: 0;
+  width: 40%;
+  background: var(--moon-gold);
+  content: "";
+  animation: notes-loading 1.3s ease-in-out infinite;
+}
+
+@keyframes notes-loading {
+  from {
+    transform: translateX(-100%);
+  }
+
+  to {
+    transform: translateX(250%);
+  }
+}
+
+/* ---- First open: where to tap, shown once, the way reading apps do. ---- */
+.notes-hint {
+  position: absolute;
+  inset: 0;
+  z-index: 22;
+  display: grid;
+  grid-template-columns: 30% 40% 30%;
+  pointer-events: none;
+  animation: notes-hint-in 360ms ease both;
+}
+
+.notes-hint__zone {
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 10px;
+  background: rgb(7 22 36 / 0.66);
+  color: var(--moon-ivory);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  letter-spacing: 0.12em;
+  text-align: center;
+}
+
+.notes-hint__zone--menu {
+  border-right: 1px dashed rgb(213 177 105 / 0.42);
+  border-left: 1px dashed rgb(213 177 105 / 0.42);
+  background: rgb(7 22 36 / 0.46);
+}
+
+.notes-hint__zone b {
+  color: var(--moon-gold);
+  font-size: 24px;
+  font-weight: 400;
+  line-height: 1;
+}
+
+.notes-hint__zone small {
+  color: var(--moon-muted);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+}
+
+@keyframes notes-hint-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
 @media (max-width: 880px) {
-  /* Give the leaf the whole phone; the turns overlay its edges. */
-  .view--notes-book .notes-stage {
-    right: 0;
-    left: 0;
+  .view--notes-book .publication-toolbar {
+    height: 48px;
+  }
+
+  .view--notes-book .publication-rail {
+    height: 50px;
+  }
+
+  .view--notes-book .publication-thumbnails {
+    bottom: 50px;
   }
 
   .view--notes-book .publication-turn {
-    width: 38px;
+    width: 40px;
     padding: 0;
     justify-content: center;
     background: rgb(7 22 36 / 0.55);
     backdrop-filter: blur(6px);
   }
 
-  .view--notes-book .publication-turn--prev { left: 2px; }
-  .view--notes-book .publication-turn--next { right: 2px; }
+  .view--notes-book .publication-turn small {
+    display: none;
+  }
+
+  .view--notes-book .publication-turn--prev { left: 4px; }
+  .view--notes-book .publication-turn--next { right: 4px; }
 
   /* Zoom stays reachable: it is how the printed density is read on a phone. */
   .view--notes-book .publication-toolbar__zoom {
@@ -7785,20 +7991,6 @@ body {
   .view--notes-book .publication-toolbar__tools > button {
     min-width: 44px;
     padding: 0 8px;
-  }
-
-  .view--notes-book .publication-reader__hint {
-    display: none;
-  }
-}
-
-@media (max-width: 880px) {
-  .view--notes-book {
-    grid-template-rows: 48px minmax(0, 1fr) 46px;
-  }
-
-  .view--notes-book::before {
-    inset: 48px 0;
   }
 }
 
@@ -7835,16 +8027,30 @@ body {
     text-overflow: ellipsis;
     white-space: nowrap;
   }
+
+  .view--notes-book #notes-caption {
+    display: none;
+  }
+
+  .view--notes-book .publication-rail {
+    grid-template-columns: 34px 72px minmax(0, 1fr);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .notes-book,
-  .note-page {
-    transition: opacity 160ms ease;
+  .notes-book[data-motion="settle"],
+  .notes-book[data-turn="slide"] .note-page {
+    transition: none;
   }
 
-  .notes-book[data-direction="forward"] .note-page[data-slot="off"],
-  .notes-book[data-direction="back"] .note-page[data-slot="off"] {
-    transform: translateX(-50%);
+  .notes-book.is-jumping,
+  .notes-hint,
+  .notes-loading__bar::after {
+    animation: none;
+  }
+
+  .view--notes-book .publication-toolbar,
+  .view--notes-book .publication-rail {
+    transition: opacity 120ms ease;
   }
 }

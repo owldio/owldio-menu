@@ -1,6 +1,14 @@
 import { describe, expect, it } from "vitest";
 
-import { PAGE_HEIGHT_BOUNDS, resolvePageHeight } from "../src/domain/notes-geometry.js";
+import {
+  PAGE_HEIGHT_BOUNDS,
+  PAGE_WIDTH,
+  SPREAD_GAP,
+  SPREAD_GUTTER,
+  pageOffset,
+  resolvePageHeight,
+  spreadWidth,
+} from "../src/domain/notes-geometry.js";
 
 describe("resolvePageHeight", () => {
   it("gives a phone a tall page so the leaf fills the screen", () => {
@@ -38,5 +46,31 @@ describe("resolvePageHeight", () => {
 
     expect(height).toBeGreaterThanOrEqual(PAGE_HEIGHT_BOUNDS.minimum);
     expect(height).toBeLessThanOrEqual(PAGE_HEIGHT_BOUNDS.maximum);
+  });
+});
+
+describe("pageOffset", () => {
+  it("lays single pages out in a strip, one gap apart", () => {
+    const stride = PAGE_WIDTH + SPREAD_GAP;
+
+    expect(pageOffset({ spreadDelta: 0, slot: 0, spreadLength: 1, twoUp: false })).toBe(0);
+    expect(pageOffset({ spreadDelta: 1, slot: 0, spreadLength: 1, twoUp: false })).toBe(stride);
+    expect(pageOffset({ spreadDelta: -1, slot: 0, spreadLength: 1, twoUp: false })).toBe(-stride);
+  });
+
+  it("sets facing pages side by side across the gutter", () => {
+    expect(pageOffset({ spreadDelta: 0, slot: 0, spreadLength: 2, twoUp: true })).toBe(0);
+    expect(pageOffset({ spreadDelta: 0, slot: 1, spreadLength: 2, twoUp: true }))
+      .toBe(PAGE_WIDTH + SPREAD_GUTTER);
+  });
+
+  it("centres a lone page, such as the cover, within its spread", () => {
+    expect(pageOffset({ spreadDelta: 0, slot: 0, spreadLength: 1, twoUp: true }))
+      .toBe((spreadWidth(true) - PAGE_WIDTH) / 2);
+  });
+
+  it("moves whole spreads by one spread and one gap", () => {
+    expect(pageOffset({ spreadDelta: 1, slot: 0, spreadLength: 2, twoUp: true }))
+      .toBe(spreadWidth(true) + SPREAD_GAP);
   });
 });

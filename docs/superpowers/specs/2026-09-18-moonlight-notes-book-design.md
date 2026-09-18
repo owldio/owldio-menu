@@ -133,6 +133,21 @@ packAtoms(atoms, { capacity, measure, splitParagraph }) -> Page[]
 - 呼叫 `buildNoteFlow` → `packAtoms` → 渲染所有頁面。
 - 首次排版延到 `activate()`，舞台有實際尺寸時才做；尺寸改變且頁高差超過 24 px 時重新分頁（見〈版面幾何〉）。
 
+## 閱讀體驗（手機實測後修訂）
+
+在 iPhone 上實測發現的問題與對應：
+
+- **iOS 文字自動放大**：Safari 會把「比螢幕寬、字又多」的區塊字級調大。書頁邏輯寬 800 px 再縮放，正好被判定要放大，導致文字比量測時大、溢出到頁碼與進度條底下。修正：`html { text-size-adjust: 100% }`。
+- **沉浸式版面**：書頁佔滿整個螢幕，工具列、翻頁箭頭、進度條改為浮在頁面上的圖層（`data-chrome`），閒置 2.8 秒自動收起，點畫面中央叫回。因為是疊加而非堆疊，顯示或收起不改變頁面尺寸，不會重排。載入期間工具列固定顯示，保留返回的路。
+- **點擊翻頁**：左 30% 上一頁、右 30% 下一頁、中間顯示選單。單擊延遲 260 ms 判定，才能和雙擊區分。放大狀態下點擊只切換選單，不翻頁。
+- **滑動**：所有頁面排在一條橫向帶上（`pageOffset`），拖曳時下一頁真的從側邊跟著手指進來；拖過 18% 寬度或快速甩動（≥0.35 px/ms）就翻頁，反向甩動取消；首尾頁拖曳有 0.3 的阻尼。滑鼠拖曳保留給選取文字，不翻頁。
+- **縮放**：雙擊以點擊位置放大到 250%，再雙擊回 100%。兩指捏合為自由連續縮放，上限 400%；捏合過程可超出上下限一些（橡皮筋），放手後超過上限回到 400%、低於原尺寸回到 100% 並置中。
+- **載入**：品牌化載入畫面遮住仍在排版的書頁；字型最多等 3.5 秒，逾時先以已到的字型排版，完整字型抵達後再強制重排一次。
+- **首次提示**：第一次打開顯示三區操作說明，4.2 秒或任一次點擊後消失，記錄在 `localStorage`。
+- **跳頁**：相鄰頁滑動；跳多頁（目錄、縮圖、捲軸、深層連結）改為淡入，不讓讀者看著書頁一路刷過去。
+
+判斷邏輯（點擊區、雙擊、滑動速度、翻頁判定、邊緣阻尼、縮放回彈）全部放在 `src/domain/reader-gestures.js` 的純函式，有單元測試。
+
 ## 閱讀器外殼
 
 獨立的 `#notes-book-view`，但沿用 PDF 閱讀器的同一組 chrome class：`publication-toolbar`、`publication-turn`、`publication-rail`、`publication-thumbnails`。兩者共用外觀語彙，卻不共用 DOM —— `#pdf-view` 由 `createPublicationViewer` 綁定，兩個引擎搶同一批節點只會互相踩到。月光下的約定同時有印刷三折頁與樂曲解說，本來就需要兩個並存的檢視。
@@ -227,7 +242,10 @@ packAtoms(atoms, { capacity, measure, splitParagraph }) -> Page[]
 | `src/notes-book.js` | 新增：書本狀態、導覽、縮放 |
 | `src/notes-book-render.js` | 新增：原子與頁面的 DOM |
 | `src/notes-book-measure.js` | 新增：離屏量測與段落切割 |
-| `src/notes-book-gestures.js` | 新增：指標手勢 |
+| `src/notes-book-gestures.js` | 新增：觸控狀態機（點擊、雙擊、拖曳、捏合、平移） |
+| `src/notes-book-chrome.js` | 新增：浮動控制列的顯示與自動收起 |
+| `src/notes-book-overlays.js` | 新增：載入畫面與首次提示 |
+| `src/domain/reader-gestures.js` | 新增：手勢判斷純函式 |
 | `index.html` | 改：新增 `#notes-book-view` 區塊 |
 | `src/reader.js` | 改：`notes-book` layout 走新模組，移除 `renderProgrammeNotes` 與 `programmeNoteList` |
 | `src/domain/routing.js` | 改：認得 `notes-book`，支援 `#page/` 與 `#note/` |

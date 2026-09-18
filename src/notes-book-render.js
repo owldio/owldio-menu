@@ -269,19 +269,19 @@ function renderBanner(payload) {
   const node = createElement("header", "note-banner");
   const copy = createElement("div", "note-banner__copy");
 
-  const eyebrow = createElement("p", "note-banner__eyebrow");
-  eyebrow.append(createElement("span", null, payload.ensemble || payload.eyebrow || "樂曲解說"));
-  if (payload.ensemble && payload.eyebrow) {
-    eyebrow.append(createElement("i", null, payload.eyebrow));
-  }
-  copy.append(eyebrow);
+  // The scoring says what kind of piece this is; the generic "programme note"
+  // label only fills in when a note has no scoring of its own.
+  copy.append(
+    createElement("p", "note-banner__eyebrow", payload.ensemble || payload.eyebrow || "樂曲解說"),
+  );
 
   copy.append(createElement("h2", "note-banner__title", payload.title));
   if (payload.titleEn) {
     copy.append(createElement("p", "note-banner__english", payload.titleEn));
   }
+  // The author wrote the note; saying so keeps her apart from the performer list.
   if (payload.author) {
-    copy.append(createElement("p", "note-banner__author", payload.author));
+    copy.append(createElement("p", "note-banner__author", `文／${payload.author}`));
   }
   if (payload.performers?.length) {
     copy.append(performerLine(payload.performers));

@@ -248,14 +248,12 @@
           </header>
 
           <div class="publication-reader" id="notes-reader">
-            <p class="publication-reader__hint">左右滑動 · 方向鍵翻頁 · 雙擊放大</p>
             <button class="publication-turn publication-turn--prev" type="button" id="notes-prev" aria-label="上一頁">
               <span aria-hidden="true">←</span><small>PREV.</small>
             </button>
 
             <div class="notes-stage" id="notes-stage" tabindex="0" aria-label="樂曲解說閱讀舞台">
               <div class="notes-book" id="notes-book"></div>
-              <p class="publication-loading" id="notes-loading" role="status" aria-live="polite">正在排版樂曲解說…</p>
             </div>
 
             <button class="publication-turn publication-turn--next" type="button" id="notes-next" aria-label="下一頁">
@@ -264,6 +262,21 @@
           </div>
 
           <p class="sr-only" id="notes-status" role="status" aria-live="polite"></p>
+
+          <div class="notes-loading" id="notes-loading" role="status" aria-live="polite">
+            <div class="notes-loading__plate">
+              <span class="notes-loading__kicker">PROGRAMME NOTES</span>
+              <strong class="notes-loading__title">月光下的約定</strong>
+              <span class="notes-loading__copy">正在排版樂曲解說</span>
+              <i class="notes-loading__bar" aria-hidden="true"></i>
+            </div>
+          </div>
+
+          <div class="notes-hint" id="notes-hint" hidden aria-hidden="true">
+            <span class="notes-hint__zone notes-hint__zone--previous"><b>←</b>上一頁</span>
+            <span class="notes-hint__zone notes-hint__zone--menu"><b>・</b>顯示選單<small>雙擊放大</small></span>
+            <span class="notes-hint__zone notes-hint__zone--next"><b>→</b>下一頁</span>
+          </div>
 
           <aside class="publication-thumbnails" id="notes-thumbnails" aria-label="頁面縮圖" hidden>
             <header>
