@@ -8,7 +8,8 @@
     "build": "vite build",
     "preview": "vite preview --host 127.0.0.1",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "fonts:notes": "node scripts/build-notes-font.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "2.112.4",

@@ -28,6 +28,13 @@ const BOTTOM_AIR_EMS = 0.4;
 const COMPACT_WIDTH = 600;
 const FALLBACK_STAGE = { width: 375, height: 667 };
 
+/**
+ * A page that holds fewer lines than this is short — a small phone, a phone on
+ * its side, or large text on any phone. Its banner and posters keep to their
+ * essentials there, so a note's opening page still has room to begin the note.
+ */
+const COMPACT_PAGE_LINES = 16.5;
+
 /** Phones start a step smaller than wide screens, where the eye sits further away. */
 export function defaultTextSize(stageWidth) {
   return stageWidth < COMPACT_WIDTH ? 17 : 18;
@@ -48,14 +55,18 @@ export function resolveLayout({ stageWidth, stageHeight, twoUp, textSize }) {
   const height = Math.max(1, Math.floor(stage.height));
   const font = textSize;
   const padX = Math.round(Math.max(font * MIN_MARGIN_EMS, (width - MAX_LINE_CHARACTERS * font) / 2));
+  const padTop = Math.round(CHROME_CLEARANCE + font * TOP_AIR_EMS);
+  const padBottom = Math.round(CHROME_CLEARANCE + font * BOTTOM_AIR_EMS);
+  const lines = (height - padTop - padBottom) / (font * LINE_HEIGHT_RATIO);
 
   return {
     width,
     height,
     font,
     padX,
-    padTop: Math.round(CHROME_CLEARANCE + font * TOP_AIR_EMS),
-    padBottom: Math.round(CHROME_CLEARANCE + font * BOTTOM_AIR_EMS),
+    padTop,
+    padBottom,
+    compact: lines < COMPACT_PAGE_LINES,
   };
 }
 

@@ -6936,18 +6936,47 @@ body {
 
 /*
  * iOS Safari enlarges text in blocks it judges too wide for the screen. The
- * notes book lays pages out 800px wide and scales them down, so without this
- * the text on a phone grows past the size it was measured at and spills over
- * the folio and the rail.
+ * notes book measures every page before showing it, so text that grew after
+ * the fact would spill over the page number and the rail.
  */
 html {
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
 }
 
+/*
+ * While the book is open the document itself must not move. iOS measures 100vh
+ * with its toolbars tucked away, so the page runs taller than the screen, and a
+ * stray swipe on the toolbar would slide the whole book up under the status bar.
+ */
 html:has(.reader-shell[data-view="notes-book"]),
 html:has(.reader-shell[data-view="notes-book"]) body {
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
   overscroll-behavior: none;
+}
+
+/*
+ * 獅尾四季春加糖 (Swei Spring Sugar): Source Han Serif with its triangular
+ * serifs taken out and its hairline strokes thickened for screens. Subset to
+ * the characters the notes book sets — rebuild with `npm run fonts:notes`.
+ * SIL Open Font License 1.1 (assets/fonts/swei-spring-OFL.txt).
+ */
+@font-face {
+  font-family: "Swei Spring Sugar";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("./assets/fonts/swei-spring-sugar-400.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Swei Spring Sugar";
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("./assets/fonts/swei-spring-sugar-600.woff2") format("woff2");
 }
 
 /* Moonlight Promise — the programme notes bound as a book. */
@@ -6976,10 +7005,9 @@ html:has(.reader-shell[data-view="notes-book"]) body {
   --fade-rule-start: linear-gradient(90deg, rgb(213 177 105 / 0.42), rgb(213 177 105 / 0));
   --fade-stroke: linear-gradient(180deg, rgb(213 177 105 / 0), rgb(213 177 105 / 0.66) 18%, rgb(213 177 105 / 0.66) 82%, rgb(213 177 105 / 0));
 
-  position: relative;
+  position: fixed;
+  inset: 0;
   display: block;
-  height: 100dvh;
-  min-height: 0;
   overflow: hidden;
   background:
     radial-gradient(circle at 16% 8%, rgb(213 177 105 / 0.17), transparent 38%),
@@ -7082,9 +7110,37 @@ html:has(.reader-shell[data-view="notes-book"]) body {
   text-align: center;
 }
 
+/*
+ * The page-turn arrows live in the page margins, slim enough to leave the text
+ * alone, and appear only where the margin can hold them. Elsewhere — every
+ * phone — the edges of the page turn it, as in a reading app.
+ */
 .view--notes-book .publication-turn {
   z-index: 25;
+  display: none;
+  width: 40px;
+  height: 64px;
+  padding: 0;
+  justify-content: center;
+  border-color: var(--moon-line);
+  background: rgb(7 22 36 / 0.5);
   transition: opacity 220ms ease, background 160ms ease;
+}
+
+.view--notes-book[data-margins="roomy"] .publication-turn {
+  display: flex;
+}
+
+.view--notes-book .publication-turn small {
+  display: none;
+}
+
+.view--notes-book .publication-turn--prev {
+  left: 6px;
+}
+
+.view--notes-book .publication-turn--next {
+  right: 6px;
 }
 
 .view--notes-book[data-chrome="hidden"] .publication-toolbar {
@@ -7211,9 +7267,10 @@ html:has(.reader-shell[data-view="notes-book"]) body {
  * A page is the screen it is read on. Its size, margins and type size arrive as
  * custom properties, and everything on it is set in em from the reader's text
  * size or in proportion to the page, so the whole leaf re-sets when either
- * changes. The page is a size container, so a short page can trim its posters.
+ * changes. A page too short for its banner is marked data-compact.
  */
 .note-page {
+  --font-serif: "Swei Spring Sugar", "Noto Serif TC", "Songti TC", serif;
   --note-margin-font: calc(var(--note-font, 17px) * 0.3 + 5.5px);
 
   position: absolute;
@@ -7231,7 +7288,6 @@ html:has(.reader-shell[data-view="notes-book"]) body {
   font-family: var(--font-serif);
   font-size: var(--note-font, 17px);
   line-height: 1.85;
-  container: note-page / size;
 }
 
 .notes-book[data-turn="slide"] .note-page {
@@ -7493,7 +7549,7 @@ html:has(.reader-shell[data-view="notes-book"]) body {
   margin: 0;
   color: var(--moon-ivory);
   font-size: 1.42em;
-  font-weight: 500;
+  font-weight: 600;
   line-height: 1.4;
   letter-spacing: 0.01em;
 }
@@ -7568,7 +7624,7 @@ html:has(.reader-shell[data-view="notes-book"]) body {
   margin: 0;
   color: var(--moon-ivory);
   font-size: 1.08em;
-  font-weight: 500;
+  font-weight: 600;
   line-height: 1.5;
 }
 
@@ -7699,7 +7755,7 @@ html:has(.reader-shell[data-view="notes-book"]) body {
   margin: 0;
   color: var(--moon-ivory);
   font-size: min(calc(var(--page-width) * 0.17), calc(var(--page-height) * 0.1));
-  font-weight: 500;
+  font-weight: 600;
   line-height: 1.08;
   letter-spacing: 0.02em;
 }
@@ -7766,7 +7822,7 @@ html:has(.reader-shell[data-view="notes-book"]) body {
   margin: 0;
   color: var(--moon-ivory);
   font-size: 1.9em;
-  font-weight: 500;
+  font-weight: 600;
   line-height: 1.3;
   letter-spacing: 0.02em;
 }
@@ -7814,7 +7870,7 @@ html:has(.reader-shell[data-view="notes-book"]) body {
 
 .note-contents__copy strong {
   color: var(--moon-ivory);
-  font-weight: 500;
+  font-weight: 400;
   line-height: 1.55;
   letter-spacing: 0.01em;
 }
@@ -7872,7 +7928,7 @@ html:has(.reader-shell[data-view="notes-book"]) body {
   margin: 0;
   color: var(--moon-ivory);
   font-size: 2.6em;
-  font-weight: 500;
+  font-weight: 600;
   line-height: 1.25;
   letter-spacing: 0.02em;
 }
@@ -7885,30 +7941,28 @@ html:has(.reader-shell[data-view="notes-book"]) body {
 }
 
 /*
- * A small phone, or any phone turned on its side, leaves a page little height
- * (the query measures the text block inside the margins). The banner and the
- * posters keep to their essentials there, so every page still holds what it must.
+ * A short page — a small phone, a phone on its side, or large text on any phone
+ * (resolveLayout marks it compact) — keeps its banner and posters to their
+ * essentials, so a note's opening page still has room to begin the note.
  */
-@container note-page (max-height: 520px) {
-  .note-banner {
-    padding-top: calc(var(--page-pad-top) * 0.45);
-    padding-bottom: 1.1em;
-  }
+.note-page[data-compact="true"] .note-banner {
+  padding-top: calc(var(--page-pad-top) * 0.45);
+  padding-bottom: 1.1em;
+}
 
-  .note-banner__performers,
-  .note-cover__summary,
-  .note-cover .note-ledger {
-    display: none;
-  }
+.note-page[data-compact="true"] .note-banner__performers,
+.note-page[data-compact="true"] .note-cover__summary,
+.note-page[data-compact="true"] .note-cover .note-ledger {
+  display: none;
+}
 
-  .note-cover__date {
-    margin-top: 1.2em;
-  }
+.note-page[data-compact="true"] .note-cover__date {
+  margin-top: 1.2em;
+}
 
-  .note-colophon .note-ledger {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    column-gap: 1.6em;
-  }
+.note-page[data-compact="true"] .note-colophon .note-ledger {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: 1.6em;
 }
 
 /* Thumbnails keep the pages' own shape at a height the rail can hold. */
@@ -8129,21 +8183,6 @@ html:has(.reader-shell[data-view="notes-book"]) body {
   .view--notes-book .publication-thumbnails {
     bottom: 50px;
   }
-
-  .view--notes-book .publication-turn {
-    width: 40px;
-    padding: 0;
-    justify-content: center;
-    background: rgb(7 22 36 / 0.55);
-    backdrop-filter: blur(6px);
-  }
-
-  .view--notes-book .publication-turn small {
-    display: none;
-  }
-
-  .view--notes-book .publication-turn--prev { left: 4px; }
-  .view--notes-book .publication-turn--next { right: 4px; }
 
   /* On a phone the text size is the control that matters; pinch still magnifies. */
   .view--notes-book .publication-toolbar__zoom {

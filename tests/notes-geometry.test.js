@@ -59,6 +59,17 @@ describe("resolveLayout", () => {
     expect(textShare).toBeGreaterThan(0.8);
   });
 
+  it("keeps a phone page in full dress at the default text size", () => {
+    expect(resolveLayout({ stageWidth: 390, stageHeight: 664, twoUp: false, textSize: 17 }).compact).toBe(false);
+    expect(resolveLayout({ stageWidth: 1440, stageHeight: 900, twoUp: true, textSize: 18 }).compact).toBe(false);
+  });
+
+  it("makes a page compact when it holds too few lines — a small phone, a phone on its side, or large text", () => {
+    expect(resolveLayout({ stageWidth: 375, stageHeight: 548, twoUp: false, textSize: 17 }).compact).toBe(true);
+    expect(resolveLayout({ stageWidth: 812, stageHeight: 375, twoUp: false, textSize: 18 }).compact).toBe(true);
+    expect(resolveLayout({ stageWidth: 390, stageHeight: 664, twoUp: false, textSize: 24 }).compact).toBe(true);
+  });
+
   it("widens the margins along with larger text", () => {
     const small = resolveLayout({ stageWidth: 375, stageHeight: 812, twoUp: false, textSize: 16 });
     const large = resolveLayout({ stageWidth: 375, stageHeight: 812, twoUp: false, textSize: 22 });

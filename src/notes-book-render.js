@@ -368,6 +368,7 @@ function applyPageLayout(article, layout) {
   article.style.setProperty("--page-pad-bottom", `${layout.padBottom}px`);
   article.style.setProperty("--note-font", `${layout.font}px`);
   article.dataset.narrow = layout.width < NARROW_PAGE ? "true" : "false";
+  article.dataset.compact = layout.compact ? "true" : "false";
 }
 
 /**

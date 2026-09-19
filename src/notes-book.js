@@ -37,6 +37,11 @@ const JUMP_FADE = 240;
 const MOUSE_WAKE_INTERVAL = 250;
 const TEXT_SIZE_KEY = "owldio-notes-text-size";
 const THUMB_HEIGHT = 80;
+// A 40px arrow set 6px in from the edge, with a little air before the text.
+const TURN_BUTTON_ROOM = 52;
+// How far an unsplittable block may be scaled down to fit a page, and in how many tries.
+const MIN_FIT_SCALE = 0.75;
+const FIT_ATTEMPTS = 4;
 
 function storedTextSize() {
   try {
@@ -349,6 +354,24 @@ export function createNotesBook(root, { onError, onPageChange } = {}) {
     }, 0);
   }
 
+  /**
+   * A block that cannot be split and is taller than a whole page — a work card
+   * at the largest text size on a short screen — is set a little smaller on its
+   * own page, rather than run on under the page number and out of sight.
+   */
+  function fitOversizedBlock(body) {
+    const last = body.lastElementChild;
+    if (!last) return;
+
+    let scale = 1;
+    for (let attempt = 0; attempt < FIT_ATTEMPTS; attempt += 1) {
+      const needed = last.offsetTop + last.offsetHeight;
+      if (needed <= body.clientHeight + 1 || scale <= MIN_FIT_SCALE) return;
+      scale = Math.max(MIN_FIT_SCALE, (scale * body.clientHeight) / needed);
+      body.style.fontSize = `${scale.toFixed(3)}em`;
+    }
+  }
+
   function settleTextBlock(element) {
     if (element.dataset.pageKind !== "note") return;
 
@@ -357,6 +380,7 @@ export function createNotesBook(root, { onError, onPageChange } = {}) {
     // gives way rather than spill into the margin over the page number.
     const endMark = body.querySelector(".note-page__endmark");
     if (endMark && stackHeight([...body.children]) > body.clientHeight) endMark.remove();
+    fitOversizedBlock(body);
 
     const children = [...body.children];
     if (!children.length) return;
@@ -473,6 +497,8 @@ export function createNotesBook(root, { onError, onPageChange } = {}) {
     paginate();
     applyShape(pageHolding(anchor));
     updateTextSizeControls();
+    // The page-turn arrows sit in the page margin, so they only show where it can hold them.
+    root.dataset.margins = layout.padX >= TURN_BUTTON_ROOM ? "roomy" : "tight";
     // The same passage now sits on another page number. That is not a turn, so
     // the address follows it without adding a step to the history.
     if (reflowing) onPageChange?.(currentSpread()[0] ?? 0, { reflow: true });
@@ -528,8 +554,9 @@ export function createNotesBook(root, { onError, onPageChange } = {}) {
     if (!document.fonts?.load) return Promise.resolve(true);
 
     const faces = [
-      ['16px "Noto Serif TC"', sample],
-      ['500 25px "Noto Serif TC"', sample],
+      // The book's own face is one subset file per weight: asking once fetches every glyph.
+      ['17px "Swei Spring Sugar"', sample],
+      ['600 17px "Swei Spring Sugar"', sample],
       ['10px "Noto Sans TC"', sample],
       ['14px "Bodoni Moda"', "Programme Notes 0123"],
     ];

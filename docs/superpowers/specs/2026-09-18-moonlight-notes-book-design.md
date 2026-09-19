@@ -68,9 +68,13 @@
 | 01 | `cover` | 月暈、豎琴弦、櫻花；「樂曲解說 / PROGRAMME NOTES」；日期、場地 |
 | 02 | `contents` | 七首曲目編號清單，含中場休息分隔；點擊跳至該曲。字級大時自動續到第二頁 |
 | 03– | `note` | 七首曲，各自「標題橫幅 → 內文」，續頁只有內文與頁腳 |
-| 末 | `colophon` | 演出資訊：日期、時間、場地、主辦、協辦、贊助 |
+| 末 | `colophon` | 演出資訊：日期、時間、場地、主辦、贊助 |
 
-封面與尾頁是「海報」：字級依頁面大小而定（`clamp(13px, min(頁寬 4.5%, 頁高 2.4%), 19px)`），不跟讀者字級走，因此永遠是一頁。手機橫放（頁高 ≤ 540 px）時以 container query 收掉封面導言、封面資料列與標題帶的演出者，尾頁資料改成兩欄。
+封面與尾頁是「海報」：字級依頁面大小而定（`clamp(13px, min(頁寬 4.5%, 頁高 2.4%), 19px)`），不跟讀者字級走，因此永遠是一頁。
+
+**精簡頁面**：版心放不下 16.5 行字時（小手機、手機橫放，或任何手機上的大字級），`resolveLayout` 回傳 `compact`，頁面標上 `data-compact`：收掉封面導言、封面資料列與標題帶的演出者，尾頁資料改成兩欄，讓每首曲的開頭頁仍有空間開始內文。以行數判斷，字越大就越早精簡；一般 iPhone 在 Safari 內（版心約 537–583 px）的預設字級不受影響。
+
+**保底**：萬一不可切割的區塊（例如最大字級、矮螢幕上的曲目卡）比一整頁還高，那一頁的字級會逐步縮小到放得下（最多縮到 75%），不讓文字跑到頁碼底下被切掉。
 
 每首曲的首頁頂端是金色標題橫幅：編號、中文曲名、英文曲名、編制。不做獨立扉頁 —— 碎心花只有 208 字，扉頁加一頁內文會留下大片空白，也多一次無意義的翻頁。
 
@@ -184,6 +188,10 @@ packAtoms(atoms, { capacity, measure, splitParagraph }) -> Page[]
 
 跨頁邏輯與 Issuu 相同：第 1 頁單獨置中，其後 (2,3)、(4,5) 成對。行動裝置一律單頁。
 
+**書固定在螢幕上**（第四輪手機回饋）：iOS 的 `100vh` 以工具列收起時的高度計算，`body { min-height: 100vh }` 讓文件比可見畫面高約 40 pt；在工具列上一滑，整本書就被推到狀態列底下，時鐘蓋住「A− / A+」。開書時以 `html:has(.reader-shell[data-view="notes-book"])` 鎖住 html 與 body 的捲動，書本檢視改為 `position: fixed; inset: 0`。
+
+**翻頁箭頭不壓字**：箭頭只剩 40 px 寬的細條，放在頁面左右留白裡；只有留白夠放（`padX ≥ 52 px`，由 `data-margins="roomy"` 標記）時才出現。手機的留白只有一個字寬，箭頭不顯示，像閱讀 App 一樣點頁面左右兩側翻頁。
+
 ## 縮放
 
 - 100% = 整頁塞滿舞台（fit-to-stage）。範圍 100%–400%。
@@ -213,7 +221,15 @@ packAtoms(atoms, { capacity, measure, splitParagraph }) -> Page[]
 
 跨頁中央加一道細書溝陰影，只在真正並排兩頁時出現。翻頁為方向感的位移加淡入淡出：離場頁往行進方向退開，入場頁補上。不做 3D `rotateY` —— 在低對比的深色頁面上，翻轉的中間影格讀起來只是閃爍。
 
-字體維持 `Noto Serif TC`（中文）與 `Bodoni Moda`（西文曲名）。
+### 字體（第四輪）
+
+書頁的中文改用委託人指定的 **獅尾四季春加糖**（Swei Spring Sugar，max32002/swei-spring 1.068）：以思源宋體為底、拔掉三角形襯線的現代明體，「加糖」版把原本極細的橫筆加粗，適合螢幕。
+
+- **字重**：內文、導言、目錄條目用 Regular（400）；標題帶曲名、目錄標題、作品卡標題、封面與尾頁標題用 SemiBold（600）。深色底上的淺色字本來就顯得粗，內文用 Regular 最舒服；600 讓標題與內文拉開層次。
+- **子集化**：完整字檔每個字重約 7 MB，不適合手機。`scripts/build-notes-font.mjs`（`npm run fonts:notes`）收集書中實際會排的字 —— 樂曲解說、節目資料（封面與尾頁）、排版程式自己寫出的字，再加上 ASCII、Latin-1 與中文標點 —— 以 Python fontTools 切出 WOFF2：約 1,370 字，Regular 253 KB、SemiBold 262 KB。改稿後要重跑一次，否則新出現的字會退回 Noto Serif TC。
+- **授權**：SIL Open Font License 1.1，可商用、可修改；子集字檔保留原字型的名稱記錄，授權全文放在 `assets/fonts/swei-spring-OFL.txt`。
+- **套用範圍**：字體變數 `--font-serif` 設在 `.note-page` 本身，隱藏的量測頁（掛在 `body` 下）與實際頁面用同一套字，量到的高度才準。小標籤（書眉、曲名上的編制、資料列標題）維持 `Noto Sans TC`，數字與西文曲名維持 `Bodoni Moda`。
+- 排版前以 `document.fonts.load()` 指名載入兩個字重；每個字重是單一子集檔，一次就取得全部字形。
 
 ## 節目單設計層
 
@@ -225,7 +241,7 @@ packAtoms(atoms, { capacity, measure, splitParagraph }) -> Page[]
 - **續頁書眉**：續頁的上留白放「曲號　曲名（續）」。書眉與頁碼都位於留白區，不佔版心容量；頁碼只放置中的數字。
 - **齊底**：分頁無法恰好落在最後一行，剩餘高度平均分到段距，每段最多 0.8em，避免把短頁撐開。
 - **收束頁**：某曲最後一頁若沒有排滿（剩餘空白超過版心 6%），內容垂直置中並以金線加 ✦ 收尾，讓短頁成為刻意的結尾而非斷掉的頁面。
-- **封面**：直排兩行的「月光下／的約定」、海報式大字日期「2026 / 9.25（五）19:30」、被頁緣裁切的月輪、豎琴弦與櫻花瓣。封面列場地與主辦；尾頁列主辦、協辦（上海商業儲蓄銀行文教基金會、台灣豎琴中心）與贊助（臺北市政府文化局）。
+- **封面**：直排兩行的「月光下／的約定」、海報式大字日期「2026 / 9.25（五）19:30」、被頁緣裁切的月輪、豎琴弦與櫻花瓣。封面列場地與主辦；尾頁列主辦與贊助（臺北市政府文化局、上海商業儲蓄銀行文教基金會、台灣豎琴中心 —— 委託人確認三者都是贊助，沒有協辦）。
 
 ## 路由
 
@@ -265,6 +281,8 @@ packAtoms(atoms, { capacity, measure, splitParagraph }) -> Page[]
 | `src/notes-book-overlays.js` | 新增：載入畫面與首次提示 |
 | `src/domain/reader-gestures.js` | 新增：手勢判斷純函式 |
 | `src/domain/text-breaks.js` | 新增：句號／逗號切點，以及以行數計的切點取捨 `chooseCut` |
+| `scripts/build-notes-font.mjs` | 新增：獅尾四季春加糖的子集字檔建置（`npm run fonts:notes`） |
+| `assets/fonts/` | 新增：`swei-spring-sugar-400.woff2`、`swei-spring-sugar-600.woff2` 與 OFL 授權 |
 | `index.html` | 改：新增 `#notes-book-view` 區塊 |
 | `src/reader.js` | 改：`notes-book` layout 走新模組，移除 `renderProgrammeNotes` 與 `programmeNoteList` |
 | `src/domain/routing.js` | 改：認得 `notes-book`，支援 `#page/` 與 `#note/` |

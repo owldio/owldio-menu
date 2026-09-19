@@ -37,6 +37,16 @@ describe("sample programme catalogue", () => {
     });
   });
 
+  it("credits every funder of Moonlight Promise as a sponsor, with no co-organisers", () => {
+    expect(moonlightPromiseProgramme.presenter).toBe("中原風雅頌室內樂集樂團");
+    expect(moonlightPromiseProgramme.sponsors).toEqual([
+      "臺北市政府文化局",
+      "上海商業儲蓄銀行文教基金會",
+      "台灣豎琴中心",
+    ]);
+    expect(moonlightPromiseProgramme.supporters ?? []).toEqual([]);
+  });
+
   it("publishes the seven Moonlight Promise notes as a paged book", () => {
     expect(moonlightPromiseProgramme).toMatchObject({
       default_reader_view: "notes-book",
