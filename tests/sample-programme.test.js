@@ -74,7 +74,8 @@ describe("sample programme catalogue", () => {
     expect(publishedText).toContain("如何讓豎琴「唱歌」");
     expect(publishedText).toContain("最嚴謹的古典形式");
     expect(publishedText).toContain("整片夜色，只留下了那可以容納一切");
-    expect(publishedText).toContain("高野達幸");
+    expect(publishedText).toContain("岡野貞一 曲∕高野辰之 詞：《朧月夜》");
+    expect(publishedText).not.toContain("高野達幸");
     expect(publishedText).toContain("飽受對春天的期盼");
     expect(publishedText).toContain("一這首著名的日本歌曲");
     expect(publishedText).toContain("法國作曲家佛瑞（Gabriel Fauré");
@@ -105,7 +106,8 @@ describe("sample programme catalogue", () => {
     const sourceCopyHash = createHash("sha256")
       .update(JSON.stringify(sourceCopy))
       .digest("hex");
-    // The printed copy, with one correction the presenter asked for: 加佛瑞 → 佛瑞.
-    expect(sourceCopyHash).toBe("47e0287ee9358cf594ba84ec311232e935069bcc49de49048656f489097c685a");
+    // The printed copy, with the corrections the presenter asked for: 加佛瑞 → 佛瑞,
+    // and 高野達幸 → 高野辰之 as the lyricist of 《朧月夜》.
+    expect(sourceCopyHash).toBe("fcfbd601bd6f6ed6343ad61f2a51f618fa42962740282eb2fd556a0370197f07");
   });
 });
