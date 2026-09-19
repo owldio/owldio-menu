@@ -35,8 +35,17 @@ describe("cutParagraph", () => {
     noteSlug: "work",
     noteIndex: 0,
     splittable: true,
-    payload: { text: "甲乙丙。丁戊己。", lede: true },
+    payload: { text: "甲乙丙。丁戊己。", lede: true, leadIn: 3 },
   };
+
+  it("keeps a lede's opening phrase on the note's opening page alone", () => {
+    const { head, tail } = cutParagraph(lede, 4);
+    const { head: shortHead } = cutParagraph(lede, 2);
+
+    expect(head.payload.leadIn).toBe(3);
+    expect(tail.payload.leadIn).toBe(0);
+    expect(shortHead.payload.leadIn).toBe(2);
+  });
 
   it("cuts a paragraph into a head and a tail that continues it, losing no text", () => {
     const { head, tail } = cutParagraph(lede, 4);
@@ -273,6 +282,26 @@ describe("buildNoteFlow", () => {
 
     expect(ledes.map((atom) => atom.noteSlug)).toEqual(["first-work", "second-work", "harp-solo"]);
     expect(ledes[0].payload.text).toBe("甲段落。");
+  });
+
+  it("sets apart the opening phrase of a note's lede, and of no other paragraph", () => {
+    const atoms = buildNoteFlow({
+      programme,
+      chapters: [{
+        slug: "grandjany",
+        position: 1,
+        title: "格蘭查尼：古典風格的詠嘆調",
+        is_visible: true,
+        blocks: [{
+          type: "prose",
+          paragraphs: ["格蘭查尼（Marcel Grandjany，1891－1975）出生於巴黎，是豎琴家。", "他自幼學琴，後進入巴黎音樂院。"],
+        }],
+      }],
+    });
+    const [lede, body] = atoms.filter((atom) => atom.kind === "paragraph");
+
+    expect(lede.payload.text.slice(0, lede.payload.leadIn)).toBe("格蘭查尼（Marcel Grandjany，1891－1975）");
+    expect(body.payload.leadIn).toBe(0);
   });
 
   it("marks only paragraphs as splittable", () => {

@@ -317,9 +317,16 @@ function renderBanner(payload) {
 }
 
 function renderParagraph(atom) {
-  const node = createElement("p", "note-paragraph", atom.payload.text);
-  if (atom.payload.continues) node.dataset.continues = "true";
-  if (atom.payload.lede) node.dataset.lede = "true";
+  const { text, lede, leadIn = 0, continues } = atom.payload;
+  const node = createElement("p", "note-paragraph");
+  // A lede leads with its first phrase in gold (leadPhraseLength); only the colour changes, never the measure.
+  if (lede && leadIn > 0) {
+    node.append(createElement("span", "note-paragraph__lead", text.slice(0, leadIn)), text.slice(leadIn));
+  } else {
+    node.textContent = text;
+  }
+  if (continues) node.dataset.continues = "true";
+  if (lede) node.dataset.lede = "true";
   return node;
 }
 

@@ -34,6 +34,49 @@ export function clauseBreak(text, limit) {
   return lastBreakBefore(text, limit, CLAUSE_END);
 }
 
+const LEAD_END = /[，；：。！？]/;
+const LEAD_OPENERS = /[（(「『《〈【]/;
+const LEAD_CLOSERS = /[）)」』》〉】]/;
+const GLOSS_CLOSERS = /[）)]/;
+
+/** About two lines of a phone page; a longer phrase would turn the lede gold wholesale. */
+const LEAD_LIMIT_EMS = 40;
+
+/** Latin letters, digits and spaces take about half the width of a Chinese character. */
+function emsOf(character) {
+  return character.charCodeAt(0) < 0x2e80 ? 0.5 : 1;
+}
+
+/**
+ * How many characters of a note's opening paragraph make up the phrase it
+ * leads with: up to its first comma or full stop, or through the gloss that
+ * follows a name — 格蘭查尼（Marcel Grandjany，1891－1975）. Punctuation inside
+ * brackets does not end it; an enumeration comma does not either. 0 when no
+ * phrase ends within LEAD_LIMIT_EMS.
+ */
+export function leadPhraseLength(text) {
+  const value = String(text ?? "");
+  let depth = 0;
+  let ems = 0;
+
+  for (let index = 0; index < value.length; index += 1) {
+    const character = value[index];
+    if (depth === 0 && LEAD_END.test(character)) return index;
+
+    ems += emsOf(character);
+    if (ems > LEAD_LIMIT_EMS) return 0;
+
+    if (LEAD_OPENERS.test(character)) {
+      depth += 1;
+    } else if (depth > 0 && LEAD_CLOSERS.test(character)) {
+      depth -= 1;
+      if (depth === 0 && GLOSS_CLOSERS.test(character)) return index + 1;
+    }
+  }
+
+  return 0;
+}
+
 /**
  * How many lines a page may leave empty to end on a full sentence, or on a
  * clause. Counted in lines rather than in characters, so larger type does not

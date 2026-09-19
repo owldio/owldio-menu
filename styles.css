@@ -7456,12 +7456,15 @@ html:has(.reader-shell[data-view="notes-book"]) body {
   text-indent: 0;
 }
 
-/* A note's first paragraph starts flush, its opening line picked out in gold. */
+/*
+ * A note's first paragraph starts flush and leads with its first phrase in
+ * gold: a whole phrase, wherever the line happens to break.
+ */
 .note-paragraph[data-lede="true"] {
   text-indent: 0;
 }
 
-.note-paragraph[data-lede="true"]::first-line {
+.note-paragraph__lead {
   color: var(--moon-gold);
 }
 
@@ -7987,6 +7990,11 @@ html:has(.reader-shell[data-view="notes-book"]) body {
 .note-page[data-compact="true"] .note-colophon .note-ledger {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   column-gap: 1.6em;
+}
+
+/* Closer lines keep a phone's contents to one page rather than strand its last work. */
+.note-page[data-compact="true"] .note-contents__link {
+  padding-block: 0.5em;
 }
 
 /* Thumbnails keep the pages' own shape at a height the rail can hold. */

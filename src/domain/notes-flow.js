@@ -1,3 +1,5 @@
+import { leadPhraseLength } from "./text-breaks.js";
+
 const INTERMISSION_TITLE = "中場休息";
 
 function visibleChapters(chapters) {
@@ -116,13 +118,14 @@ function noteAtoms(chapter, index) {
     if (block.type === "prose") {
       for (const text of (block.paragraphs || []).filter(Boolean)) {
         paragraphCount += 1;
+        // The opening paragraph is the note's way in: a lede, led by its first phrase.
+        const lede = paragraphCount === 1;
         atoms.push(
           atom("paragraph", {
             id: `${chapter.slug}:p${paragraphCount}`,
             noteSlug: chapter.slug,
             noteIndex: index,
-            // The opening paragraph is the note's way in, and is set as a lede.
-            payload: { text, lede: paragraphCount === 1 },
+            payload: { text, lede, leadIn: lede ? leadPhraseLength(text) : 0 },
           }),
         );
       }
@@ -148,16 +151,19 @@ function noteAtoms(chapter, index) {
 
 /**
  * A paragraph cut where a page ends. The tail carries on at the top of the next
- * page, unindented, and a lede's tail is set as body text: the gold stroke that
- * marks a note's opening paragraph belongs on the note's opening page alone.
+ * page, unindented, and a lede's tail is set as body text: the gold phrase that
+ * opens a note belongs on the note's opening page alone.
  */
 export function cutParagraph(paragraph, cut) {
-  const { text } = paragraph.payload;
+  const { text, leadIn = 0 } = paragraph.payload;
   return {
-    head: { ...paragraph, payload: { ...paragraph.payload, text: text.slice(0, cut) } },
+    head: {
+      ...paragraph,
+      payload: { ...paragraph.payload, text: text.slice(0, cut), leadIn: Math.min(leadIn, cut) },
+    },
     tail: {
       ...paragraph,
-      payload: { ...paragraph.payload, text: text.slice(cut), continues: true, lede: false },
+      payload: { ...paragraph.payload, text: text.slice(cut), continues: true, lede: false, leadIn: 0 },
     },
   };
 }

@@ -1,6 +1,43 @@
 import { describe, expect, it } from "vitest";
 
-import { chooseCut, clauseBreak, sentenceBreak } from "../src/domain/text-breaks.js";
+import { chooseCut, clauseBreak, leadPhraseLength, sentenceBreak } from "../src/domain/text-breaks.js";
+
+describe("leadPhraseLength", () => {
+  function leadOf(text) {
+    return text.slice(0, leadPhraseLength(text));
+  }
+
+  it("ends a lede's opening phrase at its first comma", () => {
+    expect(leadOf("我們將以日本櫻花木製成的小豎琴，演奏臺灣和日本兩地都備受珍視的歌曲。"))
+      .toBe("我們將以日本櫻花木製成的小豎琴");
+  });
+
+  it("ends it after a name's gloss, whatever commas the gloss holds", () => {
+    expect(leadOf("格蘭查尼（Marcel Grandjany，1891－1975）出生於巴黎，是 20 世紀法國重要的豎琴家。"))
+      .toBe("格蘭查尼（Marcel Grandjany，1891－1975）");
+  });
+
+  it("reads through a comma inside a title", () => {
+    expect(leadOf("《春天，來了》是一首歌，後來傳遍全島。")).toBe("《春天，來了》是一首歌");
+  });
+
+  it("does not end the phrase at an enumeration comma", () => {
+    expect(leadOf("鋼琴、小提琴與大提琴組成的三重奏，是室內樂的常見編制。"))
+      .toBe("鋼琴、小提琴與大提琴組成的三重奏");
+  });
+
+  it("counts Latin letters as half a character", () => {
+    expect(leadOf("作曲家（Wolfgang Amadeus Mozart and Johann Sebastian Bach）的作品。"))
+      .toBe("作曲家（Wolfgang Amadeus Mozart and Johann Sebastian Bach）");
+  });
+
+  it("sets no phrase apart when none ends within two lines", () => {
+    expect(leadPhraseLength(`${"長".repeat(45)}，後文。`)).toBe(0);
+    expect(leadPhraseLength(
+      "A lede written in English has no Chinese punctuation to end its first phrase, so none is set apart.",
+    )).toBe(0);
+  });
+});
 
 describe("chooseCut", () => {
   const LINE = 30;
