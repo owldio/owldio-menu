@@ -77,7 +77,8 @@ describe("sample programme catalogue", () => {
     expect(publishedText).toContain("高野達幸");
     expect(publishedText).toContain("飽受對春天的期盼");
     expect(publishedText).toContain("一這首著名的日本歌曲");
-    expect(publishedText).toContain("法國作曲家加佛瑞");
+    expect(publishedText).toContain("法國作曲家佛瑞（Gabriel Fauré");
+    expect(publishedText).not.toContain("加佛瑞");
     expect(publishedText).toContain("9∕8 拍、行版");
     expect(publishedText).toContain("Yu-Hsain Tung /arr. Che-Yi Lee");
     expect(publishedText).toContain("曲調特色：本曲採用四拍子");
@@ -104,6 +105,7 @@ describe("sample programme catalogue", () => {
     const sourceCopyHash = createHash("sha256")
       .update(JSON.stringify(sourceCopy))
       .digest("hex");
-    expect(sourceCopyHash).toBe("f080212a75afc1eec01e7fefd33084240cc927246079a818ecbb25b20b5861f9");
+    // The printed copy, with one correction the presenter asked for: 加佛瑞 → 佛瑞.
+    expect(sourceCopyHash).toBe("47e0287ee9358cf594ba84ec311232e935069bcc49de49048656f489097c685a");
   });
 });
