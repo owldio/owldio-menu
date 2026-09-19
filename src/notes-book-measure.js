@@ -1,3 +1,4 @@
+import { cutParagraph } from "./domain/notes-flow.js";
 import { LINE_HEIGHT_RATIO } from "./domain/notes-geometry.js";
 import { chooseCut, clauseBreak, sentenceBreak } from "./domain/text-breaks.js";
 import { createPageFrame, renderAtom } from "./notes-book-render.js";
@@ -9,10 +10,6 @@ const CLOSING_PUNCTUATION = /[。，、；：！？」』）》】〉・·]/;
 const MINIMUM_SPLIT_LENGTH = 8;
 const BREAK_SEARCH_LIMIT = 24;
 const MIN_HEAD_LINES = 2;
-
-function fragment(atom, text, continues) {
-  return { ...atom, payload: { ...atom.payload, text, continues } };
-}
 
 /**
  * Nudge a cut away from places that read badly: never inside a run of Latin
@@ -82,9 +79,7 @@ export function createMeasurer(host = document.body, { layout } = {}) {
 
     while (low <= high) {
       const middle = Math.floor((low + high) / 2);
-      const height = elementHeight(
-        renderAtom(fragment(atom, text.slice(0, middle), atom.payload.continues)),
-      );
+      const height = elementHeight(renderAtom(cutParagraph(atom, middle).head));
       if (height <= availableHeight) {
         best = middle;
         low = middle + 1;
@@ -106,8 +101,8 @@ export function createMeasurer(host = document.body, { layout } = {}) {
     ]
       .filter(({ cut }) => cut > 0 && cut < text.length)
       .map((candidate) => {
-        const head = fragment(atom, text.slice(0, candidate.cut), atom.payload.continues);
-        return { ...candidate, head, height: elementHeight(renderAtom(head)) };
+        const { head, tail } = cutParagraph(atom, candidate.cut);
+        return { ...candidate, head, tail, height: elementHeight(renderAtom(head)) };
       });
 
     const chosen = chooseCut(candidates, {
@@ -117,7 +112,7 @@ export function createMeasurer(host = document.body, { layout } = {}) {
     });
     if (!chosen) return null;
 
-    return { head: chosen.head, tail: fragment(atom, text.slice(chosen.cut), true) };
+    return { head: chosen.head, tail: chosen.tail };
   }
 
   function destroy() {

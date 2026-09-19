@@ -128,6 +128,22 @@ function noteAtoms(chapter, index) {
   return atoms;
 }
 
+/**
+ * A paragraph cut where a page ends. The tail carries on at the top of the next
+ * page, unindented, and a lede's tail is set as body text: the gold stroke that
+ * marks a note's opening paragraph belongs on the note's opening page alone.
+ */
+export function cutParagraph(paragraph, cut) {
+  const { text } = paragraph.payload;
+  return {
+    head: { ...paragraph, payload: { ...paragraph.payload, text: text.slice(0, cut) } },
+    tail: {
+      ...paragraph,
+      payload: { ...paragraph.payload, text: text.slice(cut), continues: true, lede: false },
+    },
+  };
+}
+
 export function buildNoteFlow({ programme, chapters }) {
   const notes = visibleChapters(chapters);
 

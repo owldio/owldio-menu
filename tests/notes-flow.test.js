@@ -1,6 +1,41 @@
 import { describe, expect, it } from "vitest";
 
-import { buildNoteFlow } from "../src/domain/notes-flow.js";
+import { buildNoteFlow, cutParagraph } from "../src/domain/notes-flow.js";
+
+describe("cutParagraph", () => {
+  const lede = {
+    id: "work:p1",
+    kind: "paragraph",
+    noteSlug: "work",
+    noteIndex: 0,
+    splittable: true,
+    payload: { text: "甲乙丙。丁戊己。", lede: true },
+  };
+
+  it("cuts a paragraph into a head and a tail that continues it, losing no text", () => {
+    const { head, tail } = cutParagraph(lede, 4);
+
+    expect(head.payload.text + tail.payload.text).toBe(lede.payload.text);
+    expect([head.id, tail.id]).toEqual([lede.id, lede.id]);
+    expect(head.payload.continues).toBeFalsy();
+    expect(tail.payload.continues).toBe(true);
+  });
+
+  it("sets the part of a lede that runs onto the next page as body text", () => {
+    const { head, tail } = cutParagraph(lede, 4);
+
+    expect(head.payload.lede).toBe(true);
+    expect(tail.payload.lede).toBe(false);
+  });
+
+  it("keeps a continuing paragraph continuing when it is cut again", () => {
+    const { tail: middle } = cutParagraph(lede, 2);
+    const { head } = cutParagraph(middle, 3);
+
+    expect(head.payload.continues).toBe(true);
+    expect(head.payload.lede).toBe(false);
+  });
+});
 
 const programme = {
   title: "月光下的約定",
