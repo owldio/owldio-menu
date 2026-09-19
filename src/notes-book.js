@@ -29,8 +29,6 @@ const ZOOMED = 1.01;
 const TWO_UP_MIN_WIDTH = 900;
 const RELAYOUT_DELAY = 180;
 const HEIGHT_TOLERANCE = 24;
-const MAX_GAP_EXTRA_EMS = 0.8;
-const ENDING_GAP_EXTRA_EMS = 1.5;
 const CENTRE_THRESHOLD = 0.06;
 const FONT_TIMEOUT = 3500;
 const JUMP_FADE = 240;
@@ -385,20 +383,11 @@ export function createNotesBook(root, { onError, onPageChange } = {}) {
     const children = [...body.children];
     if (!children.length) return;
 
+    // Paragraphs follow one another without gaps, as in a book, so a page that
+    // ends short simply ends short — except a note's last, which is held in the
+    // middle of what is left so it reads as a close.
     const slack = body.clientHeight - stackHeight(children);
-    if (slack <= 0) return;
-
-    // Only gaps between blocks can open; space after the final block is unseen.
-    const growable = children.filter(
-      (child, index) => index < children.length - 1 && child.matches(".note-paragraph, .note-work"),
-    ).length;
-    const endsNote = element.dataset.endsNote === "true";
-    const cap = (endsNote ? ENDING_GAP_EXTRA_EMS : MAX_GAP_EXTRA_EMS) * layout.font;
-    const extra = growable ? Math.min(slack / growable, cap) : 0;
-    if (extra > 0) element.style.setProperty("--note-gap-extra", `${extra.toFixed(2)}px`);
-
-    const remaining = slack - extra * growable;
-    if (endsNote && remaining > body.clientHeight * CENTRE_THRESHOLD) {
+    if (element.dataset.endsNote === "true" && slack > body.clientHeight * CENTRE_THRESHOLD) {
       element.dataset.closing = "true";
     }
   }
@@ -409,7 +398,7 @@ export function createNotesBook(root, { onError, onPageChange } = {}) {
       const noteTitle = page.noteSlug ? noteTitles.get(page.noteSlug) : null;
       return renderPage(page, {
         total: pages.length,
-        continuedLabel: noteTitle ? `${noteTitle}（續）` : null,
+        continuedLabel: noteTitle ?? null,
         endsNote: Boolean(page.noteSlug) && pages[index + 1]?.noteSlug !== page.noteSlug,
         layout,
       });
@@ -559,6 +548,8 @@ export function createNotesBook(root, { onError, onPageChange } = {}) {
       ['600 17px "Swei Spring Sugar"', sample],
       ['10px "Noto Sans TC"', sample],
       ['14px "Bodoni Moda"', "Programme Notes 0123"],
+      // Each note's English title is set in the italic, and it can wrap the opening page.
+      ['italic 14px "Bodoni Moda"', "Aria in Classic Style"],
     ];
 
     return Promise.all(faces.map(([font, text]) => document.fonts.load(font, text)))
@@ -570,10 +561,14 @@ export function createNotesBook(root, { onError, onPageChange } = {}) {
     const loadingTitle = root.querySelector(".notes-loading__title");
     if (loadingTitle && programme?.title) loadingTitle.textContent = programme.title;
     atoms = buildNoteFlow({ programme, chapters });
+    // A book's running head names the work, not the page it continues.
     noteTitles = new Map(
       atoms
         .filter((atom) => atom.kind === "note-banner")
-        .map((atom) => [atom.noteSlug, `${atom.payload.number}　${atom.payload.title}`]),
+        .map(({ noteSlug, payload }) => [
+          noteSlug,
+          payload.composer && payload.work ? `${payload.composer} · ${payload.work}` : payload.title,
+        ]),
     );
 
     const sample = atoms

@@ -46,6 +46,29 @@ export function parseReaderHash(hash) {
   return { view: "entrance" };
 }
 
+/**
+ * Alternative editions of a programme, read at /<slug>/<edition>: the same
+ * content set another way, for the reader layouts each edition can set.
+ * "copy" is a notes book on paper (月光紙).
+ */
+const EDITIONS = new Map([["copy", new Set(["notes-book"])]]);
+
+export function editionFits(edition, readerLayout) {
+  return EDITIONS.get(edition)?.has(readerLayout) ?? false;
+}
+
+/**
+ * Before editions, /<a>/copy could only mean client a's programme "copy". When
+ * the edition does not fit what /<a> holds, the address is read that way again,
+ * so an older link keeps working.
+ */
+export function legacyReadingOf(route) {
+  if (!route?.edition) return null;
+
+  const { edition, programmeSlug, ...rest } = route;
+  return { ...rest, clientSlug: programmeSlug, programmeSlug: edition, legacyPath: true };
+}
+
 export function parseAppLocation(pathname, hash) {
   const normalizedPath = String(pathname || "/").replace(/\/+$/, "") || "/";
 
@@ -58,6 +81,18 @@ export function parseAppLocation(pathname, hash) {
   }
 
   const rawSegments = normalizedPath.split("/").filter(Boolean);
+  if (rawSegments.length === 2 && EDITIONS.has(rawSegments[1])) {
+    const programmeSlug = decodeSegment(rawSegments[0]);
+    if (!programmeSlug) return { kind: "not-found" };
+
+    return {
+      kind: "programme",
+      programmeSlug,
+      edition: rawSegments[1],
+      ...parseReaderHash(hash),
+    };
+  }
+
   if (rawSegments.length === 1) {
     const programmeSlug = decodeSegment(rawSegments[0]);
     if (!programmeSlug) return { kind: "not-found" };
@@ -87,8 +122,9 @@ export function parseAppLocation(pathname, hash) {
   };
 }
 
-export function buildProgrammePath(programmeSlug) {
-  return `/${encodeURIComponent(programmeSlug)}`;
+export function buildProgrammePath(programmeSlug, { edition } = {}) {
+  const path = `/${encodeURIComponent(programmeSlug)}`;
+  return edition ? `${path}/${encodeURIComponent(edition)}` : path;
 }
 
 export function buildProgrammeReaderPath(programmeSlug) {

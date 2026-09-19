@@ -1,6 +1,32 @@
 import { describe, expect, it } from "vitest";
 
-import { buildNoteFlow, cutParagraph } from "../src/domain/notes-flow.js";
+import { buildNoteFlow, cutParagraph, splitNoteTitle } from "../src/domain/notes-flow.js";
+
+describe("splitNoteTitle", () => {
+  it("sets the composer apart from the work at the first colon", () => {
+    expect(splitNoteTitle("格蘭查尼：古典風格的詠嘆調")).toEqual({ composer: "格蘭查尼", work: "古典風格的詠嘆調" });
+    expect(splitNoteTitle("Marcel Grandjany: Aria in Classic Style")).toEqual({
+      composer: "Marcel Grandjany",
+      work: "Aria in Classic Style",
+    });
+  });
+
+  it("keeps an arranger with the composer and the rest of the title with the work", () => {
+    expect(splitNoteTitle("德布西／馬修諾庭 改編：《月光》")).toEqual({
+      composer: "德布西／馬修諾庭 改編",
+      work: "《月光》",
+    });
+    expect(splitNoteTitle("Johannes Brahms: Piano Quartet No. 3 in C Minor, Op. 60")).toEqual({
+      composer: "Johannes Brahms",
+      work: "Piano Quartet No. 3 in C Minor, Op. 60",
+    });
+  });
+
+  it("reads a title without a colon as the work alone", () => {
+    expect(splitNoteTitle("豎琴獨奏")).toEqual({ composer: null, work: "豎琴獨奏" });
+    expect(splitNoteTitle(null)).toEqual({ composer: null, work: null });
+  });
+});
 
 describe("cutParagraph", () => {
   const lede = {
@@ -208,6 +234,29 @@ describe("buildNoteFlow", () => {
 
     expect(banner.payload.ensemble).toBe("弦樂四重奏與豎琴");
     expect(banner.payload.performers).toEqual([["豎琴", "甲"], ["小提琴 I", "乙"]]);
+  });
+
+  it("gives the banner the composer and the work apart, in both languages", () => {
+    const atoms = buildNoteFlow({
+      programme,
+      chapters: [{
+        slug: "aria",
+        position: 1,
+        title: "格蘭查尼：古典風格的詠嘆調",
+        title_en: "Marcel Grandjany: Aria in Classic Style",
+        is_visible: true,
+        blocks: [],
+      }],
+    });
+    const banner = atoms.find((atom) => atom.kind === "note-banner");
+
+    expect(banner.payload).toMatchObject({
+      title: "格蘭查尼：古典風格的詠嘆調",
+      composer: "格蘭查尼",
+      work: "古典風格的詠嘆調",
+      composerEn: "Marcel Grandjany",
+      workEn: "Aria in Classic Style",
+    });
   });
 
   it("leaves the scoring empty when a note does not declare one", () => {

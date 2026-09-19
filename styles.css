@@ -747,6 +747,17 @@ html[data-publication-boot-theme="moonlight"] .publication-boot {
   background: #071624;
 }
 
+html[data-publication-boot-theme="moonlight-paper"] .publication-boot {
+  background: #efe8da;
+}
+
+html[data-publication-boot-theme="moonlight-paper"] .publication-placeholder--boot {
+  border-color: rgb(156 122 54 / 0.42);
+  background: #f6f1e6;
+  color: #1d2733;
+  box-shadow: 0 24px 54px rgb(64 50 24 / 0.2);
+}
+
 html[data-publication-boot-theme="moonlight"] .publication-placeholder--boot {
   border-color: rgb(213 177 105 / 0.42);
   background: #0b2031;
@@ -7287,7 +7298,7 @@ html:has(.reader-shell[data-view="notes-book"]) body {
   color: var(--moon-copy);
   font-family: var(--font-serif);
   font-size: var(--note-font, 17px);
-  line-height: 1.85;
+  line-height: 1.9;
 }
 
 .notes-book[data-turn="slide"] .note-page {
@@ -7364,24 +7375,23 @@ html:has(.reader-shell[data-view="notes-book"]) body {
 }
 
 /*
- * The running head and the page number live in the margins, as a reading app
- * keeps them: small, quiet, and growing more slowly than the text they frame.
+ * The running head and the page number live in the margins, as a book keeps
+ * them: small, quiet, on the centre line, growing more slowly than the text.
  */
 .note-page__running {
   position: absolute;
-  top: calc(var(--page-pad-top) * 0.34);
+  top: calc(var(--page-pad-top) * 0.4);
   right: var(--page-pad-x);
   left: var(--page-pad-x);
   z-index: 1;
   overflow: hidden;
   margin: 0;
-  padding-bottom: 0.75em;
-  background: var(--fade-rule-start) left bottom / 100% 1px no-repeat;
-  color: rgb(185 175 157 / 0.72);
+  color: color-mix(in srgb, var(--moon-gold) 62%, transparent);
   font-family: var(--font-sans);
   font-size: var(--note-margin-font);
   line-height: 1.2;
-  letter-spacing: 0.16em;
+  letter-spacing: 0.26em;
+  text-align: center;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -7389,38 +7399,16 @@ html:has(.reader-shell[data-view="notes-book"]) body {
 .note-page__folio {
   position: absolute;
   right: var(--page-pad-x);
-  bottom: calc(var(--page-pad-bottom) * 0.3);
+  bottom: calc(var(--page-pad-bottom) * 0.34);
   left: var(--page-pad-x);
   z-index: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 1.1em;
-  color: var(--moon-gold);
+  margin: 0;
+  color: color-mix(in srgb, var(--moon-gold) 78%, transparent);
   font-family: var(--font-display);
-  font-size: var(--note-margin-font);
+  font-size: calc(var(--note-margin-font) * 1.22);
   line-height: 1;
-  letter-spacing: 0.08em;
-}
-
-/* Short gold strokes either side of the number, fading into the margin. */
-.note-page__folio::before,
-.note-page__folio::after {
-  width: 2.6em;
-  height: 1px;
-  content: "";
-}
-
-.note-page__folio::before {
-  background: linear-gradient(90deg, rgb(213 177 105 / 0), rgb(213 177 105 / 0.5));
-}
-
-.note-page__folio::after {
-  background: linear-gradient(270deg, rgb(213 177 105 / 0), rgb(213 177 105 / 0.5));
-}
-
-.note-page__folio-number {
-  font-size: 1.3em;
+  letter-spacing: 0.1em;
+  text-align: center;
 }
 
 .note-page__body {
@@ -7450,30 +7438,31 @@ html:has(.reader-shell[data-view="notes-book"]) body {
   margin-top: 4em;
 }
 
+/*
+ * Paragraphs follow one another as in a book: a first-line indent and no gap.
+ * The measure is a whole number of characters (resolveLayout), so a line of
+ * Chinese meets both margins as it stands; a line that ends on a Latin word is
+ * left ragged rather than pulled apart, and a full stop may hang in the margin.
+ */
 .note-paragraph {
-  margin: 0 0 calc(0.85em + var(--note-gap-extra, 0px));
+  margin: 0;
+  text-align: start;
   text-indent: 2em;
-  text-align: justify;
-  text-justify: inter-ideograph;
+  line-break: strict;
+  hanging-punctuation: allow-end;
 }
 
 .note-paragraph[data-continues="true"] {
   text-indent: 0;
 }
 
-/*
- * The way into a note: larger, brighter, unindented, on a tapered gold stroke.
- * Set ragged rather than justified — at this size a long Latin name opens
- * rivers between the characters.
- */
+/* A note's first paragraph starts flush, its opening line picked out in gold. */
 .note-paragraph[data-lede="true"] {
-  margin-bottom: calc(1.25em + var(--note-gap-extra, 0px));
-  padding-left: 1.1em;
-  background: var(--fade-stroke) left top / 1.5px 100% no-repeat;
-  color: var(--moon-ivory);
-  font-size: 1.06em;
-  text-align: start;
   text-indent: 0;
+}
+
+.note-paragraph[data-lede="true"]::first-line {
+  color: var(--moon-gold);
 }
 
 .note-page__sentinel {
@@ -7487,7 +7476,7 @@ html:has(.reader-shell[data-view="notes-book"]) body {
   align-items: center;
   gap: 1.4em;
   margin: 3em 0 0;
-  color: rgb(213 177 105 / 0.62);
+  color: color-mix(in srgb, var(--moon-gold) 62%, transparent);
   font-size: 0.6em;
   letter-spacing: 0.3em;
 }
@@ -7495,117 +7484,135 @@ html:has(.reader-shell[data-view="notes-book"]) body {
 .note-page__endmark i {
   flex: 1;
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgb(213 177 105 / 0.34), transparent);
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--moon-gold) 34%, transparent), transparent);
 }
 
 /*
- * The banner is the head of the page, not a box inside it: negative margins
- * cancel the page padding so the gold band runs edge to edge, and the padding
- * puts the type back on the text column. Every note opens a page, so the band
- * always sits at the top. Its type grows more slowly than the reading text, so
- * even the largest setting leaves the opening page room to begin the note.
+ * A note opens like a page of the printed programme, on the centre line:
+ * scoring, number, the work set large with its English beneath, the composer,
+ * an ornament, the players. Its type grows more slowly than the reading text,
+ * so even the largest setting leaves the opening page room to begin the note.
  */
 .note-banner {
-  display: grid;
-  grid-template-columns: 3em minmax(0, 1fr);
-  gap: 1.1em;
-  align-items: start;
-  margin: calc(var(--page-pad-top) * -1) calc(var(--page-pad-x) * -1) 1.6em;
-  padding: calc(var(--page-pad-top) * 0.8) var(--page-pad-x) 1.8em;
-  background:
-    var(--harp-ripple) left bottom / 100% 1.5em no-repeat,
-    linear-gradient(180deg, rgb(213 177 105 / 0.18), rgb(213 177 105 / 0.07) 58%, rgb(213 177 105 / 0));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 0.6em 0 1.9em;
   font-size: calc(var(--note-font, 17px) * 0.6 + 6.8px);
+  text-align: center;
 }
 
-/* On a phone the number stands above the title, leaving the title the full measure. */
-.note-page[data-narrow="true"] .note-banner {
-  grid-template-columns: minmax(0, 1fr);
-  gap: 0.55em;
-}
-
-.note-banner__number {
-  color: var(--moon-gold);
-  font-family: var(--font-display);
-  font-size: 2.7em;
-  line-height: 0.86;
-  letter-spacing: -0.04em;
-}
-
-.note-page[data-narrow="true"] .note-banner__number {
-  font-size: 2.2em;
+/* The moon at the corner of the page: drawn on the paper edition only. */
+.note-banner__moon {
+  display: none;
 }
 
 .note-banner__eyebrow {
-  margin: 0 0 1.1em;
-  color: var(--moon-gold);
+  margin: 0;
+  color: color-mix(in srgb, var(--moon-gold) 85%, transparent);
   font-family: var(--font-sans);
   font-size: 0.62em;
   line-height: 1.4;
-  letter-spacing: 0.2em;
+  letter-spacing: 0.32em;
+}
+
+.note-banner__number {
+  margin-top: 0.39em;
+  color: var(--moon-gold);
+  font-family: var(--font-display);
+  font-size: 2.7em;
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: 0.02em;
 }
 
 .note-banner__title {
-  margin: 0;
+  margin: 0.69em 0 0;
   color: var(--moon-ivory);
-  font-size: 1.42em;
+  font-size: 1.53em;
   font-weight: 600;
-  line-height: 1.4;
-  letter-spacing: 0.01em;
+  line-height: 1.35;
+  letter-spacing: 0.08em;
+  text-wrap: balance;
 }
 
 .note-banner__english {
-  margin: 0.45em 0 0;
+  margin: 0.53em 0 0;
   color: var(--moon-muted);
   font-family: var(--font-display);
+  font-size: 0.88em;
+  font-style: italic;
+  line-height: 1.4;
+  text-wrap: balance;
+}
+
+.note-banner__composer {
+  margin: 1em 0 0;
+  color: var(--moon-copy);
   font-size: 0.82em;
   line-height: 1.5;
-  letter-spacing: 0.01em;
+  letter-spacing: 0.14em;
+  text-wrap: balance;
+}
+
+.note-banner__composer-en {
+  display: inline-block;
+  margin-left: 0.7em;
+  color: var(--moon-muted);
+  font-family: var(--font-display);
+  font-size: 0.93em;
+  letter-spacing: 0.02em;
 }
 
 .note-banner__author {
-  margin: 0.7em 0 0;
+  margin: 0.9em 0 0;
   color: var(--moon-rose);
   font-family: var(--font-sans);
-  font-size: 0.68em;
+  font-size: 0.66em;
   letter-spacing: 0.16em;
+}
+
+.note-banner__ornament {
+  display: block;
+  width: 5.2em;
+  height: 0.6em;
+  margin: 1.3em 0;
+  color: var(--moon-gold);
 }
 
 .note-banner__performers {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.3em 1.2em;
-  margin: 1em 0 0;
-  padding: 0.85em 0 0;
-  background: var(--fade-rule-start) left top / 100% 1px no-repeat;
-  line-height: 1.6;
+  justify-content: center;
+  gap: 0 1em;
+  margin: 0;
+  padding: 0;
+  color: var(--moon-copy);
+  font-size: 0.8em;
+  line-height: 1.95;
   list-style: none;
 }
 
 .note-banner__performers li {
-  display: flex;
+  display: inline-flex;
   align-items: baseline;
-  gap: 0.45em;
+  gap: 0.4em;
 }
 
 .note-banner__role {
-  color: rgb(213 177 105 / 0.82);
+  color: color-mix(in srgb, var(--moon-gold) 85%, transparent);
   font-family: var(--font-sans);
-  font-size: 0.6em;
-  letter-spacing: 0.14em;
+  font-size: 0.74em;
+  letter-spacing: 0.12em;
 }
 
 .note-banner__name {
-  color: var(--moon-copy);
-  font-size: 0.86em;
   letter-spacing: 0.04em;
 }
 
 /* Harp-solo work cards */
 .note-work {
-  margin: 0 0 calc(1.2em + var(--note-gap-extra, 0px));
-  padding: 0 0 1em 1.2em;
-  background: var(--fade-stroke) left top / 1px 100% no-repeat;
+  margin: 0 0 1.2em;
 }
 
 .note-work__heading {
@@ -7640,7 +7647,9 @@ html:has(.reader-shell[data-view="notes-book"]) body {
 .note-work__detail {
   margin: 0.55em 0 0;
   font-size: 0.95em;
-  text-align: justify;
+  text-align: start;
+  line-break: strict;
+  hanging-punctuation: allow-end;
 }
 
 /* Ledgers shared by the cover and the colophon */
@@ -7946,8 +7955,23 @@ html:has(.reader-shell[data-view="notes-book"]) body {
  * essentials, so a note's opening page still has room to begin the note.
  */
 .note-page[data-compact="true"] .note-banner {
-  padding-top: calc(var(--page-pad-top) * 0.45);
-  padding-bottom: 1.1em;
+  margin: 0 0 1em;
+}
+
+.note-page[data-compact="true"] .note-banner__number {
+  margin-top: 0.2em;
+  font-size: 1.6em;
+}
+
+.note-page[data-compact="true"] .note-banner__title {
+  margin-top: 0.35em;
+}
+
+/* On a short page the opening keeps its scoring, number, work and composer. */
+.note-page[data-compact="true"] .note-banner__english,
+.note-page[data-compact="true"] .note-banner__composer-en,
+.note-page[data-compact="true"] .note-banner__ornament {
+  display: none;
 }
 
 .note-page[data-compact="true"] .note-banner__performers,
@@ -8116,6 +8140,158 @@ html:has(.reader-shell[data-view="notes-book"]) body {
   to {
     transform: translateX(250%);
   }
+}
+
+/*
+ * 月光紙 — /moonlight-promise/copy. The same book on the printed programme's
+ * paper: an ivory ground, navy ink, a deeper gold that keeps its contrast, and
+ * the moon at the corner of each note's opening page. Only colours change, so
+ * the pages measure and paginate exactly as the night edition does.
+ */
+html:has(#notes-book-view[data-book-theme="paper"]:not([hidden])),
+.reader-shell[data-view="notes-book"]:has(#notes-book-view[data-book-theme="paper"]) {
+  background: #efe8da;
+}
+
+.view--notes-book[data-book-theme="paper"] {
+  --moon-ink: #efe8da;
+  --moon-panel: #f6f1e6;
+  --moon-panel-raised: #fbf8f1;
+  --moon-ivory: #1d2733;
+  --moon-copy: #26303b;
+  --moon-muted: #6f6656;
+  --moon-gold: #9c7a36;
+  --moon-rose: #a0616b;
+  --moon-line: rgb(156 122 54 / 0.3);
+  --fade-rule: linear-gradient(90deg, rgb(156 122 54 / 0), rgb(156 122 54 / 0.34) 16%, rgb(156 122 54 / 0.34) 84%, rgb(156 122 54 / 0));
+  --fade-rule-start: linear-gradient(90deg, rgb(156 122 54 / 0.42), rgb(156 122 54 / 0));
+  --fade-stroke: linear-gradient(180deg, rgb(156 122 54 / 0), rgb(156 122 54 / 0.6) 18%, rgb(156 122 54 / 0.6) 82%, rgb(156 122 54 / 0));
+
+  background:
+    radial-gradient(circle at 16% 8%, rgb(213 177 105 / 0.16), transparent 38%),
+    linear-gradient(180deg, #ebe4d4 0%, #e5ddcc 100%);
+  color: var(--moon-ivory);
+}
+
+.view--notes-book[data-book-theme="paper"]::before {
+  opacity: 0.35;
+}
+
+.view--notes-book[data-book-theme="paper"] .note-page {
+  background:
+    radial-gradient(80% 42% at 88% 0%, rgb(213 177 105 / 0.12), transparent 62%),
+    linear-gradient(180deg, #f7f2e8 0%, #f2ecdf 100%);
+  box-shadow: 0 0 0 1px rgb(156 122 54 / 0.16), 0 26px 52px rgb(64 50 24 / 0.2);
+}
+
+/* Paper carries no drawing behind the text; the moon marks each opening instead. */
+.view--notes-book[data-book-theme="paper"] .note-page::before {
+  background: none;
+}
+
+.view--notes-book[data-book-theme="paper"] .note-page[data-slot="left"]::after {
+  background: linear-gradient(270deg, rgb(64 50 24 / 0.14), transparent);
+}
+
+.view--notes-book[data-book-theme="paper"] .note-page[data-slot="right"]::after {
+  background: linear-gradient(90deg, rgb(64 50 24 / 0.14), transparent);
+}
+
+.view--notes-book[data-book-theme="paper"] .note-banner__moon {
+  position: absolute;
+  top: calc(var(--page-pad-top) * -1 - var(--page-width) * 0.3);
+  right: calc(var(--page-pad-x) * -1 - var(--page-width) * 0.27);
+  z-index: -1;
+  display: block;
+  width: calc(var(--page-width) * 0.77);
+  height: calc(var(--page-width) * 0.77);
+  color: #b08a43;
+  pointer-events: none;
+}
+
+/* The chrome turns to paper with the page, its type to ink. */
+.view--notes-book[data-book-theme="paper"] .publication-toolbar,
+.view--notes-book[data-book-theme="paper"] .publication-rail {
+  border-color: var(--moon-line);
+  background: rgb(247 242 232 / 0.95);
+  color: var(--moon-ivory);
+}
+
+.view--notes-book[data-book-theme="paper"] .publication-toolbar__back {
+  border-right-color: var(--moon-line) !important;
+  color: rgb(29 39 51 / 0.78) !important;
+}
+
+.view--notes-book[data-book-theme="paper"] .publication-toolbar__tools > button:hover,
+.view--notes-book[data-book-theme="paper"] .publication-toolbar__back:hover,
+.view--notes-book[data-book-theme="paper"] .publication-toolbar__textsize button:hover:not(:disabled) {
+  background: rgb(29 39 51 / 0.06);
+}
+
+.view--notes-book[data-book-theme="paper"] .publication-toolbar__zoom button,
+.view--notes-book[data-book-theme="paper"] .publication-rail__thumbs {
+  color: var(--moon-ivory);
+}
+
+.view--notes-book[data-book-theme="paper"] .publication-toolbar__zoom output,
+.view--notes-book[data-book-theme="paper"] .publication-toolbar__textsize output,
+.view--notes-book[data-book-theme="paper"] .publication-rail > p {
+  color: rgb(29 39 51 / 0.6);
+}
+
+.view--notes-book[data-book-theme="paper"] .publication-rail__scrubber::before {
+  background: rgb(29 39 51 / 0.16);
+}
+
+.view--notes-book[data-book-theme="paper"] .publication-turn {
+  background: rgb(247 242 232 / 0.78);
+}
+
+.view--notes-book[data-book-theme="paper"] .publication-turn:hover,
+.view--notes-book[data-book-theme="paper"] .publication-turn:focus-visible {
+  background: rgb(156 122 54 / 0.12);
+  color: var(--moon-ivory);
+}
+
+.view--notes-book[data-book-theme="paper"] .publication-thumbnails {
+  background: rgb(243 238 228 / 0.97);
+  color: var(--moon-ivory);
+}
+
+.view--notes-book[data-book-theme="paper"] .notes-thumb {
+  color: rgb(29 39 51 / 0.6);
+}
+
+.view--notes-book[data-book-theme="paper"] .notes-thumb[aria-current="true"] {
+  color: var(--moon-ivory);
+}
+
+.view--notes-book[data-book-theme="paper"] .notes-thumb__preview {
+  background: #f6f1e6;
+}
+
+.view--notes-book[data-book-theme="paper"] .notes-loading {
+  background:
+    radial-gradient(circle at 50% 44%, rgb(213 177 105 / 0.18), transparent 46%),
+    #efe8da;
+}
+
+/* The first-open hint stays a dark veil, so its words stay light. */
+.view--notes-book[data-book-theme="paper"] .notes-hint__zone {
+  background: rgb(29 39 51 / 0.62);
+  color: #f6f1e6;
+}
+
+.view--notes-book[data-book-theme="paper"] .notes-hint__zone--menu {
+  background: rgb(29 39 51 / 0.46);
+}
+
+.view--notes-book[data-book-theme="paper"] .notes-hint__zone b {
+  color: #e0c07a;
+}
+
+.view--notes-book[data-book-theme="paper"] .notes-hint__zone small {
+  color: rgb(246 241 230 / 0.75);
 }
 
 /* ---- First open: where to tap, shown once, the way reading apps do. ---- */

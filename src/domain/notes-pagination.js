@@ -28,8 +28,17 @@ function pageNoteSlug(atoms) {
  * will take, which a line less of room can give it. Returns null when no honest
  * cut exists.
  */
+/**
+ * The least height that still counts as `lines` whole lines. Browsers lay text
+ * out on a 1/64 px grid, so n lines can measure a hair under n times the
+ * nominal line height; half a line of slack tells rounding from a missing line.
+ */
+export function heightOfLines(lines, lineHeight) {
+  return (lines - 0.5) * lineHeight;
+}
+
 function splitWithGuards(atom, available, { lineHeight, measure, splitParagraph }) {
-  const minimum = lineHeight * MIN_LINES;
+  const minimum = heightOfLines(MIN_LINES, lineHeight);
   if (available < minimum) return null;
 
   let budget = available;
@@ -118,9 +127,13 @@ export function packAtoms(atoms, { capacity, lineHeight, measure, splitParagraph
     }
 
     // A paragraph longer than a whole page has to be split wherever it falls.
+    // A heading alone on a page reads as a mistake: under a note's opening, any
+    // honest cut is worth making, so the note begins where it is announced.
+    const underOpening = current?.atoms.length === 1 && PAGE_OPENERS.has(current.atoms[0].kind);
     const worthSplitting = height > capacity
+      || underOpening
       || remaining >= height * MIN_SPLIT_SHARE
-      || remaining >= lineHeight * MIN_SPLIT_LINES;
+      || remaining >= heightOfLines(MIN_SPLIT_LINES, lineHeight);
 
     if (atom.splittable && worthSplitting) {
       const split = splitWithGuards(atom, remaining, { lineHeight, measure, splitParagraph });

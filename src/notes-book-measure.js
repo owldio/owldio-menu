@@ -1,4 +1,5 @@
 import { cutParagraph } from "./domain/notes-flow.js";
+import { heightOfLines } from "./domain/notes-pagination.js";
 import { LINE_HEIGHT_RATIO } from "./domain/notes-geometry.js";
 import { chooseCut, clauseBreak, sentenceBreak } from "./domain/text-breaks.js";
 import { createPageFrame, renderAtom } from "./notes-book-render.js";
@@ -108,7 +109,7 @@ export function createMeasurer(host = document.body, { layout } = {}) {
     const chosen = chooseCut(candidates, {
       available: availableHeight,
       lineHeight,
-      minimumHead: lineHeight * MIN_HEAD_LINES,
+      minimumHead: heightOfLines(MIN_HEAD_LINES, lineHeight),
     });
     if (!chosen) return null;
 

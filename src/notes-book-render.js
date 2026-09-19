@@ -10,8 +10,9 @@ const SVG_NS = "http://www.w3.org/2000/svg";
 /** Below this width the banner stacks its number above the title. */
 const NARROW_PAGE = 520;
 
+/** A book's folio is a plain number; the reader's rail keeps the padded form. */
 function folioNumber(index) {
-  return String(index + 1).padStart(2, "0");
+  return String(index + 1);
 }
 
 function svgElement(tagName, attributes) {
@@ -252,29 +253,66 @@ function performerLine(performers) {
   return list;
 }
 
+/** Line, lozenge, line: the one ornament a note's opening page carries. */
+function ornament(className) {
+  const svg = svgElement("svg", {
+    class: className,
+    viewBox: "0 0 88 10",
+    "aria-hidden": "true",
+    focusable: "false",
+  });
+  svg.append(
+    svgElement("path", { d: "M0 5 H36", fill: "none", stroke: "currentColor", "stroke-opacity": 0.6, "stroke-width": 0.8 }),
+    svgElement("path", { d: "M44 1 L48 5 L44 9 L40 5 Z", fill: "currentColor", "fill-opacity": 0.85 }),
+    svgElement("path", { d: "M52 5 H88", fill: "none", stroke: "currentColor", "stroke-opacity": 0.6, "stroke-width": 0.8 }),
+  );
+  return svg;
+}
+
+/**
+ * A note opens like a page of the printed programme: scoring, number, the work
+ * set large, its English beneath, then the composer, an ornament and the
+ * players, all on the centre line.
+ */
 function renderBanner(payload) {
   const node = createElement("header", "note-banner");
-  const copy = createElement("div", "note-banner__copy");
-
   // The scoring says what kind of piece this is; the generic "programme note"
   // label only fills in when a note has no scoring of its own.
-  copy.append(
-    createElement("p", "note-banner__eyebrow", payload.ensemble || payload.eyebrow || "樂曲解說"),
+  const scoring = payload.ensemble || payload.eyebrow || "樂曲解說";
+
+  const title = createElement("h2", "note-banner__title", payload.work || payload.title);
+  // However it is set, the heading is heard as the whole title.
+  if (payload.work && payload.work !== payload.title) title.setAttribute("aria-label", payload.title);
+
+  node.append(
+    moonDisc("note-banner__moon"),
+    createElement("p", "note-banner__eyebrow", scoring),
+    createElement("span", "note-banner__number", payload.number),
+    title,
   );
 
-  copy.append(createElement("h2", "note-banner__title", payload.title));
-  if (payload.titleEn) {
-    copy.append(createElement("p", "note-banner__english", payload.titleEn));
-  }
-  // The author wrote the note; saying so keeps her apart from the performer list.
-  if (payload.author) {
-    copy.append(createElement("p", "note-banner__author", `文／${payload.author}`));
-  }
-  if (payload.performers?.length) {
-    copy.append(performerLine(payload.performers));
+  const english = payload.composer ? payload.workEn || payload.titleEn : payload.titleEn;
+  if (english) node.append(createElement("p", "note-banner__english", english));
+
+  // A "composer" that only repeats the scoring (豎琴獨奏) is left out.
+  if (payload.composer && payload.composer !== scoring) {
+    const composer = createElement("p", "note-banner__composer", payload.composer);
+    if (payload.composerEn) {
+      const latin = createElement("span", "note-banner__composer-en", payload.composerEn);
+      latin.lang = "en";
+      composer.append(latin);
+    }
+    node.append(composer);
   }
 
-  node.append(createElement("span", "note-banner__number", payload.number), copy);
+  // The author wrote the note; saying so keeps her apart from the performer list.
+  if (payload.author) {
+    node.append(createElement("p", "note-banner__author", `文／${payload.author}`));
+  }
+  node.append(ornament("note-banner__ornament"));
+  if (payload.performers?.length) {
+    node.append(performerLine(payload.performers));
+  }
   return node;
 }
 

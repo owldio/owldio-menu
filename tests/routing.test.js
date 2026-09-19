@@ -4,7 +4,9 @@ import {
   buildProgrammeViewUrl,
   buildProgrammePath,
   buildProgrammeReaderPath,
+  editionFits,
   isProgrammeReaderHash,
+  legacyReadingOf,
   parseAppLocation,
   parseReaderHash,
   resolveNoteAnchor,
@@ -71,11 +73,58 @@ describe("parseAppLocation", () => {
   it("rejects malformed deep paths", () => {
     expect(parseAppLocation("/ours/tide-awake/extra", "")).toEqual({ kind: "not-found" });
   });
+
+  it("opens a programme's copy edition at /<slug>/copy", () => {
+    expect(parseAppLocation("/moonlight-promise/copy", "")).toEqual({
+      kind: "programme",
+      programmeSlug: "moonlight-promise",
+      edition: "copy",
+      view: "pdf",
+    });
+  });
+
+  it("keeps a page deep link inside the copy edition", () => {
+    expect(parseAppLocation("/moonlight-promise/copy/", "#page/5")).toEqual({
+      kind: "programme",
+      programmeSlug: "moonlight-promise",
+      edition: "copy",
+      view: "notes-book",
+      page: 5,
+    });
+  });
+});
+
+describe("programme editions", () => {
+  it("sets only a notes book on paper", () => {
+    expect(editionFits("copy", "notes-book")).toBe(true);
+    expect(editionFits("copy", "pdf")).toBe(false);
+    expect(editionFits("copy", undefined)).toBe(false);
+    expect(editionFits("print", "notes-book")).toBe(false);
+  });
+
+  it("reads /<client>/copy as it was read before editions: a client's programme named copy", () => {
+    expect(legacyReadingOf(parseAppLocation("/ours/copy", "#contents"))).toEqual({
+      kind: "programme",
+      clientSlug: "ours",
+      programmeSlug: "copy",
+      legacyPath: true,
+      view: "contents",
+    });
+  });
+
+  it("gives no older reading to an address that names no edition", () => {
+    expect(legacyReadingOf(parseAppLocation("/moonlight-promise", ""))).toBeNull();
+    expect(legacyReadingOf(parseAppLocation("/ours/tide-awake", ""))).toBeNull();
+  });
 });
 
 describe("buildProgrammePath", () => {
   it("builds one encoded public programme segment", () => {
     expect(buildProgrammePath("潮聲/未眠")).toBe("/%E6%BD%AE%E8%81%B2%2F%E6%9C%AA%E7%9C%A0");
+  });
+
+  it("builds the path of a programme's copy edition", () => {
+    expect(buildProgrammePath("moonlight-promise", { edition: "copy" })).toBe("/moonlight-promise/copy");
   });
 
   it("builds the direct reading destination used by programme covers", () => {

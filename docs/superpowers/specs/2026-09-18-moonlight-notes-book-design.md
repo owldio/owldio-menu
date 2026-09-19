@@ -47,15 +47,15 @@
 | --- | --- |
 | 頁面寬高 | 單頁 = 舞台；跨頁每頁 = `(舞台寬 − 2) ÷ 2` × 舞台高 |
 | 內文字級 | 讀者可調：15／16／17／18／20／22／24 px；預設手機（< 600 px）17、其他 18 |
-| 行高 | 1.85 |
+| 行高 | 1.9 |
 | 每行字數 | 最多 34 字；頁面太寬時加寬左右留白，不縮小字 |
-| 左右留白 | `max(1.35em, (頁寬 − 34em) ÷ 2)` |
+| 左右留白 | 版心取整數字寬：`字數 = min(34, ⌊(頁寬 − 2.7em) ÷ 1em⌋)`，留白 = `(頁寬 − 字數 em) ÷ 2`（可為小數） |
 | 上留白 | `58 + 0.25em`（浮動工具列最高 58 px，內文永遠不被遮住） |
 | 下留白 | `58 + 0.4em`（同上，避開進度列） |
 
 上下留白幾乎不隨字級變大：像閱讀 App 一樣，字放大時多出來的是版面，不是邊界。幾何計算在 `src/domain/notes-geometry.js` 的 `resolveLayout()`，有單元測試。
 
-尺寸與字級以 CSS 自訂屬性傳給每一頁（`--page-width`、`--page-height`、`--page-pad-x/top/bottom`、`--note-font`，窄頁另有 `data-narrow`），樣式一律以 em 或頁面比例撰寫，整頁跟著字級與螢幕一起縮放。書眉與頁碼放在上下留白裡，字級成長較慢（`0.3em + 5.5px`）；頁碼只剩置中的「— 07 —」。
+尺寸與字級以 CSS 自訂屬性傳給每一頁（`--page-width`、`--page-height`、`--page-pad-x/top/bottom`、`--note-font`，窄頁另有 `data-narrow`），樣式一律以 em 或頁面比例撰寫，整頁跟著字級與螢幕一起縮放。書眉與頁碼放在上下留白裡，字級成長較慢（`0.3em + 5.5px`），都置中：書眉是「作曲家 · 作品」，頁碼是單純的數字「7」。
 
 容量不寫成常數：排版前量測一張相同幾何的真實頁面。字級、螢幕尺寸或方向改變時重新分頁，並回到重排前第一個原子所在的頁，讀者停在同一段。
 
@@ -158,7 +158,7 @@ packAtoms(atoms, { capacity, measure, splitParagraph }) -> Page[]
 - **不硬拆段落**：一段文字放得進一整頁時，只有目前這頁能容納一半以上、或至少四行時才切分，否則整段移到下一頁，讓下一頁從完整段落開始。四行已是一段完整的文字而非碎片；字放大後段落變長，只看比例會在頁底留下好幾行空白。比整頁還長的段落照樣切分。
 - **切在句子上**：必須切分時，先找句號（。！？，連同後面的收尾引號），其次找逗號、頓號，最後才退回行尾。為了停在句號最多讓頁底空兩行，停在逗號最多空一行 —— 以行數計算，字級再大也不會開出大洞。量測器第一次找不到可用切點時少一行再試。規則在 `src/domain/text-breaks.js` 的 `chooseCut()`。
 - **曲末記號讓位**：曲末的 ✦ 記號是裝飾，文字已經排滿的頁面就不放，免得擠進頁碼所在的下留白。
-- **曲末短頁**：某曲最後一頁的段距上限放寬到 1.5em（其他頁 0.8em），剩餘空白超過版心 6% 就把內容置中；有標題帶的頁面，內容置中在標題帶下方。
+- **曲末短頁**：某曲最後一頁剩餘空白超過版心 6% 就把內容置中；有標題帶的頁面，內容置中在標題帶下方。（第六輪起段落之間不再加寬段距：書卷式的段落沒有段距，加了反而各頁不一致。）
 
 ### 線條
 
@@ -235,17 +235,31 @@ packAtoms(atoms, { capacity, measure, splitParagraph }) -> Page[]
 
 這本書是節目單本身，只是不印出來。因此每首曲的開頭頁要像節目單的曲目頁，而不是網頁文章：
 
-- **標題帶出血到頁緣**：負邊距抵銷頁面留白，金色帶佔滿整個版面寬度並貼齊頁頂。每首曲都開新頁，所以標題帶永遠在頁頂。
+- **開頭頁（第六輪改為置中曲目頁）**：編制、曲號、作品名（600）、英文作品名（Bodoni 斜體）、作曲家與英文作曲家、菱形裝飾、演出者，全部置中。作曲家與作品由 `splitNoteTitle` 在第一個冒號拆開（「格蘭查尼：古典風格的詠嘆調」）；作曲家若只是重複編制（豎琴獨奏）就不列。標題的 `aria-label` 仍是完整曲名。精簡頁面收掉英文、菱形與演出者，曲號縮小。
 - **編制與演出者**：標題帶上列出編制（弦樂四重奏與豎琴、鋼琴四重奏……）與每位演出者，資料取自印刷三折頁的曲目面，存在 `moonlight-promise-notes.js` 的 `ensemble` 與 `performers`。
-- **導言段**：每首曲第一段放大、提亮、不縮排、左側金線。以齊左排，因為在這個字級下，長串拉丁人名會把兩端對齊撐出字距河流。導言排不下開頭頁時，接到下一頁的部分改為一般內文（`cutParagraph` 讓尾段不帶導言標記）—— 否則續頁偶爾冒出一條金線，讀者會以為是另一種段落（第五輪回饋）。
-- **續頁書眉**：續頁的上留白放「曲號　曲名（續）」。書眉與頁碼都位於留白區，不佔版心容量；頁碼只放置中的數字。
-- **齊底**：分頁無法恰好落在最後一行，剩餘高度平均分到段距，每段最多 0.8em，避免把短頁撐開。
+- **導言段**：每首曲第一段不縮排，第一行設成金色（`::first-line`，七首一致，不會切斷詞）。第六輪起不再放大、不加左側金線。導言排不下開頭頁時，接到下一頁的部分是一般內文（`cutParagraph` 讓尾段不帶導言標記）。
+- **續頁書眉**：續頁的上留白置中放「作曲家 · 作品」，不加曲號與「（續）」。書眉與頁碼都位於留白區，不佔版心容量。
+- **段落（書卷式）**：首行縮排兩字、段落之間不空行、齊左排。版心是整數字寬，純中文行自然貼齊兩邊；遇到英文字的行留在左邊，不把字距撐開。`line-break: strict`，句號、逗號可懸在行尾（Safari 的 `hanging-punctuation`）。
 - **收束頁**：某曲最後一頁若沒有排滿（剩餘空白超過版心 6%），內容垂直置中並以金線加 ✦ 收尾，讓短頁成為刻意的結尾而非斷掉的頁面。
 - **封面**：直排兩行的「月光下／的約定」、海報式大字日期「2026 / 9.25（五）19:30」、被頁緣裁切的月輪、豎琴弦與櫻花瓣。封面列場地與主辦；尾頁列主辦與贊助（臺北市政府文化局、上海商業儲蓄銀行文教基金會、台灣豎琴中心 —— 委託人確認三者都是贊助，沒有協辦）。
 
+## 書卷版與月光紙版（第六輪）
+
+委託人看過五種版面對照（現行、A 書卷、B 節目單、C 夜讀、D 月光紙；設計畫布 https://claude.ai/artifact/PV6CJLpSQSNo8CfhjkHGTh）後決定：
+
+- `/moonlight-promise`：**A 書卷**的文字排版，保留現行的深藍背景與豎琴線條（委託人：「背景的話 現行的不錯」）。
+- `/moonlight-promise/copy`：**D 月光紙**，同一套排版，改成象牙紙底、深藍字、較深的金（`#9c7a36`，在淺底上仍有對比），每首曲的開頭頁右上角有月輪浮水印；工具列、進度列、縮圖、載入畫面、開機畫面與 Safari 的狀態列顏色都跟著換成紙色。
+
+兩版只差顏色：主題以 `#notes-book-view[data-book-theme="night" | "paper"]` 切換，版面、字級與分頁完全相同（量測頁掛在 `body` 下，不受主題影響）。實測兩版頁數一致。
+
+分頁同時補了兩條規則：
+
+- **開頭頁一定接上內文**：頁面上只有曲名區塊時，只要放得下兩行就切分導言。曲名區塊獨佔一頁比兩行的開頭更難看（手機橫放時原本七首都會落單）。
+- **行數判斷容許捨入**：瀏覽器以 1/64 px 排版，1.9 × 18 px 的一行實際是 34.1875 px，兩行比「2 × 34.2」少一點點；`heightOfLines(n) = (n − 0.5) × 行高` 讓「至少兩行」不會因捨入被誤判。
+
 ## 路由
 
-- 路徑 `/moonlight-promise` 不變。
+- 路徑 `/moonlight-promise` 不變；`/<slug>/copy` 是同一本節目的月光紙版（`parseAppLocation` 回傳 `edition: "copy"`，開機時的標準網址保留 `/copy`）。
 - `src/domain/routing.js` 的 `READER_VIEWS` 新增 `notes-book`，使 `default_reader_view: "notes-book"` 通過 `validReaderView`。
 - `resolveProgrammeLayoutView` 改為：`reader_layout === "notes-book"` 時，`pdf` 仍回傳 `pdf`，其餘一律回傳 `notes-book`。印刷三折頁的檢視仍保留在 `#pdf` 路由，但委託人要求暫時拿掉書內入口（尾頁「翻閱印刷節目單」與工具列按鈕）。
 - 網址的 hash 由書本自己維護，`showRoute` 不再改寫 notes-book 的網址，否則正規化網址會把訪客帶進來的 `#note/...` 洗掉。開書完成前以 `replaceState` 寫入；之後每次翻頁 `pushState` 一筆 `#page/N`，手機的「上一頁」就是回到書的上一頁，`popstate` 只翻頁、不重新進入檢視。字級或螢幕改變造成的重排只 `replaceState`，因為同一段換了頁碼不算翻頁。第一次排版不回報頁碼，深層連結才不會在套用前被洗掉。
@@ -283,11 +297,11 @@ packAtoms(atoms, { capacity, measure, splitParagraph }) -> Page[]
 | `src/domain/text-breaks.js` | 新增：句號／逗號切點，以及以行數計的切點取捨 `chooseCut` |
 | `scripts/build-notes-font.mjs` | 新增：獅尾四季春加糖的子集字檔建置（`npm run fonts:notes`） |
 | `assets/fonts/` | 新增：`swei-spring-sugar-400.woff2`、`swei-spring-sugar-600.woff2` 與 OFL 授權 |
-| `index.html` | 改：新增 `#notes-book-view` 區塊 |
-| `src/reader.js` | 改：`notes-book` layout 走新模組，移除 `renderProgrammeNotes` 與 `programmeNoteList` |
-| `src/domain/routing.js` | 改：認得 `notes-book`，支援 `#page/` 與 `#note/` |
+| `index.html` | 改：新增 `#notes-book-view` 區塊；`/copy` 的開機底色與 theme-color |
+| `src/reader.js` | 改：`notes-book` layout 走新模組，移除 `renderProgrammeNotes` 與 `programmeNoteList`；依 `edition` 設 `data-book-theme` |
+| `src/domain/routing.js` | 改：認得 `notes-book`，支援 `#page/` 與 `#note/`；`/<slug>/copy` 月光紙版 |
 | `src/data/sample-programme.js` | 改：`reader_layout: "notes-book"`，`default_reader_view: "notes-book"` |
-| `styles.css` | 改：新增月光書頁樣式區塊，刪除 `[data-reader-layout="programme-notes"]` 全部規則 |
+| `styles.css` | 改：新增月光書頁樣式區塊與月光紙色票，刪除 `[data-reader-layout="programme-notes"]` 全部規則 |
 | `tests/` | 新增 flow 與 pagination 單元測試 |
 
 舊的 `programme-notes` 長捲軸樣式與渲染函式一併移除，不保留死碼。

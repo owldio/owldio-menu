@@ -28,6 +28,22 @@ describe("resolveLayout", () => {
     expect(layout.height).toBe(900);
   });
 
+  it("sets the text block to a whole number of characters, so Chinese lines meet both margins", () => {
+    const cases = [
+      { stageWidth: 390, textSize: 17, twoUp: false },
+      { stageWidth: 375, textSize: 16, twoUp: false },
+      { stageWidth: 1440, textSize: 18, twoUp: true },
+      { stageWidth: 768, textSize: 20, twoUp: false },
+    ];
+
+    for (const { stageWidth, textSize, twoUp } of cases) {
+      const layout = resolveLayout({ stageWidth, stageHeight: 800, twoUp, textSize });
+      const characters = (layout.width - layout.padX * 2) / layout.font;
+
+      expect(characters).toBe(Math.round(characters));
+    }
+  });
+
   it("keeps lines to a comfortable length on a wide page", () => {
     const layout = resolveLayout({ stageWidth: 768, stageHeight: 1024, twoUp: false, textSize: 18 });
     const charactersPerLine = (layout.width - layout.padX * 2) / layout.font;

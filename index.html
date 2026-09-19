@@ -14,9 +14,13 @@
         const hashRoute = location.hash.slice(1).split("/")[0];
         if (isProgrammePath && (!hashRoute || hashRoute === "pdf")) {
           document.documentElement.dataset.publicationBoot = "true";
-          if (location.pathname.replace(/\/+$/, "") === "/moonlight-promise") {
+          const path = location.pathname.replace(/\/+$/, "");
+          if (path === "/moonlight-promise") {
             document.documentElement.dataset.publicationBootTheme = "moonlight";
             document.querySelector('meta[name="theme-color"]')?.setAttribute("content", "#071624");
+          } else if (path === "/moonlight-promise/copy") {
+            document.documentElement.dataset.publicationBootTheme = "moonlight-paper";
+            document.querySelector('meta[name="theme-color"]')?.setAttribute("content", "#efe8da");
           }
         }
       })();
@@ -25,7 +29,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,500;6..96,600&family=IBM+Plex+Sans+Condensed:wght@400;500;600&family=Noto+Sans+TC:wght@400;500;600&family=Noto+Serif+TC:wght@400;500;600;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400;0,6..96,500;0,6..96,600;1,6..96,400&family=IBM+Plex+Sans+Condensed:wght@400;500;600&family=Noto+Sans+TC:wght@400;500;600&family=Noto+Serif+TC:wght@400;500;600;700&display=swap"
       rel="stylesheet"
     />
     <link rel="stylesheet" href="./styles.css" />

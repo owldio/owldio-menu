@@ -2,7 +2,9 @@ import {
   buildProgrammePath,
   buildProgrammeReaderPath,
   buildProgrammeViewUrl,
+  editionFits,
   isProgrammeReaderHash,
+  legacyReadingOf,
   parseReaderHash,
   resolveNoteAnchor,
   resolveProgrammeLayoutView,
@@ -438,7 +440,11 @@ export async function mountReader({ root, repository, initialRoute }) {
   // that — opening the book, following a deep link — the URL is only corrected.
   let notesHistoryArmed = false;
 
-  const notesBook = createNotesBook(document.querySelector("#notes-book-view"), {
+  // /<slug>/copy is the same book set on paper (月光紙); the plain address keeps the night sky.
+  const notesView = document.querySelector("#notes-book-view");
+  notesView.dataset.bookTheme = initialRoute.edition === "copy" ? "paper" : "night";
+
+  const notesBook = createNotesBook(notesView, {
     onError(error) {
       console.error("Unable to lay out the programme notes", error);
       showToast("樂曲解說暫時無法排版，請重新整理頁面。");
@@ -1196,6 +1202,29 @@ export async function mountReader({ root, repository, initialRoute }) {
     applyNotesAnchor(location.hash, { toStart: true });
   }
 
+  function findLocalProgramme(route) {
+    return sampleProgrammes.find((programme) => {
+      const slugMatches = programme.slug === route.programmeSlug
+        || programme.legacy_slugs?.includes(route.programmeSlug);
+      if (!route.legacyPath) return slugMatches;
+      return slugMatches && (programme.client_slug === route.clientSlug
+        || programme.legacy_client_slugs?.includes(route.clientSlug));
+    });
+  }
+
+  async function fetchProgramme(route) {
+    if (!repository) return null;
+
+    try {
+      return await (route.legacyPath
+        ? repository.getPublicByPath(route.clientSlug, route.programmeSlug)
+        : repository.getPublicBySlug(route.programmeSlug));
+    } catch (error) {
+      console.error("Unable to load programme", error);
+      return null;
+    }
+  }
+
   window.addEventListener("popstate", followLocation);
   window.addEventListener("hashchange", followLocation);
 
@@ -1212,15 +1241,7 @@ export async function mountReader({ root, repository, initialRoute }) {
     showRoute("shelf", { updateHash: false });
     startShelfMarquee();
   } else if (initialRoute.kind === "programme") {
-    const localProgramme = sampleProgrammes.find(
-      (programme) => {
-        const slugMatches = programme.slug === initialRoute.programmeSlug
-          || programme.legacy_slugs?.includes(initialRoute.programmeSlug);
-        if (!initialRoute.legacyPath) return slugMatches;
-        return slugMatches && (programme.client_slug === initialRoute.clientSlug
-          || programme.legacy_client_slugs?.includes(initialRoute.clientSlug));
-      },
-    );
+    const localProgramme = findLocalProgramme(initialRoute);
 
     if (
       initialRoute.view === "pdf"
@@ -1231,17 +1252,18 @@ export async function mountReader({ root, repository, initialRoute }) {
       showRoute("pdf", { updateHash: false });
     }
 
-    try {
-      currentProgramme = repository
-        ? await (initialRoute.legacyPath
-          ? repository.getPublicByPath(initialRoute.clientSlug, initialRoute.programmeSlug)
-          : repository.getPublicBySlug(initialRoute.programmeSlug))
-        : null;
-    } catch (error) {
-      console.error("Unable to load programme", error);
-    }
+    currentProgramme = withEditorialFallback(await fetchProgramme(initialRoute), localProgramme);
 
-    currentProgramme = withEditorialFallback(currentProgramme, localProgramme);
+    // An edition only sets a book it fits. Anything else at /<a>/copy is an
+    // older link to client a's programme "copy", and is read that way.
+    if (initialRoute.edition && !editionFits(initialRoute.edition, currentProgramme?.reader_layout)) {
+      initialRoute = legacyReadingOf(initialRoute);
+      notesView.dataset.bookTheme = "night";
+      currentProgramme = withEditorialFallback(
+        await fetchProgramme(initialRoute),
+        findLocalProgramme(initialRoute),
+      );
+    }
 
     if (!currentProgramme) {
       initialRoute.kind = "not-found";
@@ -1256,7 +1278,7 @@ export async function mountReader({ root, repository, initialRoute }) {
         readerLayout: currentProgramme.reader_layout,
         view: resolvedInitialView,
       });
-      const canonicalPath = buildProgrammePath(currentProgramme.slug);
+      const canonicalPath = buildProgrammePath(currentProgramme.slug, { edition: initialRoute.edition });
       const notesAnchor = displayedInitialView === "notes-book" ? location.hash : "";
       const canonicalUrl = `${buildProgrammeViewUrl(canonicalPath, {
         view: displayedInitialView,

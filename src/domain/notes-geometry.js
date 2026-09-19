@@ -11,7 +11,7 @@ export const SPREAD_GAP = 48;
 /** The steps the A− / A+ controls move through, in CSS pixels. */
 export const TEXT_SIZES = [15, 16, 17, 18, 20, 22, 24];
 
-export const LINE_HEIGHT_RATIO = 1.85;
+export const LINE_HEIGHT_RATIO = 1.9;
 
 /**
  * The toolbar and progress rail float over the page when they are shown. The
@@ -54,7 +54,13 @@ export function resolveLayout({ stageWidth, stageHeight, twoUp, textSize }) {
   const width = Math.max(1, Math.floor(twoUp ? (stage.width - SPREAD_GUTTER) / 2 : stage.width));
   const height = Math.max(1, Math.floor(stage.height));
   const font = textSize;
-  const padX = Math.round(Math.max(font * MIN_MARGIN_EMS, (width - MAX_LINE_CHARACTERS * font) / 2));
+  // A whole number of characters to the line: a line of Chinese then meets both
+  // margins as it stands, without its characters being pulled apart to fit.
+  const characters = Math.max(
+    1,
+    Math.min(MAX_LINE_CHARACTERS, Math.floor((width - 2 * font * MIN_MARGIN_EMS) / font)),
+  );
+  const padX = (width - characters * font) / 2;
   const padTop = Math.round(CHROME_CLEARANCE + font * TOP_AIR_EMS);
   const padBottom = Math.round(CHROME_CLEARANCE + font * BOTTOM_AIR_EMS);
   const lines = (height - padTop - padBottom) / (font * LINE_HEIGHT_RATIO);

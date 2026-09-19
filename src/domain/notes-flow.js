@@ -73,7 +73,21 @@ function workCardPayload(item) {
   };
 }
 
+/**
+ * A note's title names the composer before the work — 「格蘭查尼：古典風格的詠嘆調」,
+ * "Marcel Grandjany: Aria in Classic Style". Split at the first colon so an
+ * opening page can set the two apart; a title without one is all work.
+ */
+export function splitNoteTitle(title) {
+  const text = typeof title === "string" ? title.trim() : "";
+  const match = text.match(/^(.+?)\s*[：:]\s*(.+)$/u);
+  if (!match) return { composer: null, work: text || null };
+  return { composer: match[1], work: match[2] };
+}
+
 function noteAtoms(chapter, index) {
+  const { composer, work } = splitNoteTitle(chapter.title);
+  const english = splitNoteTitle(chapter.title_en);
   const atoms = [
     atom("note-banner", {
       id: `${chapter.slug}:banner`,
@@ -84,6 +98,10 @@ function noteAtoms(chapter, index) {
         eyebrow: chapter.eyebrow || null,
         title: chapter.title,
         titleEn: chapter.title_en ?? null,
+        composer,
+        work,
+        composerEn: english.composer,
+        workEn: english.work,
         author: chapter.author ?? null,
         ensemble: chapter.ensemble ?? null,
         performers: chapter.performers ?? [],

@@ -282,6 +282,47 @@ describe("packAtoms typographic guards", () => {
     expect(flatten(pages)).toEqual(atoms);
   });
 
+  it("begins a note's text on its opening page, however little of it fits", () => {
+    // A tall banner leaves three lines; the lede needs nine. A heading alone on
+    // a page reads as a mistake, so the lede starts under it all the same.
+    const tallBanner = (atom) => (atom.kind === "note-banner" ? LINE_HEIGHT * 7 : measure(atom));
+    const atoms = [banner("note-a"), paragraph("p1", repeat("甲", 90), "note-a")];
+
+    const pages = packAtoms(atoms, { ...options, measure: tallBanner });
+
+    expect(pages.map((page) => page.atoms.map((atom) => atom.id))).toEqual([["note-a:banner", "p1"], ["p1"]]);
+    expect(flatten(pages)).toEqual(atoms);
+  });
+
+  it("counts lines the browser lays out a hair under their nominal height", () => {
+    // Browsers set lines on a 1/64 px grid: 1.9 × 18px becomes 34.1875px, so two
+    // laid-out lines measure a little under twice the nominal line height.
+    const nominal = 34.2;
+    const laidOut = 34.1875;
+    const lines = (atom) => Math.ceil(atom.payload.text.length / CHARS_PER_LINE);
+    const measureLaidOut = (atom) => (atom.kind === "note-banner" ? laidOut * 8 : lines(atom) * laidOut);
+    const splitLaidOut = (atom, available) => {
+      const fit = Math.floor(available / laidOut) * CHARS_PER_LINE;
+      const { text } = atom.payload;
+      if (fit <= 0 || fit >= text.length) return null;
+      return {
+        head: { ...atom, payload: { ...atom.payload, text: text.slice(0, fit) } },
+        tail: { ...atom, payload: { ...atom.payload, text: text.slice(fit) } },
+      };
+    };
+    const atoms = [banner("note-a"), paragraph("p1", repeat("甲", 90), "note-a")];
+
+    const pages = packAtoms(atoms, {
+      capacity: laidOut * 10,
+      lineHeight: nominal,
+      measure: measureLaidOut,
+      splitParagraph: splitLaidOut,
+    });
+
+    expect(pages[0].atoms.map((atom) => atom.id)).toEqual(["note-a:banner", "p1"]);
+    expect(flatten(pages)).toEqual(atoms);
+  });
+
   it("moves a whole paragraph forward when fewer than two lines remain", () => {
     const atoms = [
       paragraph("p1", repeat("甲", 90), "note-a"),
