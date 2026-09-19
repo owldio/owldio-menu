@@ -76,12 +76,15 @@ describe("sample programme catalogue", () => {
     expect(publishedText).toContain("整片夜色，只留下了那可以容納一切");
     expect(publishedText).toContain("岡野貞一 曲∕高野辰之 詞：《朧月夜》");
     expect(publishedText).not.toContain("高野達幸");
-    expect(publishedText).toContain("飽受對春天的期盼");
-    expect(publishedText).toContain("一這首著名的日本歌曲");
+    expect(publishedText).toContain("飽含對春天的期盼");
+    expect(publishedText).not.toContain("飽受");
+    expect(publishedText).toContain("Furusato (Hometown)\\n這首著名的日本歌曲");
+    expect(publishedText).not.toContain("一這首");
     expect(publishedText).toContain("法國作曲家佛瑞（Gabriel Fauré");
     expect(publishedText).not.toContain("加佛瑞");
     expect(publishedText).toContain("9∕8 拍、行版");
-    expect(publishedText).toContain("Yu-Hsain Tung /arr. Che-Yi Lee");
+    expect(publishedText).toContain("Yu-Hsien Tung /arr. Che-Yi Lee");
+    expect(publishedText).not.toContain("Hsain");
     expect(publishedText).toContain("曲調特色：本曲採用四拍子");
     expect(publishedText).not.toContain("聆聽重點");
     expect(publishedText).not.toContain("先聽這三件事");
@@ -107,7 +110,8 @@ describe("sample programme catalogue", () => {
       .update(JSON.stringify(sourceCopy))
       .digest("hex");
     // The printed copy, with the corrections the presenter asked for: 加佛瑞 → 佛瑞,
-    // and 高野達幸 → 高野辰之 as the lyricist of 《朧月夜》.
-    expect(sourceCopyHash).toBe("fcfbd601bd6f6ed6343ad61f2a51f618fa42962740282eb2fd556a0370197f07");
+    // 高野達幸 → 高野辰之 as the lyricist of 《朧月夜》, 飽受 → 飽含 in 《望春風》,
+    // a stray 一 before 這首 in 《故郷》, and Yu-Hsain → Yu-Hsien in 《碎心花》.
+    expect(sourceCopyHash).toBe("4aa457468716beed6a8bad9f03dbcfe32dd42d74ad073dbd04679a374662673c");
   });
 });
