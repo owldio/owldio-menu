@@ -92,10 +92,14 @@ export const moonlightPromisePeople = [
   },
 ];
 
-/** The book opens on the printed cover panel: lockup, date and credits as printed. */
+/**
+ * The book opens on the printed cover panel: lockup, date and credits as
+ * printed. Its sides carry a mirrored reach of its own artwork, so the page can
+ * be filled edge to edge without cropping anything the printer set.
+ */
 export const moonlightPromiseCoverArtwork = {
   url: coverUrl,
-  width: 946,
+  width: 1420,
   height: 2028,
   alt: "月光下的約定：2026 年 9 月 25 日（五）19:30，國家兩廳院演奏廳",
 };

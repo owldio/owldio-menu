@@ -450,14 +450,16 @@ export async function mountReader({ root, repository, initialRoute }) {
       console.error("Unable to lay out the programme notes", error);
       showToast("樂曲解說暫時無法排版，請重新整理頁面。");
     },
-    onPageChange(pageIndex, { reflow = false } = {}) {
+    onPageChange(pageIndex, { reason = "turn" } = {}) {
       if (currentProgramme?.reader_layout !== "notes-book") return;
       const hash = pageIndex > 0 ? `#page/${pageIndex + 1}` : "";
       const nextUrl = `${location.pathname}${hash}`;
       if (`${location.pathname}${location.hash}` === nextUrl) return;
       const state = { route: "notes-book", page: pageIndex + 1 };
-      // A page turn is a step back can undo; a reflow only renumbers the page.
-      if (notesHistoryArmed && !reflow) history.pushState(state, "", nextUrl);
+      // Back undoes a move, not a leaf: following a link from the programme
+      // list, or jumping from the previews, is a step to take back. Turning
+      // pages and reflowing only keep the address on the page in hand.
+      if (notesHistoryArmed && reason === "jump") history.pushState(state, "", nextUrl);
       else history.replaceState(state, "", nextUrl);
     },
   });

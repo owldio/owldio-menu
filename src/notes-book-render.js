@@ -258,14 +258,17 @@ function renderContentsEntry(payload) {
     copy.append(createElement("span", "note-contents__ensemble", payload.ensemble));
     if (payload.performers?.length) copy.append(scoringLine(payload.performers));
   }
-  copy.append(createElement("strong", null, payload.title));
+  // Only the work's own title follows the link. The rest of the entry is page,
+  // so a reader turning leaves on a phone does not land on a note by accident.
+  const title = createElement("strong", "note-contents__title-link");
+  title.append(
+    createElement("span", null, payload.title),
+    createElement("span", "note-contents__cue", "→"),
+  );
+  copy.append(title);
   if (payload.titleEn) copy.append(createElement("small", null, payload.titleEn));
 
-  button.append(
-    createElement("span", "note-contents__number", payload.number),
-    copy,
-    createElement("span", "note-contents__arrow", "→"),
-  );
+  button.append(createElement("span", "note-contents__number", payload.number), copy);
   return button;
 }
 

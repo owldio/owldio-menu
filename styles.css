@@ -7339,20 +7339,12 @@ html:has(.reader-shell[data-view="notes-book"]) body {
  * that settles the edges. Facing pages mirror each other across the spine.
  */
 /*
- * The printed artwork already carries the harp and its lines; the page only
- * deepens its edges so the type keeps its contrast.
+ * Only the leaves in hand carry the printed artwork. A book of sixty pages
+ * would otherwise hold sixty copies of it painted at once — more than a phone
+ * can keep — and a darkened edge in passing made every turn look smudged.
  */
-.note-page::before {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  background: radial-gradient(120% 78% at 50% 34%, transparent 62%, rgb(2 8 15 / 0.34) 100%);
-  content: "";
-  pointer-events: none;
-}
-
-.note-page[data-slot="left"]::before {
-  transform: scaleX(-1);
+.note-page:not([data-near="true"]) {
+  background-image: none;
 }
 
 /*
@@ -7362,11 +7354,6 @@ html:has(.reader-shell[data-view="notes-book"]) body {
 .note-page[data-page-kind="cover"],
 .note-page[data-page-kind="back-cover"] {
   background-image: none;
-}
-
-.note-page[data-page-kind="cover"]::before,
-.note-page[data-page-kind="back-cover"]::before {
-  display: none;
 }
 
 .note-page > * {
@@ -7903,6 +7890,11 @@ html:has(.reader-shell[data-view="notes-book"]) body {
   object-position: center;
 }
 
+/* The cover fills the leaf; its mirrored sides are what a page edge trims. */
+.note-page[data-page-kind="cover"] .note-printed img {
+  object-fit: cover;
+}
+
 /* Contents: a heading, then one line per work, flowing on like any other text. */
 .note-contents {
   margin: 0 0 0.5em;
@@ -7930,7 +7922,7 @@ html:has(.reader-shell[data-view="notes-book"]) body {
 
 .note-contents__link {
   display: grid;
-  grid-template-columns: 1.9em minmax(0, 1fr) 1em;
+  grid-template-columns: 1.9em minmax(0, 1fr);
   gap: 0.6em;
   align-items: start;
   width: 100%;
@@ -7940,7 +7932,22 @@ html:has(.reader-shell[data-view="notes-book"]) body {
   color: inherit;
   font: inherit;
   text-align: left;
+  /* The entry is page: a tap here turns the leaf, as it does anywhere else. */
+  pointer-events: none;
   cursor: pointer;
+}
+
+/* The work's title is the link, and says so with a small mark. */
+.note-contents__title-link {
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+.note-contents__cue {
+  margin-left: 0.5em;
+  color: var(--moon-rose);
+  font-size: 0.72em;
+  vertical-align: 0.12em;
 }
 
 .note-contents__link:hover,
@@ -7948,6 +7955,10 @@ html:has(.reader-shell[data-view="notes-book"]) body {
   background:
     var(--fade-rule) center bottom / 100% 1px no-repeat,
     linear-gradient(90deg, rgb(213 177 105 / 0.12), transparent 76%);
+}
+
+.note-contents__title-link:hover {
+  color: var(--moon-gold);
 }
 
 .note-contents__link:active {
@@ -7984,13 +7995,6 @@ html:has(.reader-shell[data-view="notes-book"]) body {
   letter-spacing: 0.02em;
 }
 
-.note-contents__arrow {
-  align-self: center;
-  color: var(--moon-rose);
-  font-size: 0.8em;
-  text-align: right;
-}
-
 /* A block's scoring and its players head an entry, as the tri-fold heads it. */
 .note-contents__ensemble {
   color: var(--moon-gold);
@@ -8025,21 +8029,11 @@ html:has(.reader-shell[data-view="notes-book"]) body {
   display: grid;
   grid-template-columns: 2.4em minmax(0, 1fr);
   gap: 0.05em 0.5em;
-  width: 100%;
+  margin: 0;
   padding: 0.22em 0.2em 0.22em 2.5em;
-  border: 0;
-  background: none;
   color: var(--moon-muted);
-  font: inherit;
   font-size: 0.84em;
   line-height: 1.5;
-  text-align: left;
-  cursor: pointer;
-}
-
-.note-contents__sub:hover,
-.note-contents__sub:focus-visible {
-  background: linear-gradient(90deg, rgb(213 177 105 / 0.1), transparent 70%);
 }
 
 .note-contents__sub-mark {
@@ -8337,11 +8331,6 @@ html:has(#notes-book-view[data-book-theme="paper"]:not([hidden])),
 .view--notes-book[data-book-theme="paper"] .note-page {
   background: #f4efe4 var(--page-artwork-paper) center / cover no-repeat;
   box-shadow: 0 0 0 1px rgb(156 122 54 / 0.16), 0 26px 52px rgb(64 50 24 / 0.2);
-}
-
-/* Paper carries no drawing behind the text; the moon marks each opening instead. */
-.view--notes-book[data-book-theme="paper"] .note-page::before {
-  background: none;
 }
 
 .view--notes-book[data-book-theme="paper"] .note-page[data-slot="left"]::after {

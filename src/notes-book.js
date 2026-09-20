@@ -93,6 +93,7 @@ export function createNotesBook(root, { onError, onPageChange } = {}) {
   let placements = [];
   let spreads = [];
   let spreadIndex = 0;
+  let thumbnailsStale = true;
   let twoUp = false;
   let zoom = ZOOM_LIMITS.minimum;
   let pan = { x: 0, y: 0 };
@@ -267,7 +268,7 @@ export function createNotesBook(root, { onError, onPageChange } = {}) {
     }
   }
 
-  function goToSpread(nextIndex, { animate = true } = {}) {
+  function goToSpread(nextIndex, { animate = true, reason = "turn" } = {}) {
     if (!spreads.length) return;
     const target = clamp(nextIndex, 0, spreads.length - 1);
     const delta = target - spreadIndex;
@@ -283,19 +284,24 @@ export function createNotesBook(root, { onError, onPageChange } = {}) {
 
     layoutPages({ animate: slide || delta === 0 });
     updateChrome();
-    onPageChange?.(currentSpread()[0] ?? 0);
+    onPageChange?.(currentSpread()[0] ?? 0, { reason });
   }
 
-  function goToPage(pageIndex, { animate = false } = {}) {
+  function goToPage(pageIndex, { animate = false, reason = "turn" } = {}) {
     const target = spreads.findIndex((spread) => spread.includes(pageIndex));
-    if (target >= 0) goToSpread(target, { animate });
+    if (target >= 0) goToSpread(target, { animate, reason });
   }
 
+  /**
+   * Following a link is a move a reader can take back: the phone's own back
+   * button returns to the page the link was followed from, not to the leaf
+   * before this one.
+   */
   function goToNote(slug) {
     const target = pages.findIndex((page) =>
       page.atoms.some((atom) => atom.kind === "note-banner" && atom.noteSlug === slug),
     );
-    if (target >= 0) goToPage(target);
+    if (target >= 0) goToPage(target, { reason: "jump" });
   }
 
   function move(direction) {
@@ -306,6 +312,7 @@ export function createNotesBook(root, { onError, onPageChange } = {}) {
 
   function buildThumbnails() {
     if (!thumbnailRail) return;
+    thumbnailsStale = false;
     thumbnailRail.replaceChildren();
     // Pages come in the screen's own shape, so the previews take it too, at a
     // height the rail can hold.
@@ -326,6 +333,8 @@ export function createNotesBook(root, { onError, onPageChange } = {}) {
       clone.style.removeProperty("transform");
       delete clone.dataset.slot;
       delete clone.dataset.near;
+      // A preview is 80px tall: pictures cost memory here and show nothing.
+      for (const picture of clone.querySelectorAll("img")) picture.remove();
       preview.append(clone);
 
       button.append(preview, createElement("span", "notes-thumb__folio", folio(index)));
@@ -405,7 +414,10 @@ export function createNotesBook(root, { onError, onPageChange } = {}) {
     });
     for (const element of pageElements) book.append(element);
     for (const element of pageElements) settleTextBlock(element);
-    buildThumbnails();
+    // The rail holds a copy of every page. It is built when a reader asks for
+    // it, so a book of sixty pages does not carry sixty previews unread.
+    thumbnailsStale = true;
+    if (thumbnails && !thumbnails.hidden) buildThumbnails();
   }
 
   /** The atom a reader is looking at, so a reflow can put them back on it. */
@@ -490,7 +502,7 @@ export function createNotesBook(root, { onError, onPageChange } = {}) {
     root.dataset.margins = layout.padX >= TURN_BUTTON_ROOM ? "roomy" : "tight";
     // The same passage now sits on another page number. That is not a turn, so
     // the address follows it without adding a step to the history.
-    if (reflowing) onPageChange?.(currentSpread()[0] ?? 0, { reflow: true });
+    if (reflowing) onPageChange?.(currentSpread()[0] ?? 0, { reason: "reflow" });
 
     if (!overlays.isReady()) {
       overlays.setReady(true);
@@ -721,6 +733,7 @@ export function createNotesBook(root, { onError, onPageChange } = {}) {
 
   function setThumbnails(open) {
     if (!thumbnails) return;
+    if (open && thumbnailsStale) buildThumbnails();
     thumbnails.hidden = !open;
     thumbnailsToggle?.setAttribute("aria-expanded", open ? "true" : "false");
     chrome.pin(open);
@@ -737,7 +750,7 @@ export function createNotesBook(root, { onError, onPageChange } = {}) {
   thumbnailRail?.addEventListener("click", (event) => {
     const button = event.target.closest("[data-page-index]");
     if (!button) return;
-    goToPage(Number(button.dataset.pageIndex));
+    goToPage(Number(button.dataset.pageIndex), { reason: "jump" });
     setThumbnails(false);
   });
 
@@ -745,7 +758,7 @@ export function createNotesBook(root, { onError, onPageChange } = {}) {
   root.querySelector("#notes-zoom-out")?.addEventListener("click", () => zoomTo(zoom - ZOOM_STEP));
   textSmaller?.addEventListener("click", () => stepTextSize(-1));
   textLarger?.addEventListener("click", () => stepTextSize(1));
-  root.querySelector("#notes-contents-jump")?.addEventListener("click", () => goToPage(1));
+  root.querySelector("#notes-contents-jump")?.addEventListener("click", () => goToPage(1, { reason: "jump" }));
 
   root.querySelector("#notes-fullscreen")?.addEventListener("click", () => {
     if (document.fullscreenElement) document.exitFullscreen?.();
@@ -799,8 +812,8 @@ export function createNotesBook(root, { onError, onPageChange } = {}) {
       ArrowLeft: () => move(-1),
       PageDown: () => move(1),
       PageUp: () => move(-1),
-      Home: () => goToSpread(0, { animate: false }),
-      End: () => goToSpread(spreads.length - 1, { animate: false }),
+      Home: () => goToSpread(0, { animate: false, reason: "jump" }),
+      End: () => goToSpread(spreads.length - 1, { animate: false, reason: "jump" }),
       "+": () => stepTextSize(1),
       "=": () => stepTextSize(1),
       "-": () => stepTextSize(-1),
