@@ -7902,12 +7902,15 @@ html:has(.reader-shell[data-view="notes-book"]) body {
 }
 
 /*
- * The cover panel is narrower than a phone's page. Rather than crop it or
- * fake a wider picture, the leaf itself takes the navy of the panel's own
- * edge, so the cover reads as printed to the edge of the page.
+ * The cover carries its own field around the printed panel, so it fills the
+ * leaf and a page edge only ever trims that field.
  */
 .note-page[data-page-kind="cover"] {
-  background-color: #27314e;
+  background-color: #070d1c;
+}
+
+.note-page[data-page-kind="cover"] .note-printed img {
+  object-fit: cover;
 }
 
 /* Contents: a heading, then one line per work, flowing on like any other text. */
