@@ -397,7 +397,6 @@ function renderPersonBanner(payload) {
     image.height = payload.portrait.height;
     image.alt = payload.name ? `${payload.name}` : "";
     image.decoding = "async";
-    image.loading = "lazy";
     figure.append(image);
     node.append(figure);
   }
@@ -423,7 +422,6 @@ function printedPage(image) {
   picture.height = image.height;
   picture.alt = image.alt || "";
   picture.decoding = "async";
-  picture.loading = "lazy";
   node.append(picture);
   return node;
 }
