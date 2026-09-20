@@ -7937,17 +7937,20 @@ html:has(.reader-shell[data-view="notes-book"]) body {
   cursor: pointer;
 }
 
-/* The work's title is the link, and says so with a small mark. */
+/* The title is the link, and only as wide as its own letters. */
 .note-contents__title-link {
+  justify-self: start;
   pointer-events: auto;
   cursor: pointer;
 }
 
-.note-contents__cue {
-  margin-left: 0.5em;
-  color: var(--moon-rose);
-  font-size: 0.72em;
-  vertical-align: 0.12em;
+/* No arrow marks the links: a thumb finds an arrow before it finds a page. */
+.note-contents__hint {
+  margin: 0.9em 0 0;
+  color: var(--moon-muted);
+  font-family: var(--font-sans);
+  font-size: 0.62em;
+  letter-spacing: 0.22em;
 }
 
 .note-contents__link:hover,

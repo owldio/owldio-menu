@@ -212,6 +212,8 @@ function renderContentsHeading(payload) {
   node.append(
     createElement("p", "note-contents__kicker", "PROGRAMME"),
     createElement("h2", "note-contents__title", payload.title),
+    // No arrow marks the links: an arrow is the first thing a thumb finds.
+    createElement("p", "note-contents__hint", "點曲名可直接跳到該首解說"),
   );
   return node;
 }
@@ -258,14 +260,9 @@ function renderContentsEntry(payload) {
     copy.append(createElement("span", "note-contents__ensemble", payload.ensemble));
     if (payload.performers?.length) copy.append(scoringLine(payload.performers));
   }
-  // Only the work's own title follows the link. The rest of the entry is page,
-  // so a reader turning leaves on a phone does not land on a note by accident.
-  const title = createElement("strong", "note-contents__title-link");
-  title.append(
-    createElement("span", null, payload.title),
-    createElement("span", "note-contents__cue", "→"),
-  );
-  copy.append(title);
+  // Only the work's own title follows the link, and only as far as its own
+  // letters reach: everything else on the page is page, and turns the leaf.
+  copy.append(createElement("strong", "note-contents__title-link", payload.title));
   if (payload.titleEn) copy.append(createElement("small", null, payload.titleEn));
 
   button.append(createElement("span", "note-contents__number", payload.number), copy);
