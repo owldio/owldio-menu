@@ -237,17 +237,15 @@ function scoringLine(performers) {
  * in it. A line of its own, so the list flows and a page can break between two.
  */
 function renderContentsSub(payload, variant) {
-  const button = createElement("button", `note-contents__sub note-contents__sub--${variant}`);
-  button.type = "button";
-  button.dataset.noteSlug = payload.slug;
-  button.append(createElement("span", "note-contents__sub-mark", payload.mark));
+  const line = createElement("p", `note-contents__sub note-contents__sub--${variant}`);
+  line.append(createElement("span", "note-contents__sub-mark", payload.mark));
 
   const copy = createElement("span", "note-contents__sub-copy");
   copy.append(createElement("span", null, payload.title));
   if (payload.titleEn) copy.append(createElement("small", null, payload.titleEn));
 
-  button.append(copy);
-  return button;
+  line.append(copy);
+  return line;
 }
 
 function renderContentsEntry(payload) {
