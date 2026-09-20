@@ -1,4 +1,4 @@
-import { isDoubleTap, swipeVelocity, tapZone } from "./domain/reader-gestures.js";
+import { followsLink, isDoubleTap, swipeVelocity, tapZone } from "./domain/reader-gestures.js";
 
 const MOVE_SLOP = 10;
 const PAN_SLOP = 4;
@@ -114,7 +114,14 @@ export function bindNotesGestures(stage, controller) {
     if (event.pointerType === "mouse" && event.button !== 0) return;
     // A drag does not always produce a click, so a leftover guard must not eat the next one.
     if (!pointers.size) suppressClick = false;
-    if (isInteractive(event.target) && !pointers.size) return;
+
+    if (!pointers.size && isInteractive(event.target)) {
+      const rect = stageRect();
+      const zone = tapZone(event.clientX - rect.left, rect.width);
+      // In the middle the link is what the reader means; at the edges the leaf is.
+      if (followsLink({ zone, interactive: true })) return;
+      suppressClick = true;
+    }
 
     pointers.set(event.pointerId, event);
 

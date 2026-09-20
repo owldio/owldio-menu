@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  followsLink,
   isDoubleTap,
   resistEdge,
   resolveSwipe,
@@ -141,5 +142,20 @@ describe("settleZoom", () => {
 
   it("snaps a near-fitted zoom home so the page is not left a hair off", () => {
     expect(settleZoom(1.03, limits)).toBe(1);
+  });
+});
+
+describe("followsLink", () => {
+  it("follows a link tapped in the middle of the page", () => {
+    expect(followsLink({ zone: "menu", interactive: true })).toBe(true);
+  });
+
+  it("turns the page when a link is tapped where the page turns", () => {
+    expect(followsLink({ zone: "previous", interactive: true })).toBe(false);
+    expect(followsLink({ zone: "next", interactive: true })).toBe(false);
+  });
+
+  it("follows nothing when the tap is on the page itself", () => {
+    expect(followsLink({ zone: "menu", interactive: false })).toBe(false);
   });
 });

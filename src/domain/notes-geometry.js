@@ -5,8 +5,11 @@
  */
 export const SPREAD_GUTTER = 2;
 
-/** The strip of reading room a reader glimpses between pages mid-swipe. */
-export const SPREAD_GAP = 48;
+/**
+ * The strip a reader glimpses between pages mid-swipe. Narrow: a wide one
+ * reads as a hole in the book rather than as the next leaf arriving.
+ */
+export const SPREAD_GAP = 18;
 
 /** The steps the A− / A+ controls move through, in CSS pixels. */
 export const TEXT_SIZES = [15, 16, 17, 18, 20, 22, 24];

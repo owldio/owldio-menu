@@ -7355,10 +7355,18 @@ html:has(.reader-shell[data-view="notes-book"]) body {
   transform: scaleX(-1);
 }
 
-/* The cover and the closing page carry drawings of their own. */
+/*
+ * A printed panel is the page itself. The sheet behind it stays plain, so the
+ * page's own artwork never shows beside the panel it frames.
+ */
+.note-page[data-page-kind="cover"],
+.note-page[data-page-kind="back-cover"] {
+  background-image: none;
+}
+
 .note-page[data-page-kind="cover"]::before,
-.note-page[data-page-kind="colophon"]::before {
-  background: radial-gradient(120% 78% at 50% 34%, transparent 58%, rgb(2 8 15 / 0.42) 100%);
+.note-page[data-page-kind="back-cover"]::before {
+  display: none;
 }
 
 .note-page > * {
