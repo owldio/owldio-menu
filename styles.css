@@ -15,8 +15,9 @@
   --stage-red: #d4553f;
   --stage-gold: #c3a36a;
   --stage-cream: #eee5d7;
-  --font-serif: "Noto Serif TC", "Songti TC", serif;
-  --font-sans: "Noto Sans TC", sans-serif;
+  /* The Chinese web fonts load only where they are used; elsewhere the reader's own faces stand in. */
+  --font-serif: "Noto Serif TC", "Songti TC", "Source Han Serif TC", serif;
+  --font-sans: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
   --font-latin: "IBM Plex Sans Condensed", sans-serif;
   --font-display: "Bodoni Moda", "Times New Roman", serif;
   --reader-width: 430px;

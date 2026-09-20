@@ -30,6 +30,7 @@ import {
   normalizeReadingSize,
   resetReadingPosition,
 } from "./domain/reading.js";
+import { loadCjkWebFonts } from "./lib/cjk-webfonts.js";
 import { createElement } from "./lib/dom.js";
 import { sampleProgrammes } from "./data/sample-programme.js";
 import { createPublicationViewer } from "./publication-pdf.js";
@@ -859,6 +860,10 @@ export async function mountReader({ root, repository, initialRoute }) {
         view: nextRoute,
       });
     }
+
+    // Every surface but the book is set in the Chinese web fonts; fetch them
+    // the moment one is shown, and never for a reader who only opens the book.
+    if (nextRoute !== "notes-book") loadCjkWebFonts();
 
     const activeChapter = nextRoute === "chapter" ? renderChapter(chapterSlug) : null;
 

@@ -546,7 +546,6 @@ export function createNotesBook(root, { onError, onPageChange } = {}) {
       // The book's own face is one subset file per weight: asking once fetches every glyph.
       ['17px "Swei Spring Sugar"', sample],
       ['600 17px "Swei Spring Sugar"', sample],
-      ['10px "Noto Sans TC"', sample],
       ['14px "Bodoni Moda"', "Programme Notes 0123"],
       // Each note's English title is set in the italic, and it can wrap the opening page.
       ['italic 14px "Bodoni Moda"', "Aria in Classic Style"],

@@ -1,4 +1,5 @@
 import { buildProgrammePath } from "./domain/routing.js";
+import { loadCjkWebFonts } from "./lib/cjk-webfonts.js";
 import { canTransitionVisibility, programmeVisibilityLabels } from "./domain/programme.js";
 import { ProgrammeRepository } from "./services/programme-repository.js";
 
@@ -227,6 +228,7 @@ function statusNode(message, tone = "neutral") {
 }
 
 export async function mountAdmin({ root, client }) {
+  loadCjkWebFonts();
   root.hidden = false;
   root.innerHTML = adminTemplate();
   const main = root.querySelector("#admin-main");
