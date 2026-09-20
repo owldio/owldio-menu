@@ -7345,6 +7345,17 @@ html:has(.reader-shell[data-view="notes-book"]) body {
  */
 .note-page:not([data-near="true"]) {
   background-image: none;
+  /*
+   * A leaf out of sight is not drawn at all. The book is one strip of sixty
+   * leaves that zooming scales as a whole: drawn together they ask for more
+   * pixels than a phone can hold, and the tab is killed for asking.
+   */
+  content-visibility: hidden;
+}
+
+/* Each leaf paints on its own, so one can never widen another's drawing. */
+.note-page {
+  contain: layout paint;
 }
 
 /*
