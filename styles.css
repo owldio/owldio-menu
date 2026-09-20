@@ -7901,9 +7901,13 @@ html:has(.reader-shell[data-view="notes-book"]) body {
   object-position: center;
 }
 
-/* The cover fills the leaf; its mirrored sides are what a page edge trims. */
-.note-page[data-page-kind="cover"] .note-printed img {
-  object-fit: cover;
+/*
+ * The cover panel is narrower than a phone's page. Rather than crop it or
+ * fake a wider picture, the leaf itself takes the navy of the panel's own
+ * edge, so the cover reads as printed to the edge of the page.
+ */
+.note-page[data-page-kind="cover"] {
+  background-color: #27314e;
 }
 
 /* Contents: a heading, then one line per work, flowing on like any other text. */

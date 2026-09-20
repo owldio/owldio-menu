@@ -92,14 +92,10 @@ export const moonlightPromisePeople = [
   },
 ];
 
-/**
- * The book opens on the printed cover panel: lockup, date and credits as
- * printed. Its sides carry a mirrored reach of its own artwork, so the page can
- * be filled edge to edge without cropping anything the printer set.
- */
+/** The book opens on the printed cover panel: lockup, date and credits as printed. */
 export const moonlightPromiseCoverArtwork = {
   url: coverUrl,
-  width: 1420,
+  width: 960,
   height: 2028,
   alt: "月光下的約定：2026 年 9 月 25 日（五）19:30，國家兩廳院演奏廳",
 };
@@ -107,7 +103,7 @@ export const moonlightPromiseCoverArtwork = {
 /** The sponsor's page closes the book, exactly as it closes the printed sheet. */
 export const moonlightPromiseBackCover = {
   url: backCoverUrl,
-  width: 947,
+  width: 936,
   height: 2028,
   alt: "上海商業儲蓄銀行：科技領航、顧客為本、連繫國際",
 };
