@@ -1,8 +1,4 @@
-import {
-  programmeDateLabel,
-  programmeDateParts,
-  programmeTimeLabel,
-} from "./domain/datetime.js";
+import { programmeDateParts } from "./domain/datetime.js";
 import { createElement } from "./lib/dom.js";
 
 const SVG_NS = "http://www.w3.org/2000/svg";
@@ -190,6 +186,7 @@ function renderCover(payload) {
     ledger([
       ["場地", payload.venue],
       ["主辦", payload.presenter],
+      ["贊助", payload.sponsors?.join("、") || null],
     ]),
   );
 
@@ -211,10 +208,42 @@ function coverDate({ year, monthDay, weekday, time }) {
 function renderContentsHeading(payload) {
   const node = createElement("header", "note-contents");
   node.append(
-    createElement("p", "note-contents__kicker", "CONTENTS"),
+    createElement("p", "note-contents__kicker", "PROGRAMME"),
     createElement("h2", "note-contents__title", payload.title),
   );
   return node;
+}
+
+/** The players of a block, set in phrasing content so an entry stays one button. */
+function scoringLine(performers) {
+  const line = createElement("span", "note-contents__performers");
+  for (const [role, name] of performers) {
+    const performer = createElement("span", "note-contents__performer");
+    performer.append(
+      createElement("span", "note-contents__role", role),
+      createElement("span", "note-contents__name", name),
+    );
+    line.append(performer);
+  }
+  return line;
+}
+
+/**
+ * A line under an entry: a movement of the work, or one of the pieces played
+ * in it. A line of its own, so the list flows and a page can break between two.
+ */
+function renderContentsSub(payload, variant) {
+  const button = createElement("button", `note-contents__sub note-contents__sub--${variant}`);
+  button.type = "button";
+  button.dataset.noteSlug = payload.slug;
+  button.append(createElement("span", "note-contents__sub-mark", payload.mark));
+
+  const copy = createElement("span", "note-contents__sub-copy");
+  copy.append(createElement("span", null, payload.title));
+  if (payload.titleEn) copy.append(createElement("small", null, payload.titleEn));
+
+  button.append(copy);
+  return button;
 }
 
 function renderContentsEntry(payload) {
@@ -223,6 +252,10 @@ function renderContentsEntry(payload) {
   button.dataset.noteSlug = payload.slug;
 
   const copy = createElement("span", "note-contents__copy");
+  if (payload.ensemble) {
+    copy.append(createElement("span", "note-contents__ensemble", payload.ensemble));
+    if (payload.performers?.length) copy.append(scoringLine(payload.performers));
+  }
   copy.append(createElement("strong", null, payload.title));
   if (payload.titleEn) copy.append(createElement("small", null, payload.titleEn));
 
@@ -349,33 +382,6 @@ function renderWorkCard(payload) {
   return node;
 }
 
-function renderColophon(payload) {
-  const node = createElement("section", "note-colophon");
-  node.append(goldSwoosh("note-colophon__swoosh"));
-
-  const copy = createElement("div", "note-colophon__copy");
-  copy.append(
-    createElement("p", "note-colophon__kicker", "END OF PROGRAMME NOTES"),
-    createElement("h2", "note-colophon__title", payload.title),
-  );
-  if (payload.productionType) {
-    copy.append(createElement("p", "note-colophon__type", payload.productionType));
-  }
-  copy.append(
-    ledger([
-      ["日期", programmeDateLabel({ starts_at: payload.startsAt })],
-      ["時間", programmeTimeLabel({ starts_at: payload.startsAt })],
-      ["場地", payload.venue],
-      ["主辦", payload.presenter],
-      ["協辦", payload.supporters?.join("、") || null],
-      ["贊助", payload.sponsors?.join("、") || null],
-    ]),
-  );
-
-  node.append(copy);
-  return node;
-}
-
 export function renderAtom(atom) {
   switch (atom.kind) {
     case "cover":
@@ -384,6 +390,10 @@ export function renderAtom(atom) {
       return renderContentsHeading(atom.payload);
     case "contents-entry":
       return renderContentsEntry(atom.payload);
+    case "contents-movement":
+      return renderContentsSub(atom.payload, "movement");
+    case "contents-work":
+      return renderContentsSub(atom.payload, "work");
     case "contents-intermission":
       return renderContentsIntermission(atom.payload);
     case "note-banner":
@@ -392,8 +402,6 @@ export function renderAtom(atom) {
       return renderParagraph(atom);
     case "work-card":
       return renderWorkCard(atom.payload);
-    case "colophon":
-      return renderColophon(atom.payload);
     default:
       return createElement("div");
   }

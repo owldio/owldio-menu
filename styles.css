@@ -7691,8 +7691,7 @@ html:has(.reader-shell[data-view="notes-book"]) body {
  * not to the reader's text setting, so each always composes as a single page;
  * their drawings are placed from the page's own edges.
  */
-.note-cover,
-.note-colophon {
+.note-cover {
   position: relative;
   display: flex;
   flex-direction: column;
@@ -7703,8 +7702,7 @@ html:has(.reader-shell[data-view="notes-book"]) body {
   isolation: isolate;
 }
 
-.note-cover__swoosh,
-.note-colophon__swoosh {
+.note-cover__swoosh {
   position: absolute;
   right: calc(var(--page-pad-x) * -1);
   bottom: calc(var(--page-pad-bottom) * -1);
@@ -7843,7 +7841,7 @@ html:has(.reader-shell[data-view="notes-book"]) body {
   display: grid;
   grid-template-columns: 1.9em minmax(0, 1fr) 1em;
   gap: 0.6em;
-  align-items: center;
+  align-items: start;
   width: 100%;
   padding: 0.7em 0.2em 0.7em 0;
   border: 0;
@@ -7895,15 +7893,87 @@ html:has(.reader-shell[data-view="notes-book"]) body {
   letter-spacing: 0.02em;
 }
 
-/* On a phone the contents keeps to the Chinese titles; each banner carries the English. */
-.note-page[data-narrow="true"] .note-contents__copy small {
-  display: none;
-}
-
 .note-contents__arrow {
+  align-self: center;
   color: var(--moon-rose);
   font-size: 0.8em;
   text-align: right;
+}
+
+/* A block's scoring and its players head an entry, as the tri-fold heads it. */
+.note-contents__ensemble {
+  color: var(--moon-gold);
+  font-size: 0.76em;
+  letter-spacing: 0.16em;
+}
+
+.note-contents__performers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.1em 0.85em;
+  margin-bottom: 0.3em;
+  color: var(--moon-muted);
+  font-size: 0.7em;
+  letter-spacing: 0.04em;
+}
+
+.note-contents__performer {
+  display: inline-flex;
+  gap: 0.35em;
+  align-items: baseline;
+}
+
+.note-contents__role {
+  color: var(--moon-gold);
+  font-size: 0.88em;
+  letter-spacing: 0.1em;
+}
+
+/* Movements and pieces are lines of their own, indented under their entry. */
+.note-contents__sub {
+  display: grid;
+  grid-template-columns: 2.4em minmax(0, 1fr);
+  gap: 0.05em 0.5em;
+  width: 100%;
+  padding: 0.22em 0.2em 0.22em 2.5em;
+  border: 0;
+  background: none;
+  color: var(--moon-muted);
+  font: inherit;
+  font-size: 0.84em;
+  line-height: 1.5;
+  text-align: left;
+  cursor: pointer;
+}
+
+.note-contents__sub:hover,
+.note-contents__sub:focus-visible {
+  background: linear-gradient(90deg, rgb(213 177 105 / 0.1), transparent 70%);
+}
+
+.note-contents__sub-mark {
+  color: var(--moon-gold);
+  font-family: var(--font-display);
+  letter-spacing: 0.04em;
+}
+
+.note-contents__sub-copy {
+  display: grid;
+  gap: 0.05em;
+  min-width: 0;
+}
+
+.note-contents__sub-copy small {
+  color: var(--moon-muted);
+  font-family: var(--font-display);
+  font-size: 0.84em;
+  letter-spacing: 0.02em;
+  opacity: 0.8;
+}
+
+/* An entry that leads into its pieces closes on them, not on its own rule. */
+.note-contents__link:has(+ .note-contents__sub) {
+  background: none;
 }
 
 .note-contents__intermission {
@@ -7925,31 +7995,6 @@ html:has(.reader-shell[data-view="notes-book"]) body {
   height: 1px;
   background: var(--moon-line);
   content: "";
-}
-
-/* Colophon */
-.note-colophon__kicker {
-  margin: 0 0 1.2em;
-  color: var(--moon-gold);
-  font-family: var(--font-sans);
-  font-size: 0.64em;
-  letter-spacing: 0.3em;
-}
-
-.note-colophon__title {
-  margin: 0;
-  color: var(--moon-ivory);
-  font-size: 2.6em;
-  font-weight: 600;
-  line-height: 1.25;
-  letter-spacing: 0.02em;
-}
-
-.note-colophon__type {
-  margin: 0.6em 0 0;
-  color: var(--moon-muted);
-  font-size: 0.92em;
-  letter-spacing: 0.06em;
 }
 
 /*
@@ -7978,18 +8023,18 @@ html:has(.reader-shell[data-view="notes-book"]) body {
 }
 
 .note-page[data-compact="true"] .note-banner__performers,
-.note-page[data-compact="true"] .note-cover__summary,
-.note-page[data-compact="true"] .note-cover .note-ledger {
+.note-page[data-compact="true"] .note-cover__summary {
   display: none;
+}
+
+.note-page[data-compact="true"] .note-cover .note-ledger {
+  gap: 0.35em;
+  margin-top: 1.4em;
+  font-size: 0.86em;
 }
 
 .note-page[data-compact="true"] .note-cover__date {
   margin-top: 1.2em;
-}
-
-.note-page[data-compact="true"] .note-colophon .note-ledger {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  column-gap: 1.6em;
 }
 
 /* Closer lines keep a phone's contents to one page rather than strand its last work. */

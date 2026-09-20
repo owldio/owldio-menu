@@ -5,7 +5,7 @@ import { chooseCut, clauseBreak, sentenceBreak } from "./domain/text-breaks.js";
 import { createPageFrame, renderAtom } from "./notes-book-render.js";
 import { createElement } from "./lib/dom.js";
 
-const FULL_PAGE_KINDS = new Set(["cover", "colophon"]);
+const FULL_PAGE_KINDS = new Set(["cover", "back-cover"]);
 const WORD_CHARACTER = /[A-Za-z0-9'’.\-–—]/;
 const CLOSING_PUNCTUATION = /[。，、；：！？」』）》】〉・·]/;
 const MINIMUM_SPLIT_LENGTH = 8;

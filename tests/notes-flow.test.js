@@ -100,6 +100,7 @@ const chapters = [
     title: "第二首",
     title_en: "Second Work",
     is_visible: true,
+    movements: [["I.", "不太快的快板", "Allegro non troppo"], ["II.", "行板", "Andante"]],
     blocks: [{ type: "prose", paragraphs: ["丙段落。"] }],
   },
   {
@@ -134,12 +135,22 @@ function kindsOf(atoms) {
 }
 
 describe("buildNoteFlow", () => {
-  it("opens with the cover and closes with the colophon", () => {
+  it("opens with the cover and its programme list, and keeps no colophon", () => {
     const atoms = buildNoteFlow({ programme, chapters });
 
     expect(atoms.at(0).kind).toBe("cover");
     expect(atoms.at(1).kind).toBe("contents-heading");
-    expect(atoms.at(-1).kind).toBe("colophon");
+    expect(atoms.some((atom) => atom.kind === "colophon")).toBe(false);
+  });
+
+  it("credits the presenter and the sponsors on the cover", () => {
+    const atoms = buildNoteFlow({ programme, chapters });
+
+    expect(atoms.at(0).payload).toMatchObject({
+      presenter: "主辦單位",
+      sponsors: ["贊助單位"],
+      venue: "國家兩廳院演奏廳",
+    });
   });
 
   it("emits one banner per visible note, in programme order", () => {
@@ -204,17 +215,63 @@ describe("buildNoteFlow", () => {
       "contents-heading",
       "contents-entry",
       "contents-entry",
+      "contents-movement",
+      "contents-movement",
       "contents-intermission",
       "contents-entry",
+      "contents-work",
+      "contents-work",
     ]);
     expect(contents[1].payload).toEqual({
       number: "01",
       title: "第一首",
       titleEn: "First Work",
       slug: "first-work",
+      ensemble: "弦樂四重奏與豎琴",
+      performers: [["豎琴", "甲"], ["小提琴 I", "乙"]],
     });
-    expect(contents[3].payload).toEqual({ title: "中場休息" });
-    expect(contents[4].payload.titleEn).toBeNull();
+    expect(contents[5].payload).toEqual({ title: "中場休息" });
+    expect(contents[6].payload.titleEn).toBeNull();
+  });
+
+  it("names the programme list as the printed programme names it", () => {
+    const atoms = buildNoteFlow({ programme, chapters });
+
+    expect(atoms.find((atom) => atom.kind === "contents-heading").payload).toEqual({ title: "節目單" });
+  });
+
+  it("states a scoring once per block, and restates it after the intermission", () => {
+    const atoms = buildNoteFlow({
+      programme,
+      chapters: chapters.map((chapter) => ({ ...chapter, ensemble: "弦樂四重奏與豎琴" })),
+    });
+    const entries = atoms.filter((atom) => atom.kind === "contents-entry");
+
+    expect(entries.map((atom) => atom.payload.ensemble)).toEqual([
+      "弦樂四重奏與豎琴",
+      null,
+      "弦樂四重奏與豎琴",
+    ]);
+  });
+
+  it("sets a work's movements and its pieces as lines of their own, so a page can break between them", () => {
+    const atoms = buildNoteFlow({ programme, chapters });
+
+    expect(atoms.filter((atom) => atom.kind === "contents-movement").map((atom) => atom.payload)).toEqual([
+      { mark: "I.", title: "不太快的快板", titleEn: "Allegro non troppo", slug: "second-work" },
+      { mark: "II.", title: "行板", titleEn: "Andante", slug: "second-work" },
+    ]);
+    expect(atoms.filter((atom) => atom.kind === "contents-work").map((atom) => atom.payload)).toEqual([
+      { mark: "01", title: "櫻", titleEn: "Sakura", slug: "harp-solo" },
+      { mark: "02", title: "雨夜花", titleEn: "Torment of a Flower", slug: "harp-solo" },
+    ]);
+  });
+
+  it("keeps the programme list clear of note slugs, so its pages take no running head", () => {
+    const atoms = buildNoteFlow({ programme, chapters });
+    const list = atoms.filter((atom) => atom.kind.startsWith("contents-"));
+
+    expect(list.every((atom) => atom.noteSlug === null)).toBe(true);
   });
 
   it("leaves the intermission out when the programme does not declare one", () => {
@@ -226,16 +283,6 @@ describe("buildNoteFlow", () => {
     expect(atoms.some((atom) => atom.kind === "contents-intermission")).toBe(false);
   });
 
-  it("credits co-organisers and sponsors separately on the colophon", () => {
-    const atoms = buildNoteFlow({ programme, chapters });
-    const colophon = atoms.find((atom) => atom.kind === "colophon");
-
-    expect(colophon.payload).toMatchObject({
-      presenter: "主辦單位",
-      supporters: ["協辦單位"],
-      sponsors: ["贊助單位"],
-    });
-  });
 
   it("carries the scoring onto the banner so a note reads like a programme entry", () => {
     const atoms = buildNoteFlow({ programme, chapters });
@@ -319,9 +366,9 @@ describe("buildNoteFlow", () => {
     expect(new Set(ids).size).toBe(ids.length);
   });
 
-  it("returns cover and colophon even when no chapter is visible", () => {
+  it("returns the cover and an empty programme list when no chapter is visible", () => {
     const atoms = buildNoteFlow({ programme, chapters: [] });
 
-    expect(kindsOf(atoms)).toEqual(["cover", "contents-heading", "colophon"]);
+    expect(kindsOf(atoms)).toEqual(["cover", "contents-heading"]);
   });
 });

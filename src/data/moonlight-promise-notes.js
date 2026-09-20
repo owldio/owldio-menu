@@ -57,6 +57,12 @@ export const moonlightPromiseChapters = [
     eyebrow: "樂曲解說 / PROGRAMME NOTE",
     title: "布拉姆斯：第三號 C 小調鋼琴四重奏，作品 60",
     title_en: "Johannes Brahms: Piano Quartet No. 3 in C Minor, Op. 60",
+    movements: [
+      ["I.", "不太快的快板", "Allegro non troppo"],
+      ["II.", "詼諧曲：快板", "Scherzo: Allegro"],
+      ["III.", "行板", "Andante"],
+      ["IV.", "終曲：從容地快板", "Finale: Allegro comodo"],
+    ],
     ensemble: "鋼琴四重奏",
     performers: [
       ["鋼琴", "陳文婉"],
@@ -121,8 +127,8 @@ export const moonlightPromiseChapters = [
         type: "programme-list",
         items: [
           ["01", "日本古謠：《櫻》", "Japanese Traditional Song: Sakura\n這首流傳數百年的日本旋律，象徵櫻花－日本春天的象徵。我們將用豎琴的琴聲，傳遞仰望盛開櫻花的喜悅，以及日本人對大自然的珍惜與熱愛。", ""],
-          ["02", "鄧雨賢 曲∕周添旺 詞：《雨夜花》", "Yu-Hsien Tung: Torment of a Flower\n臺灣代表性歌曲之一。這首優美的歌曲將人生的短暫與孤獨，以及內心深處的情感，與雨夜盛開的花朵連結起來。這首旋律深受臺灣民眾喜愛。", ""],
-          ["03", "鄧雨賢 曲∕李臨秋 詞：《望春風》", "Yu-Hsien Tung: Longing for the Spring Breeze\n臺灣代表性歌曲，歌頌少女被春風輕拂時的感受。清新悅耳的旋律，飽含對春天的期盼和對他人溫柔的思念。", ""],
+          ["02", "鄧雨賢 曲∕周添旺 詞：《雨夜花》", "Yu-Hsien Teng: Torment of a Flower\n臺灣代表性歌曲之一。這首優美的歌曲將人生的短暫與孤獨，以及內心深處的情感，與雨夜盛開的花朵連結起來。這首旋律深受臺灣民眾喜愛。", ""],
+          ["03", "鄧雨賢 曲∕李臨秋 詞：《望春風》", "Yu-Hsien Teng: Longing for the Spring Breeze\n臺灣代表性歌曲，歌頌少女被春風輕拂時的感受。清新悅耳的旋律，飽含對春天的期盼和對他人溫柔的思念。", ""],
           ["04", "岡野貞一 曲∕高野辰之 詞：《朧月夜》", "Teiichi Okano: Oborozukiyo (Misty Moonlit Night)\n一首描繪日本春夜的童謠——油菜花田、朦朧的山巒和柔和的月光。今晚，當我們仰望中秋明月，用豎琴描繪一幅靜謐而經典的日本田園風光，遠處春月的光芒也映襯其間。", ""],
           ["05", "岡野貞一 曲∕高野辰之 詞：《故郷》", "Teiichi Okano: Furusato (Hometown)\n這首著名的日本歌曲表達了對遠方家鄉的思念，珍藏著山川河流、父母親友的美好回憶。對故鄉的思念超越了國界和語言，觸動著每個人的心弦。彩愛玲寫完臺灣民謠與日本民謠的曲解，也以最後這一首故鄉，作為最後的寄語：願日本與臺灣的心靈能夠悄悄相連。", ""],
         ],
@@ -195,7 +201,7 @@ export const moonlightPromiseChapters = [
     kind: "essay",
     eyebrow: "樂曲解說 / PROGRAMME NOTE",
     title: "德布西／馬修諾庭 改編：《月光》",
-    title_en: "Claude Debussy／arr. Matthew Naughtin: Clair de Lune",
+    title_en: "Claude Debussy (arr. Matthew Naughtin): Clair de Lune",
     ensemble: "弦樂四重奏與豎琴",
     performers: [
       ["豎琴", "彩愛玲"],
@@ -225,8 +231,8 @@ export const moonlightPromiseChapters = [
     slug: "broken-hearted-flower",
     kind: "essay",
     eyebrow: "樂曲解說 / PROGRAMME NOTE",
-    title: "鄧雨賢∕李哲藝 改編：《碎心花》",
-    title_en: "Yu-Hsien Tung /arr. Che-Yi Lee: Broken Hearted Flower",
+    title: "鄧雨賢／李哲藝 改編：《碎心花》",
+    title_en: "Yu-Hsien Teng (arr. Che-Yi Lee): Broken Hearted Flower",
     ensemble: "弦樂四重奏與豎琴",
     performers: [
       ["豎琴", "彩愛玲"],

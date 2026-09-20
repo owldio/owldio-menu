@@ -7,7 +7,7 @@ const LINE_HEIGHT = 30;
 const CAPACITY = 300;
 const CHARS_PER_LINE = 10;
 
-const FULL_PAGE_KINDS = new Set(["cover", "colophon"]);
+const FULL_PAGE_KINDS = new Set(["cover", "back-cover"]);
 
 function measure(atom) {
   if (FULL_PAGE_KINDS.has(atom.kind)) return CAPACITY;
@@ -92,19 +92,19 @@ function usedHeight(page) {
 }
 
 describe("packAtoms page composition", () => {
-  it("gives the cover and the colophon a page each, and opens the contents on its own", () => {
+  it("gives the cover and the back cover a page each, and opens the contents on its own", () => {
     const atoms = [
       fullPage("cover"),
       contentsHeading(),
       contentsEntry("c1"),
       banner("note-a"),
       paragraph("p1", repeat("甲", 20)),
-      fullPage("colophon"),
+      fullPage("back-cover"),
     ];
 
     const pages = packAtoms(atoms, options);
 
-    expect(pages.map((page) => page.kind)).toEqual(["cover", "contents", "note", "colophon"]);
+    expect(pages.map((page) => page.kind)).toEqual(["cover", "contents", "note", "back-cover"]);
     expect(pages[0].atoms).toHaveLength(1);
     expect(pages[1].atoms.map((atom) => atom.id)).toEqual(["contents", "c1"]);
     expect(pages[3].atoms).toHaveLength(1);
@@ -121,7 +121,7 @@ describe("packAtoms page composition", () => {
   });
 
   it("numbers pages sequentially from zero", () => {
-    const atoms = [fullPage("cover"), paragraph("p1", repeat("甲", 200)), fullPage("colophon")];
+    const atoms = [fullPage("cover"), paragraph("p1", repeat("甲", 200)), fullPage("back-cover")];
 
     const pages = packAtoms(atoms, options);
 
@@ -367,7 +367,7 @@ describe("packAtoms content conservation", () => {
       banner("note-b", 1),
       paragraph("p3", repeat("丙", 412), "note-b"),
       workCard("w1", "note-b"),
-      fullPage("colophon"),
+      fullPage("back-cover"),
     ];
 
     const pages = packAtoms(atoms, options);
@@ -395,6 +395,6 @@ describe("packAtoms content conservation", () => {
 
     expect(flatten(pages)).toEqual(atoms);
     expect(pages.at(0).kind).toBe("cover");
-    expect(pages.at(-1).kind).toBe("colophon");
+    expect(pages.at(-1).kind).toBe("note");
   });
 });

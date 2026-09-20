@@ -2,6 +2,9 @@ import { leadPhraseLength } from "./text-breaks.js";
 
 const INTERMISSION_TITLE = "中場休息";
 
+/** The printed tri-fold calls this page 節目單, and so does the book. */
+const PROGRAMME_TITLE = "節目單";
+
 function visibleChapters(chapters) {
   return (chapters || []).filter((chapter) => chapter?.is_visible !== false);
 }
@@ -22,19 +25,54 @@ function atom(kind, { id, noteSlug = null, noteIndex = null, payload = {} }) {
 }
 
 /**
- * The contents flows like any other text: a heading, then one line per work,
- * so a long programme or a large type size simply runs onto a second page.
+ * The movements of a work, and the pieces played inside one entry, each set as
+ * a line of its own so a page can break between them rather than carry a whole
+ * entry — or leave half a page empty for want of room.
+ */
+function subEntryAtoms(chapter) {
+  const movements = (chapter.movements ?? []).map(([mark, title, titleEn], index) => atom("contents-movement", {
+    id: `contents:${chapter.slug}:m${index + 1}`,
+    payload: { mark, title, titleEn: titleEn ?? null, slug: chapter.slug },
+  }));
+
+  const works = (chapter.blocks ?? [])
+    .filter((block) => block.type === "programme-list")
+    .flatMap((block) => block.items ?? [])
+    .map(([mark, title, detail], index) => atom("contents-work", {
+      id: `contents:${chapter.slug}:w${index + 1}`,
+      payload: {
+        mark,
+        title,
+        titleEn: String(detail || "").split("\n")[0] || null,
+        slug: chapter.slug,
+      },
+    }));
+
+  return [...movements, ...works];
+}
+
+/**
+ * The programme list, set as the tri-fold sets it: a scoring and its players
+ * head each block, then the works, their movements and their pieces. It flows
+ * like any other text, so a longer programme or larger type runs onto a second
+ * page rather than shrinking.
  */
 function contentsAtoms(programme, notes) {
   const intermissionAfter = Number(programme?.intermission_after_position) || 0;
   const atoms = [
     atom("contents-heading", {
       id: "contents",
-      payload: { title: programme?.contents_title ?? "樂曲解說" },
+      payload: { title: PROGRAMME_TITLE },
     }),
   ];
 
+  let statedEnsemble = null;
+
   notes.forEach((chapter, index) => {
+    const ensemble = chapter.ensemble ?? null;
+    const opensBlock = Boolean(ensemble) && ensemble !== statedEnsemble;
+    statedEnsemble = ensemble;
+
     atoms.push(
       atom("contents-entry", {
         id: `contents:${chapter.slug}`,
@@ -43,8 +81,11 @@ function contentsAtoms(programme, notes) {
           title: chapter.title,
           titleEn: chapter.title_en ?? null,
           slug: chapter.slug,
+          ensemble: opensBlock ? ensemble : null,
+          performers: opensBlock ? (chapter.performers ?? []) : [],
         },
       }),
+      ...subEntryAtoms(chapter),
     );
 
     const isLast = index === notes.length - 1;
@@ -55,6 +96,8 @@ function contentsAtoms(programme, notes) {
           payload: { title: INTERMISSION_TITLE },
         }),
       );
+      // After the interval the programme states its scoring again.
+      statedEnsemble = null;
     }
   });
 
@@ -181,21 +224,10 @@ export function buildNoteFlow({ programme, chapters }) {
         venue: programme?.venue ?? null,
         startsAt: programme?.starts_at ?? null,
         presenter: programme?.presenter ?? null,
+        sponsors: programme?.sponsors ?? [],
       },
     }),
     ...contentsAtoms(programme, notes),
     ...notes.flatMap((chapter, index) => noteAtoms(chapter, index)),
-    atom("colophon", {
-      id: "colophon",
-      payload: {
-        title: programme?.title ?? "",
-        venue: programme?.venue ?? null,
-        startsAt: programme?.starts_at ?? null,
-        productionType: programme?.production_type ?? null,
-        presenter: programme?.presenter ?? null,
-        supporters: programme?.supporters ?? [],
-        sponsors: programme?.sponsors ?? [],
-      },
-    }),
   ];
 }

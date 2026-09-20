@@ -61,7 +61,7 @@ describe("sample programme catalogue", () => {
       "伊貝爾：《幕間曲》給小提琴與豎琴",
       "佛瑞：《搖籃》作品23，第 1 首",
       "德布西／馬修諾庭 改編：《月光》",
-      "鄧雨賢∕李哲藝 改編：《碎心花》",
+      "鄧雨賢／李哲藝 改編：《碎心花》",
     ]);
 
     moonlightPromiseProgramme.chapters.forEach((chapter) => {
@@ -83,8 +83,19 @@ describe("sample programme catalogue", () => {
     expect(publishedText).toContain("法國作曲家佛瑞（Gabriel Fauré");
     expect(publishedText).not.toContain("加佛瑞");
     expect(publishedText).toContain("9∕8 拍、行版");
-    expect(publishedText).toContain("Yu-Hsien Tung /arr. Che-Yi Lee");
-    expect(publishedText).not.toContain("Hsain");
+    // Names and formats follow the printed tri-fold: Teng, and "(arr. …)".
+    expect(publishedText).toContain("Yu-Hsien Teng (arr. Che-Yi Lee)");
+    expect(publishedText).toContain("Claude Debussy (arr. Matthew Naughtin)");
+    expect(publishedText).toContain("鄧雨賢／李哲藝 改編");
+    expect(publishedText).not.toContain("Tung");
+    expect(publishedText).not.toContain("∕李哲藝");
+
+    expect(moonlightPromiseProgramme.chapters[1].movements).toEqual([
+      ["I.", "不太快的快板", "Allegro non troppo"],
+      ["II.", "詼諧曲：快板", "Scherzo: Allegro"],
+      ["III.", "行板", "Andante"],
+      ["IV.", "終曲：從容地快板", "Finale: Allegro comodo"],
+    ]);
     expect(publishedText).toContain("曲調特色：本曲採用四拍子");
     expect(publishedText).not.toContain("聆聽重點");
     expect(publishedText).not.toContain("先聽這三件事");
@@ -111,7 +122,8 @@ describe("sample programme catalogue", () => {
       .digest("hex");
     // The printed copy, with the corrections the presenter asked for: 加佛瑞 → 佛瑞,
     // 高野達幸 → 高野辰之 as the lyricist of 《朧月夜》, 飽受 → 飽含 in 《望春風》,
-    // a stray 一 before 這首 in 《故郷》, and Yu-Hsain → Yu-Hsien in 《碎心花》.
-    expect(sourceCopyHash).toBe("4aa457468716beed6a8bad9f03dbcfe32dd42d74ad073dbd04679a374662673c");
+    // a stray 一 before 這首 in 《故郷》, Yu-Hsain → Yu-Hsien in 《碎心花》, and the
+    // names and formats of the printed tri-fold: Teng, "(arr. …)" and ／.
+    expect(sourceCopyHash).toBe("026f0c63badc752be6629d6c061bd51c268f3155ebbd43e4e7361771a0bc4c06");
   });
 });
