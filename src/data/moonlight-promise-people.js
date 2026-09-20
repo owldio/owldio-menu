@@ -93,13 +93,14 @@ export const moonlightPromisePeople = [
 ];
 
 /**
- * The book opens on the printed cover panel, whole. Around it lies the panel
- * itself thrown out of focus and fading into the night, so the leaf can be
- * filled edge to edge and only that field is ever trimmed.
+ * The book opens on the printed cover panel, whole. Beside it runs the sheet's
+ * own field — the same artwork the panel is printed on, carried on from where
+ * the fold cut it and fading into the night at the outer edge — so the leaf
+ * fills edge to edge and a page trims only that field.
  */
 export const moonlightPromiseCoverArtwork = {
   url: coverUrl,
-  width: 1520,
+  width: 1540,
   height: 2022,
   alt: "月光下的約定：2026 年 9 月 25 日（五）19:30，國家兩廳院演奏廳",
 };
