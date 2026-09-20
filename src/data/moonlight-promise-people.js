@@ -100,7 +100,7 @@ export const moonlightPromisePeople = [
  */
 export const moonlightPromiseCoverArtwork = {
   url: coverUrl,
-  width: 1540,
+  width: 1558,
   height: 2022,
   alt: "月光下的約定：2026 年 9 月 25 日（五）19:30，國家兩廳院演奏廳",
 };
