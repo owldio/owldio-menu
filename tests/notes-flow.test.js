@@ -397,6 +397,15 @@ describe("buildNoteFlow", () => {
     );
   });
 
+  it("opens on the printed cover when the programme carries its artwork", () => {
+    const atoms = buildNoteFlow({
+      programme: { ...programme, cover_artwork: { url: "cover.webp", width: 2, height: 3, alt: "封面" } },
+      chapters,
+    });
+
+    expect(atoms.at(0).payload.artwork).toEqual({ url: "cover.webp", width: 2, height: 3, alt: "封面" });
+  });
+
   it("closes the book on the sponsor's back cover", () => {
     const atoms = buildNoteFlow({
       programme: { ...programme, back_cover: { url: "back.webp", width: 2, height: 3, alt: "贊助" } },

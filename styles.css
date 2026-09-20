@@ -7010,6 +7010,9 @@ html:has(.reader-shell[data-view="notes-book"]) body {
   --moon-gold: #d5b169;
   --moon-rose: #bf7f89;
   --moon-line: rgb(213 177 105 / 0.26);
+  /* The printed sheet's own artwork: the navy field and the ivory harp sheet. */
+  --page-artwork-night: url("./assets/page-night.webp");
+  --page-artwork-paper: url("./assets/page-paper.webp");
   --harp-strings: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 800 1000' fill='none'%3E %3Cdefs%3E %3ClinearGradient id='s' gradientUnits='userSpaceOnUse' x1='0' y1='70' x2='0' y2='1000'%3E %3Cstop offset='0' stop-color='%23d5b169' stop-opacity='.3'/%3E %3Cstop offset='.45' stop-color='%23d5b169' stop-opacity='.1'/%3E %3Cstop offset='1' stop-color='%23d5b169' stop-opacity='0'/%3E %3C/linearGradient%3E %3ClinearGradient id='r' gradientUnits='userSpaceOnUse' x1='0' y1='70' x2='0' y2='1000'%3E %3Cstop offset='0' stop-color='%23dd98a2' stop-opacity='.34'/%3E %3Cstop offset='.45' stop-color='%23dd98a2' stop-opacity='.1'/%3E %3Cstop offset='1' stop-color='%23dd98a2' stop-opacity='0'/%3E %3C/linearGradient%3E %3ClinearGradient id='n' x1='0' y1='0' x2='1' y2='0'%3E %3Cstop offset='0' stop-color='%23d5b169' stop-opacity='0'/%3E %3Cstop offset='.42' stop-color='%23d5b169' stop-opacity='.62'/%3E %3Cstop offset='1' stop-color='%23d5b169' stop-opacity='.3'/%3E %3C/linearGradient%3E %3C/defs%3E %3Cpath d='M140 158 C290 58 420 214 560 150 C664 104 724 42 836 70' stroke='url(%23n)' stroke-width='14' opacity='.07'/%3E %3Cpath d='M140 158 C290 58 420 214 560 150 C664 104 724 42 836 70' stroke='url(%23n)' stroke-width='1.6'/%3E %3Cpath d='M150 178 C300 82 426 234 568 172 C670 128 730 66 836 96' stroke='url(%23n)' stroke-width='.8' opacity='.5'/%3E %3Cpath d='M330 132 C333 392 341.7 692 356 1000' stroke='url(%23s)' stroke-width='1.6'/%3E%3Cpath d='M366 140 C369 400 379.1 700 395 1000' stroke='url(%23s)' stroke-width='1.1'/%3E%3Cpath d='M402 150 C405 410 416.4 710 434 1000' stroke='url(%23s)' stroke-width='1.1'/%3E%3Cpath d='M438 158 C441 418 453.8 718 473 1000' stroke='url(%23r)' stroke-width='1.6'/%3E%3Cpath d='M474 160 C477 420 491.1 720 512 1000' stroke='url(%23s)' stroke-width='1.1'/%3E%3Cpath d='M510 158 C513 418 528.5 718 551 1000' stroke='url(%23s)' stroke-width='1.1'/%3E%3Cpath d='M546 152 C549 412 565.8 712 590 1000' stroke='url(%23s)' stroke-width='1.6'/%3E%3Cpath d='M582 142 C585 402 603.1 702 629 1000' stroke='url(%23s)' stroke-width='1.1'/%3E%3Cpath d='M618 128 C621 388 640.5 688 668 1000' stroke='url(%23s)' stroke-width='1.1'/%3E%3Cpath d='M654 112 C657 372 677.9 672 707 1000' stroke='url(%23s)' stroke-width='1.6'/%3E%3Cpath d='M690 96 C693 356 715.2 656 746 1000' stroke='url(%23r)' stroke-width='1.1'/%3E%3Cpath d='M726 82 C729 342 752.5 642 785 1000' stroke='url(%23s)' stroke-width='1.1'/%3E%3Cpath d='M762 72 C765 332 789.9 632 824 1000' stroke='url(%23s)' stroke-width='1.6'/%3E%3Cpath d='M798 66 C801 326 827.2 626 863 1000' stroke='url(%23s)' stroke-width='1.1'/%3E %3C/svg%3E");
   --harp-water: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 800 260' fill='none'%3E %3Cdefs%3E %3ClinearGradient id='w' x1='0' y1='0' x2='1' y2='0'%3E %3Cstop offset='0' stop-color='%23d5b169' stop-opacity='0'/%3E %3Cstop offset='.28' stop-color='%23d5b169' stop-opacity='.5'/%3E %3Cstop offset='.72' stop-color='%23d5b169' stop-opacity='.5'/%3E %3Cstop offset='1' stop-color='%23d5b169' stop-opacity='0'/%3E %3C/linearGradient%3E %3ClinearGradient id='f' x1='0' y1='0' x2='0' y2='1'%3E %3Cstop offset='0' stop-color='%23d5b169' stop-opacity='.07'/%3E %3Cstop offset='1' stop-color='%23d5b169' stop-opacity='0'/%3E %3C/linearGradient%3E %3C/defs%3E %3Cpath d='M-20 150 C150 90 320 200 480 150 S720 92 820 124 L820 260 L-20 260Z' fill='url(%23f)'/%3E %3Cpath d='M-20 150 C150 90 320 200 480 150 S720 92 820 124' stroke='url(%23w)' stroke-width='1.6'/%3E %3Cpath d='M-20 178 C168 124 336 224 498 180 S728 126 820 154' stroke='url(%23w)' stroke-width='1.1' opacity='.55'/%3E %3Cpath d='M-20 124 C132 72 300 172 458 126 S700 66 820 96' stroke='url(%23w)' stroke-width='1' opacity='.35'/%3E %3C/svg%3E");
   --harp-ripple: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 800 30' preserveAspectRatio='none' fill='none'%3E %3Cdefs%3E %3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='0'%3E %3Cstop offset='0' stop-color='%23d5b169' stop-opacity='0'/%3E %3Cstop offset='.3' stop-color='%23d5b169' stop-opacity='.62'/%3E %3Cstop offset='.7' stop-color='%23d5b169' stop-opacity='.62'/%3E %3Cstop offset='1' stop-color='%23d5b169' stop-opacity='0'/%3E %3C/linearGradient%3E %3C/defs%3E %3Cpath d='M0 18 C170 4 330 30 480 16 S710 6 800 14' stroke='url(%23g)' stroke-width='1.4'/%3E %3C/svg%3E");
@@ -7291,9 +7294,7 @@ html:has(.reader-shell[data-view="notes-book"]) body {
   display: flex;
   flex-direction: column;
   padding: var(--page-pad-top, 62px) var(--page-pad-x, 24px) var(--page-pad-bottom, 65px);
-  background:
-    radial-gradient(circle at 88% 6%, rgb(213 177 105 / 0.12), transparent 34%),
-    linear-gradient(176deg, #102a3d 0%, #0b2031 46%, #08192a 100%);
+  background: #0d1f34 var(--page-artwork-night) center / cover no-repeat;
   overflow: hidden;
   box-shadow: 0 0 0 1px rgb(213 177 105 / 0.2), 0 34px 68px rgb(2 8 15 / 0.56);
   color: var(--moon-copy);
@@ -7337,14 +7338,15 @@ html:has(.reader-shell[data-view="notes-book"]) body {
  * page, strings falling and fading, water moving at the foot — and a vignette
  * that settles the edges. Facing pages mirror each other across the spine.
  */
+/*
+ * The printed artwork already carries the harp and its lines; the page only
+ * deepens its edges so the type keeps its contrast.
+ */
 .note-page::before {
   position: absolute;
   inset: 0;
   z-index: 0;
-  background:
-    var(--harp-strings) right top / 100% auto no-repeat,
-    var(--harp-water) center bottom / 100% auto no-repeat,
-    radial-gradient(120% 78% at 50% 34%, transparent 58%, rgb(2 8 15 / 0.42) 100%);
+  background: radial-gradient(120% 78% at 50% 34%, transparent 62%, rgb(2 8 15 / 0.34) 100%);
   content: "";
   pointer-events: none;
 }
@@ -7875,7 +7877,7 @@ html:has(.reader-shell[data-view="notes-book"]) body {
 }
 
 /* The sponsor's page is printed as it stands, filling the leaf edge to edge. */
-.note-back-cover {
+.note-printed {
   display: block;
   width: var(--page-width);
   height: var(--page-height);
@@ -7885,7 +7887,7 @@ html:has(.reader-shell[data-view="notes-book"]) body {
     calc(var(--page-pad-bottom) * -1);
 }
 
-.note-back-cover img {
+.note-printed img {
   display: block;
   width: 100%;
   height: 100%;
@@ -8325,9 +8327,7 @@ html:has(#notes-book-view[data-book-theme="paper"]:not([hidden])),
 }
 
 .view--notes-book[data-book-theme="paper"] .note-page {
-  background:
-    radial-gradient(80% 42% at 88% 0%, rgb(213 177 105 / 0.12), transparent 62%),
-    linear-gradient(180deg, #f7f2e8 0%, #f2ecdf 100%);
+  background: #f4efe4 var(--page-artwork-paper) center / cover no-repeat;
   box-shadow: 0 0 0 1px rgb(156 122 54 / 0.16), 0 26px 52px rgb(64 50 24 / 0.2);
 }
 

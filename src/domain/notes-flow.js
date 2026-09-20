@@ -253,6 +253,8 @@ export function buildNoteFlow({ programme, chapters }) {
         startsAt: programme?.starts_at ?? null,
         presenter: programme?.presenter ?? null,
         sponsors: programme?.sponsors ?? [],
+        // A programme that was printed opens on its own printed cover.
+        artwork: programme?.cover_artwork ?? null,
       },
     }),
     ...contentsAtoms(programme, notes),

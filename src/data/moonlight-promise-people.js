@@ -1,4 +1,5 @@
 import backCoverUrl from "../../assets/back-cover-shanghai-bank.webp?url";
+import coverUrl from "../../assets/cover-moonlight-promise.webp?url";
 import chanChingChing from "../../assets/people/chan-ching-ching.webp?url";
 import chenWenWan from "../../assets/people/chen-wen-wan.webp?url";
 import huangYunYu from "../../assets/people/huang-yun-yu.webp?url";
@@ -90,6 +91,14 @@ export const moonlightPromisePeople = [
     ],
   },
 ];
+
+/** The book opens on the printed cover panel: lockup, date and credits as printed. */
+export const moonlightPromiseCoverArtwork = {
+  url: coverUrl,
+  width: 946,
+  height: 2028,
+  alt: "月光下的約定：2026 年 9 月 25 日（五）19:30，國家兩廳院演奏廳",
+};
 
 /** The sponsor's page closes the book, exactly as it closes the printed sheet. */
 export const moonlightPromiseBackCover = {

@@ -162,6 +162,8 @@ function ledger(rows) {
 }
 
 function renderCover(payload) {
+  if (payload.artwork?.url) return printedPage(payload.artwork);
+
   const node = createElement("section", "note-cover");
   node.append(
     moonDisc("note-cover__moon"),
@@ -413,17 +415,22 @@ function renderPersonBanner(payload) {
   return node;
 }
 
+/** A page that is a printed panel itself: the sheet's own artwork, whole. */
+function printedPage(image) {
+  const node = createElement("section", "note-printed");
+  const picture = createElement("img");
+  picture.src = image.url;
+  picture.width = image.width;
+  picture.height = image.height;
+  picture.alt = image.alt || "";
+  picture.decoding = "async";
+  node.append(picture);
+  return node;
+}
+
 /** The sponsor's page, printed as it stands; its type is part of the picture. */
 function renderBackCover(payload) {
-  const node = createElement("section", "note-back-cover");
-  const image = createElement("img");
-  image.src = payload.url;
-  image.width = payload.width;
-  image.height = payload.height;
-  image.alt = payload.alt || "";
-  image.decoding = "async";
-  node.append(image);
-  return node;
+  return printedPage(payload);
 }
 
 export function renderAtom(atom) {

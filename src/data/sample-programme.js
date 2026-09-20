@@ -5,7 +5,11 @@ import moonlightPromisePdfUrl from "../../assets/moonlight-promise-programme-v1.
 import moonlightPromiseCoverUrl from "../../assets/moonlight-promise-cover-v1.jpg?url";
 import moonlightPromisePreviewUrl from "../../assets/moonlight-promise-preview-v2.webp?url";
 import { moonlightPromiseChapters } from "./moonlight-promise-notes.js";
-import { moonlightPromiseBackCover, moonlightPromisePeople } from "./moonlight-promise-people.js";
+import {
+  moonlightPromiseBackCover,
+  moonlightPromiseCoverArtwork,
+  moonlightPromisePeople,
+} from "./moonlight-promise-people.js";
 
 export const sampleProgramme = {
   id: "sample-sense-and-sensibility",
@@ -298,6 +302,7 @@ export const moonlightPromiseProgramme = {
   },
   chapters: moonlightPromiseChapters,
   people: moonlightPromisePeople,
+  cover_artwork: moonlightPromiseCoverArtwork,
   back_cover: moonlightPromiseBackCover,
 };
 
