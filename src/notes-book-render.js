@@ -382,6 +382,50 @@ function renderWorkCard(payload) {
   return node;
 }
 
+/**
+ * A performer's opening: the portrait in a band of fixed depth, so the page can
+ * be measured before the picture arrives, then the instrument and the name.
+ */
+function renderPersonBanner(payload) {
+  const node = createElement("header", "note-person");
+
+  if (payload.portrait?.url) {
+    const figure = createElement("figure", "note-person__portrait");
+    const image = createElement("img");
+    image.src = payload.portrait.url;
+    image.width = payload.portrait.width;
+    image.height = payload.portrait.height;
+    image.alt = payload.name ? `${payload.name}` : "";
+    image.decoding = "async";
+    figure.append(image);
+    node.append(figure);
+  }
+
+  if (payload.role) node.append(createElement("p", "note-person__role", payload.role));
+  node.append(createElement("h2", "note-person__name", payload.name));
+  if (payload.nameEn) {
+    const english = createElement("p", "note-person__english", payload.nameEn);
+    english.lang = "en";
+    node.append(english);
+  }
+  node.append(ornament("note-person__ornament"));
+
+  return node;
+}
+
+/** The sponsor's page, printed as it stands; its type is part of the picture. */
+function renderBackCover(payload) {
+  const node = createElement("section", "note-back-cover");
+  const image = createElement("img");
+  image.src = payload.url;
+  image.width = payload.width;
+  image.height = payload.height;
+  image.alt = payload.alt || "";
+  image.decoding = "async";
+  node.append(image);
+  return node;
+}
+
 export function renderAtom(atom) {
   switch (atom.kind) {
     case "cover":
@@ -402,6 +446,10 @@ export function renderAtom(atom) {
       return renderParagraph(atom);
     case "work-card":
       return renderWorkCard(atom.payload);
+    case "person-banner":
+      return renderPersonBanner(atom.payload);
+    case "back-cover":
+      return renderBackCover(atom.payload);
     default:
       return createElement("div");
   }

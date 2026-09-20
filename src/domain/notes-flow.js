@@ -211,6 +211,34 @@ export function cutParagraph(paragraph, cut) {
   };
 }
 
+/**
+ * A performer's pages: the portrait and the name, then the biography as it is
+ * printed. The first paragraph is a lede, as a note's first paragraph is.
+ */
+function personAtoms(person) {
+  return [
+    atom("person-banner", {
+      id: `${person.slug}:banner`,
+      noteSlug: person.slug,
+      payload: {
+        role: person.role ?? null,
+        name: person.name ?? "",
+        nameEn: person.name_en ?? null,
+        portrait: person.portrait ?? null,
+      },
+    }),
+    ...(person.paragraphs ?? []).filter(Boolean).map((text, index) => atom("paragraph", {
+      id: `${person.slug}:p${index + 1}`,
+      noteSlug: person.slug,
+      payload: {
+        text,
+        lede: index === 0,
+        leadIn: index === 0 ? leadPhraseLength(text) : 0,
+      },
+    })),
+  ];
+}
+
 export function buildNoteFlow({ programme, chapters }) {
   const notes = visibleChapters(chapters);
 
@@ -229,5 +257,9 @@ export function buildNoteFlow({ programme, chapters }) {
     }),
     ...contentsAtoms(programme, notes),
     ...notes.flatMap((chapter, index) => noteAtoms(chapter, index)),
+    ...(programme?.people ?? []).flatMap(personAtoms),
+    ...(programme?.back_cover
+      ? [atom("back-cover", { id: "back-cover", payload: { ...programme.back_cover } })]
+      : []),
   ];
 }

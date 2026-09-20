@@ -366,6 +366,49 @@ describe("buildNoteFlow", () => {
     expect(new Set(ids).size).toBe(ids.length);
   });
 
+  it("introduces each performer after the notes, on a page of their own", () => {
+    const atoms = buildNoteFlow({
+      programme: {
+        ...programme,
+        people: [{
+          slug: "harpist",
+          role: "豎琴",
+          name: "甲",
+          name_en: "A",
+          portrait: { url: "harp.webp", width: 4, height: 3 },
+          paragraphs: ["第一段。", "第二段。"],
+        }],
+      },
+      chapters,
+    });
+    const person = atoms.filter((atom) => atom.noteSlug === "harpist");
+
+    expect(kindsOf(person)).toEqual(["person-banner", "paragraph", "paragraph"]);
+    expect(person[0].payload).toEqual({
+      role: "豎琴",
+      name: "甲",
+      nameEn: "A",
+      portrait: { url: "harp.webp", width: 4, height: 3 },
+    });
+    expect(person[1].payload.lede).toBe(true);
+    expect(person[2].payload.lede).toBe(false);
+    expect(atoms.indexOf(person[0])).toBeGreaterThan(
+      atoms.map((atom) => atom.kind).lastIndexOf("note-banner"),
+    );
+  });
+
+  it("closes the book on the sponsor's back cover", () => {
+    const atoms = buildNoteFlow({
+      programme: { ...programme, back_cover: { url: "back.webp", width: 2, height: 3, alt: "贊助" } },
+      chapters,
+    });
+
+    expect(atoms.at(-1)).toMatchObject({
+      kind: "back-cover",
+      payload: { url: "back.webp", width: 2, height: 3, alt: "贊助" },
+    });
+  });
+
   it("returns the cover and an empty programme list when no chapter is visible", () => {
     const atoms = buildNoteFlow({ programme, chapters: [] });
 

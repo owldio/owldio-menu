@@ -564,10 +564,14 @@ export function createNotesBook(root, { onError, onPageChange } = {}) {
     // A book's running head names the work, not the page it continues.
     noteTitles = new Map(
       atoms
-        .filter((atom) => atom.kind === "note-banner")
-        .map(({ noteSlug, payload }) => [
+        .filter((atom) => atom.kind === "note-banner" || atom.kind === "person-banner")
+        .map(({ kind, noteSlug, payload }) => [
           noteSlug,
-          payload.composer && payload.work ? `${payload.composer} · ${payload.work}` : payload.title,
+          kind === "person-banner"
+            ? [payload.role, payload.name].filter(Boolean).join("／")
+            : (payload.composer && payload.work
+              ? `${payload.composer} · ${payload.work}`
+              : payload.title),
         ]),
     );
 

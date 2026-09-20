@@ -1,7 +1,7 @@
 const FULL_PAGE_KINDS = new Set(["cover", "back-cover"]);
 
 /** A note, or the contents, always starts on a page of its own. */
-const PAGE_OPENERS = new Set(["note-banner", "contents-heading"]);
+const PAGE_OPENERS = new Set(["note-banner", "contents-heading", "person-banner"]);
 
 function pageKindFor(atom) {
   return atom.kind.startsWith("contents-") ? "contents" : "note";

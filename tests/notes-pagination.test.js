@@ -12,6 +12,7 @@ const FULL_PAGE_KINDS = new Set(["cover", "back-cover"]);
 function measure(atom) {
   if (FULL_PAGE_KINDS.has(atom.kind)) return CAPACITY;
   if (atom.kind === "note-banner") return LINE_HEIGHT * 2;
+  if (atom.kind === "person-banner") return LINE_HEIGHT * 4;
   if (atom.kind === "work-card") return LINE_HEIGHT * 3;
   if (atom.kind.startsWith("contents-")) return LINE_HEIGHT * 3;
   const length = atom.payload.text.length;
@@ -57,6 +58,17 @@ function workCard(id, noteSlug = "note-a") {
 
 function fullPage(kind) {
   return { id: kind, kind, noteSlug: null, noteIndex: null, splittable: false, payload: {} };
+}
+
+function personBanner(slug) {
+  return {
+    id: `${slug}:banner`,
+    kind: "person-banner",
+    noteSlug: slug,
+    noteIndex: null,
+    splittable: false,
+    payload: { name: slug },
+  };
 }
 
 function contentsHeading() {
@@ -373,6 +385,20 @@ describe("packAtoms content conservation", () => {
     const pages = packAtoms(atoms, options);
 
     expect(flatten(pages)).toEqual(atoms);
+  });
+
+  it("opens every performer on a page of their own, as a note opens", () => {
+    const atoms = [
+      personBanner("harpist"),
+      paragraph("p1", repeat("甲", 20), "harpist"),
+      personBanner("violinist"),
+      paragraph("p2", repeat("乙", 20), "violinist"),
+    ];
+
+    const pages = packAtoms(atoms, options);
+
+    expect(pages).toHaveLength(2);
+    expect(pages.map((page) => page.atoms[0].id)).toEqual(["harpist:banner", "violinist:banner"]);
   });
 
   it("splits a paragraph taller than a whole page instead of dropping it", () => {
