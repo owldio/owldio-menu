@@ -11,3 +11,7 @@ coverage/
 
 # Print-ready source artwork the client drops in the repo root (hundreds of MB).
 節目單*.pdf
+
+# Isolated workspaces and agent scratch: never part of the project.
+.claude/worktrees/
+.superpowers/
