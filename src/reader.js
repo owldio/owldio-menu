@@ -30,6 +30,7 @@ import {
   normalizeReadingSize,
   resetReadingPosition,
 } from "./domain/reading.js";
+import { readingAnchorFromHistory } from "./domain/notes-position.js";
 import { loadCjkWebFonts } from "./lib/cjk-webfonts.js";
 import { createElement } from "./lib/dom.js";
 import { sampleProgrammes } from "./data/sample-programme.js";
@@ -450,12 +451,23 @@ export async function mountReader({ root, repository, initialRoute }) {
       console.error("Unable to lay out the programme notes", error);
       showToast("樂曲解說暫時無法排版，請重新整理頁面。");
     },
-    onPageChange(pageIndex, { reason = "turn" } = {}) {
+    onPageChange(pageIndex, { reason = "turn", anchor = null } = {}) {
       if (currentProgramme?.reader_layout !== "notes-book") return;
       const hash = pageIndex > 0 ? `#page/${pageIndex + 1}` : "";
       const nextUrl = `${location.pathname}${hash}`;
-      if (`${location.pathname}${location.hash}` === nextUrl) return;
-      const state = { route: "notes-book", page: pageIndex + 1 };
+      const priorState = history.state && typeof history.state === "object" ? history.state : {};
+      const state = {
+        ...priorState,
+        route: "notes-book",
+        page: pageIndex + 1,
+        notesAnchor: anchor,
+      };
+      if (`${location.pathname}${location.hash}` === nextUrl) {
+        // A reload keeps history.state. Refresh the semantic anchor even when
+        // the visible #page/N address did not need to change.
+        history.replaceState(state, "", nextUrl);
+        return;
+      }
       // Back undoes a move, not a leaf: following a link from the programme
       // list, or jumping from the previews, is a step to take back. Turning
       // pages and reflowing only keep the address on the page in hand.
@@ -842,7 +854,9 @@ export async function mountReader({ root, repository, initialRoute }) {
 
     const route = parseReaderHash(hash);
     if (route.page) {
-      notesBook.goToPage(route.page - 1);
+      const saved = readingAnchorFromHistory(history.state, route.page);
+      if (saved && notesBook.goToAnchor(saved)) return;
+      notesBook.goToPage(route.page - 1, { reason: "restore" });
       return;
     }
 

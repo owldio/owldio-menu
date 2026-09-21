@@ -199,14 +199,35 @@ function noteAtoms(chapter, index) {
  */
 export function cutParagraph(paragraph, cut) {
   const { text, leadIn = 0 } = paragraph.payload;
+  const sourceStart = Number.isInteger(paragraph.payload.sourceStart)
+    ? paragraph.payload.sourceStart
+    : 0;
+  const sourceEnd = Number.isInteger(paragraph.payload.sourceEnd)
+    ? paragraph.payload.sourceEnd
+    : sourceStart + text.length;
+  const sourceCut = sourceStart + cut;
   return {
     head: {
       ...paragraph,
-      payload: { ...paragraph.payload, text: text.slice(0, cut), leadIn: Math.min(leadIn, cut) },
+      payload: {
+        ...paragraph.payload,
+        text: text.slice(0, cut),
+        leadIn: Math.min(leadIn, cut),
+        sourceStart,
+        sourceEnd: sourceCut,
+      },
     },
     tail: {
       ...paragraph,
-      payload: { ...paragraph.payload, text: text.slice(cut), continues: true, lede: false, leadIn: 0 },
+      payload: {
+        ...paragraph.payload,
+        text: text.slice(cut),
+        continues: true,
+        lede: false,
+        leadIn: 0,
+        sourceStart: sourceCut,
+        sourceEnd,
+      },
     },
   };
 }

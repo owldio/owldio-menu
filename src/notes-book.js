@@ -10,6 +10,7 @@ import {
   shouldTransitionPage,
   spreadWidth,
 } from "./domain/notes-geometry.js";
+import { pageHoldingAnchor, readingAnchorForPage } from "./domain/notes-position.js";
 import {
   resistEdge,
   resolveSwipe,
@@ -33,7 +34,8 @@ const HEIGHT_TOLERANCE = 24;
 const FONT_TIMEOUT = 3500;
 const JUMP_FADE = 240;
 const MOUSE_WAKE_INTERVAL = 250;
-const TEXT_SIZE_KEY = "owldio-notes-text-size";
+// Versioned so the new 15px commissioned default is not masked by the former default.
+const TEXT_SIZE_KEY = "owldio-notes-text-size-v2";
 const THUMB_HEIGHT = 80;
 // A 40px arrow set 6px in from the edge, with a little air before the text.
 const TURN_BUTTON_ROOM = 52;
@@ -106,6 +108,7 @@ export function createNotesBook(root, { onError, onPageChange } = {}) {
   let relayoutTimer = 0;
   let jumpTimer = 0;
   let lastMouseWake = 0;
+  let positionAnchor = null;
 
   function prefersReducedMotion() {
     return Boolean(reducedMotion?.matches);
@@ -277,7 +280,7 @@ export function createNotesBook(root, { onError, onPageChange } = {}) {
     }
   }
 
-  function goToSpread(nextIndex, { animate = true, reason = "turn" } = {}) {
+  function goToSpread(nextIndex, { animate = true, reason = "turn", anchor = null } = {}) {
     if (!spreads.length) return;
     const target = clamp(nextIndex, 0, spreads.length - 1);
     const delta = target - spreadIndex;
@@ -293,13 +296,21 @@ export function createNotesBook(root, { onError, onPageChange } = {}) {
 
     layoutPages({ animate: slide || delta === 0 });
     updateChrome();
-    onPageChange?.(currentSpread()[0] ?? 0, { reason });
+    positionAnchor = anchor ?? readingAnchorForPage(pages[currentSpread()[0]]);
+    onPageChange?.(currentSpread()[0] ?? 0, { reason, anchor: positionAnchor });
   }
 
-  function goToPage(pageIndex, { animate = false, reason = "turn" } = {}) {
+  function goToPage(pageIndex, { animate = false, reason = "turn", anchor = null } = {}) {
     const safePage = clamp(pageIndex, 0, Math.max(0, pages.length - 1));
     const target = spreads.findIndex((spread) => spread.includes(safePage));
-    if (target >= 0) goToSpread(target, { animate, reason });
+    if (target >= 0) goToSpread(target, { animate, reason, anchor });
+  }
+
+  function goToAnchor(anchor, { reason = "restore" } = {}) {
+    const pageIndex = pageHoldingAnchor(pages, anchor);
+    if (pageIndex < 0) return false;
+    goToPage(pageIndex, { animate: false, reason, anchor });
+    return true;
   }
 
   /**
@@ -395,18 +406,6 @@ export function createNotesBook(root, { onError, onPageChange } = {}) {
     if (thumbnails && !thumbnails.hidden) buildThumbnails();
   }
 
-  /** The atom a reader is looking at, so a reflow can put them back on it. */
-  function anchorAtomId() {
-    const first = currentSpread()[0];
-    return pages[first]?.atoms[0]?.id ?? null;
-  }
-
-  function pageHolding(atomId) {
-    if (!atomId) return 0;
-    const page = pages.findIndex((candidate) => candidate.atoms.some((atom) => atom.id === atomId));
-    return Math.max(0, page);
-  }
-
   function paginate() {
     // Measured outside the view: the stage carries a transform of its own.
     const measurer = createMeasurer(document.body, { layout });
@@ -467,17 +466,22 @@ export function createNotesBook(root, { onError, onPageChange } = {}) {
     }
 
     const reflowing = paginated;
-    const anchor = reflowing ? anchorAtomId() : null;
+    const anchor = reflowing
+      ? (positionAnchor ?? readingAnchorForPage(pages[currentSpread()[0]]))
+      : null;
     twoUp = nextTwoUp;
     layout = next;
     paginate();
-    applyShape(pageHolding(anchor));
+    applyShape(Math.max(0, pageHoldingAnchor(pages, anchor)));
+    positionAnchor = anchor ?? readingAnchorForPage(pages[currentSpread()[0]]);
     updateTextSizeControls();
     // The page-turn arrows sit in the page margin, so they only show where it can hold them.
     root.dataset.margins = layout.padX >= TURN_BUTTON_ROOM ? "roomy" : "tight";
     // The same passage now sits on another page number. That is not a turn, so
     // the address follows it without adding a step to the history.
-    if (reflowing) onPageChange?.(currentSpread()[0] ?? 0, { reason: "reflow" });
+    if (reflowing) {
+      onPageChange?.(currentSpread()[0] ?? 0, { reason: "reflow", anchor: positionAnchor });
+    }
 
     if (!overlays.isReady()) {
       overlays.setReady(true);
@@ -807,6 +811,7 @@ export function createNotesBook(root, { onError, onPageChange } = {}) {
     prepare,
     activate,
     deactivate,
+    goToAnchor,
     goToPage,
     goToNote,
     pageCount: () => pages.length,

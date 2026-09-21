@@ -28,7 +28,6 @@ const MAX_LINE_CHARACTERS = 34;
 const MIN_MARGIN_EMS = 1.35;
 const TOP_AIR_EMS = 0.25;
 const BOTTOM_AIR_EMS = 0.4;
-const COMPACT_WIDTH = 600;
 const FALLBACK_STAGE = { width: 375, height: 667 };
 
 /**
@@ -38,9 +37,9 @@ const FALLBACK_STAGE = { width: 375, height: 667 };
  */
 const COMPACT_PAGE_LINES = 16.5;
 
-/** Phones start a step smaller than wide screens, where the eye sits further away. */
-export function defaultTextSize(stageWidth) {
-  return stageWidth < COMPACT_WIDTH ? 17 : 18;
+/** The commissioned programme opens at 15px; readers can enlarge it in one-step increments. */
+export function defaultTextSize() {
+  return 15;
 }
 
 export function nextTextSize(current, direction) {

@@ -7611,6 +7611,7 @@ html:has(.reader-shell[data-view="notes-book"]) body {
   color: var(--moon-gold);
   font-family: var(--font-display);
   font-size: 1.05em;
+  font-style: italic;
 }
 
 .note-work__heading h3 {

@@ -14,4 +14,11 @@ describe("printed cover artwork", () => {
     expect(rule[1]).toMatch(/object-fit:\s*contain\s*;/u);
     expect(rule[1]).not.toMatch(/object-fit:\s*cover\s*;/u);
   });
+
+  it("sets harp-solo item numbers apart in italic", () => {
+    const rule = styles.match(/\.note-work__number\s*\{([^}]*)\}/u);
+
+    expect(rule, "the work number rule must remain explicit").not.toBeNull();
+    expect(rule[1]).toMatch(/font-style:\s*italic\s*;/u);
+  });
 });

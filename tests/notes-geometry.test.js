@@ -105,9 +105,9 @@ describe("resolveLayout", () => {
 });
 
 describe("text size", () => {
-  it("starts phones a step smaller than wide screens", () => {
-    expect(defaultTextSize(375)).toBe(17);
-    expect(defaultTextSize(1440)).toBe(18);
+  it("starts every reader at the requested 15px default", () => {
+    expect(defaultTextSize(375)).toBe(15);
+    expect(defaultTextSize(1440)).toBe(15);
   });
 
   it("steps up and down through the size ladder", () => {

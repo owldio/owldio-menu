@@ -70,6 +70,15 @@ describe("cutParagraph", () => {
     expect(head.payload.continues).toBe(true);
     expect(head.payload.lede).toBe(false);
   });
+
+  it("keeps absolute text offsets when a paragraph is split more than once", () => {
+    const { head: first, tail: remainder } = cutParagraph(lede, 2);
+    const { head: middle, tail: last } = cutParagraph(remainder, 3);
+
+    expect(first.payload).toMatchObject({ sourceStart: 0, sourceEnd: 2 });
+    expect(middle.payload).toMatchObject({ sourceStart: 2, sourceEnd: 5 });
+    expect(last.payload).toMatchObject({ sourceStart: 5, sourceEnd: lede.payload.text.length });
+  });
 });
 
 const programme = {
