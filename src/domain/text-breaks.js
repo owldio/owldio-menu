@@ -7,6 +7,8 @@
 const SENTENCE_END = /[。！？]/;
 const CLAUSE_END = /[；：，、]/;
 const CLOSERS = /[」』）》〉】”’]/;
+const WORD_CHARACTER = /[A-Za-z0-9'’.\-–—]/;
+const BREAK_SEARCH_LIMIT = 24;
 
 /**
  * The latest cut at or before `limit` that falls just after a mark matching
@@ -32,6 +34,29 @@ export function sentenceBreak(text, limit) {
 
 export function clauseBreak(text, limit) {
   return lastBreakBefore(text, limit, CLAUSE_END);
+}
+
+/**
+ * Use the full amount of text the browser measured onto the page. Punctuation
+ * does not pull the cut backwards; only a Latin word or number is kept whole.
+ */
+export function lineBreak(text, limit) {
+  const value = String(text ?? "");
+  let cut = Math.min(Math.max(0, limit), value.length);
+  let steps = 0;
+
+  while (
+    cut > 1
+    && cut < value.length
+    && steps < BREAK_SEARCH_LIMIT
+    && WORD_CHARACTER.test(value[cut - 1])
+    && WORD_CHARACTER.test(value[cut])
+  ) {
+    cut -= 1;
+    steps += 1;
+  }
+
+  return cut;
 }
 
 const LEAD_END = /[，；：。！？]/;

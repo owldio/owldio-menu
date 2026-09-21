@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { chooseCut, clauseBreak, leadPhraseLength, sentenceBreak } from "../src/domain/text-breaks.js";
+import { chooseCut, clauseBreak, leadPhraseLength, lineBreak, sentenceBreak } from "../src/domain/text-breaks.js";
 
 describe("leadPhraseLength", () => {
   function leadOf(text) {
@@ -114,5 +114,15 @@ describe("clauseBreak", () => {
 
   it("finds nothing in an unbroken run", () => {
     expect(clauseBreak("甲乙丙丁戊己", 6)).toBe(0);
+  });
+});
+
+describe("lineBreak", () => {
+  it("uses the full measured line instead of jumping back to punctuation", () => {
+    expect(lineBreak("甲乙。丙丁，戊己", 7)).toBe(7);
+  });
+
+  it("keeps a Latin word intact when the measured edge lands inside it", () => {
+    expect(lineBreak("前文 Grandjany 後文", 10)).toBe(3);
   });
 });

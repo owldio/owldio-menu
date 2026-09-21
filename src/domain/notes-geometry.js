@@ -125,3 +125,8 @@ export function pageRenderPlacement({
 export function shouldTransitionPage({ animate, wasNear, isNear }) {
   return Boolean(animate && wasNear && isNear);
 }
+
+/** The cover counts as the first physical leaf but carries no printed folio. */
+export function shouldShowFolio(pageKind) {
+  return pageKind !== "cover";
+}

@@ -1,4 +1,5 @@
 import { programmeDateParts } from "./domain/datetime.js";
+import { shouldShowFolio } from "./domain/notes-geometry.js";
 import { createElement } from "./lib/dom.js";
 
 const SVG_NS = "http://www.w3.org/2000/svg";
@@ -487,15 +488,17 @@ function applyPageLayout(article, layout) {
  * The folio is only the page number, set in the bottom margin as a reading app
  * sets it; the running head at the top already says which note this is.
  */
-export function createPageFrame({ folioLabel = "00", layout } = {}) {
+export function createPageFrame({ folioLabel = "00", layout, showFolio = true } = {}) {
   const article = createElement("article", "note-page");
   if (layout) applyPageLayout(article, layout);
   const body = createElement("div", "note-page__body");
 
-  const folio = createElement("footer", "note-page__folio");
-  folio.append(createElement("span", "note-page__folio-number", folioLabel));
-
-  article.append(body, folio);
+  article.append(body);
+  if (showFolio) {
+    const folio = createElement("footer", "note-page__folio");
+    folio.append(createElement("span", "note-page__folio-number", folioLabel));
+    article.append(folio);
+  }
   return { article, body };
 }
 
@@ -515,6 +518,7 @@ export function renderPage(page, { total, continuedLabel, endsNote, layout }) {
   const { article, body } = createPageFrame({
     folioLabel: folioNumber(page.index),
     layout,
+    showFolio: shouldShowFolio(page.kind),
   });
 
   article.dataset.pageKind = page.kind;

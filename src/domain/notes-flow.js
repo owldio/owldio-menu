@@ -2,8 +2,8 @@ import { leadPhraseLength } from "./text-breaks.js";
 
 const INTERMISSION_TITLE = "中場休息";
 
-/** The printed tri-fold calls this page 節目單, and so does the book. */
-const PROGRAMME_TITLE = "節目單";
+/** 節目單 is the whole publication; this page is only the concert order. */
+const PROGRAMME_TITLE = "曲序";
 
 function visibleChapters(chapters) {
   return (chapters || []).filter((chapter) => chapter?.is_visible !== false);

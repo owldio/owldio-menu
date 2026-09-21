@@ -10,6 +10,7 @@ import {
   pageOffset,
   pageRenderPlacement,
   resolveLayout,
+  shouldShowFolio,
   shouldTransitionPage,
   spreadWidth,
 } from "../src/domain/notes-geometry.js";
@@ -190,5 +191,14 @@ describe("shouldTransitionPage", () => {
     expect(shouldTransitionPage({ animate: true, wasNear: true, isNear: true })).toBe(true);
     expect(shouldTransitionPage({ animate: false, wasNear: true, isNear: true })).toBe(false);
     expect(shouldTransitionPage({ animate: true, wasNear: true, isNear: false })).toBe(false);
+  });
+});
+
+describe("shouldShowFolio", () => {
+  it("keeps the cover unnumbered without changing the numbering of later pages", () => {
+    expect(shouldShowFolio("cover")).toBe(false);
+    expect(shouldShowFolio("contents")).toBe(true);
+    expect(shouldShowFolio("note")).toBe(true);
+    expect(shouldShowFolio("back-cover")).toBe(true);
   });
 });

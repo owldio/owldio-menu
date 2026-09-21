@@ -7467,13 +7467,7 @@ html:has(.reader-shell[data-view="notes-book"]) body {
   text-indent: 0;
 }
 
-/*
- * A note's first paragraph starts flush and leads with its first phrase in
- * gold: a whole phrase, wherever the line happens to break.
- */
-.note-paragraph[data-lede="true"] {
-  text-indent: 0;
-}
+/* The opening phrase changes colour only; it keeps the normal paragraph indent. */
 
 .note-paragraph__lead {
   color: var(--moon-gold);
@@ -8088,6 +8082,11 @@ html:has(.reader-shell[data-view="notes-book"]) body {
   font-size: 0.84em;
   letter-spacing: 0.02em;
   opacity: 0.8;
+}
+
+/* The five harp-solo pieces are subworks, distinct from the large programme blocks. */
+.note-contents__sub--work {
+  font-style: italic;
 }
 
 /* An entry that leads into its pieces closes on them, not on its own rule. */

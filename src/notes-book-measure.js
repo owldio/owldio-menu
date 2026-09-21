@@ -1,41 +1,10 @@
 import { cutParagraph } from "./domain/notes-flow.js";
-import { heightOfLines } from "./domain/notes-pagination.js";
-import { LINE_HEIGHT_RATIO } from "./domain/notes-geometry.js";
-import { chooseCut, clauseBreak, sentenceBreak } from "./domain/text-breaks.js";
+import { lineBreak } from "./domain/text-breaks.js";
 import { createPageFrame, renderAtom } from "./notes-book-render.js";
 import { createElement } from "./lib/dom.js";
 
 const FULL_PAGE_KINDS = new Set(["cover", "back-cover"]);
-const WORD_CHARACTER = /[A-Za-z0-9'’.\-–—]/;
-const CLOSING_PUNCTUATION = /[。，、；：！？」』）》】〉・·]/;
 const MINIMUM_SPLIT_LENGTH = 8;
-const BREAK_SEARCH_LIMIT = 24;
-const MIN_HEAD_LINES = 2;
-
-/**
- * Nudge a cut away from places that read badly: never inside a run of Latin
- * letters or digits, and never immediately before closing punctuation.
- */
-function safeBreak(text, index) {
-  let cut = index;
-
-  while (cut < text.length && CLOSING_PUNCTUATION.test(text[cut])) {
-    cut += 1;
-  }
-
-  let steps = 0;
-  while (
-    cut > 1
-    && steps < BREAK_SEARCH_LIMIT
-    && WORD_CHARACTER.test(text[cut - 1])
-    && WORD_CHARACTER.test(text[cut])
-  ) {
-    cut -= 1;
-    steps += 1;
-  }
-
-  return cut;
-}
 
 /**
  * Lays atoms out in a hidden page of identical geometry so the pagination
@@ -91,29 +60,11 @@ export function createMeasurer(host = document.body, { layout } = {}) {
 
     if (!best) return null;
 
-    // Prefer to end the page on a full sentence, then on a clause, and only
-    // then wherever the line happens to run out — each within a few lines of
-    // the foot, so the page still reads as full.
-    const lineHeight = layout.font * LINE_HEIGHT_RATIO;
-    const candidates = [
-      { kind: "sentence", cut: sentenceBreak(text, best) },
-      { kind: "clause", cut: clauseBreak(text, best) },
-      { kind: "line", cut: safeBreak(text, best) },
-    ]
-      .filter(({ cut }) => cut > 0 && cut < text.length)
-      .map((candidate) => {
-        const { head, tail } = cutParagraph(atom, candidate.cut);
-        return { ...candidate, head, tail, height: elementHeight(renderAtom(head)) };
-      });
-
-    const chosen = chooseCut(candidates, {
-      available: availableHeight,
-      lineHeight,
-      minimumHead: heightOfLines(MIN_HEAD_LINES, lineHeight),
-    });
-    if (!chosen) return null;
-
-    return { head: chosen.head, tail: chosen.tail };
+    // Continue through the last measured line. A comma or full stop never
+    // pulls text onto the next page and leaves an artificial hole here.
+    const cut = lineBreak(text, best);
+    if (cut <= 0 || cut >= text.length) return null;
+    return cutParagraph(atom, cut);
   }
 
   function destroy() {
