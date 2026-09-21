@@ -88,11 +88,11 @@ export function spreadWidth({ twoUp, pageWidth }) {
  * Every page gets a place, so a drag can pull the next one in from the side
  * instead of swapping it in once the gesture is over.
  */
-export function pageOffset({ spreadDelta, slot, spreadLength, twoUp, pageWidth }) {
+export function pageOffset({ spreadDelta, slot, spreadLength, twoUp, pageWidth, singlePageWidth = pageWidth }) {
   const spread = spreadWidth({ twoUp, pageWidth });
   const base = spreadDelta * (spread + SPREAD_GAP);
 
-  if (twoUp && spreadLength === 1) return base + (spread - pageWidth) / 2;
+  if (twoUp && spreadLength === 1) return base + (spread - singlePageWidth) / 2;
   return base + slot * (pageWidth + SPREAD_GUTTER);
 }
 
@@ -107,12 +107,13 @@ export function pageRenderPlacement({
   spreadLength,
   twoUp,
   pageWidth,
+  singlePageWidth = pageWidth,
   dragOffset = 0,
 }) {
   const near = Math.abs(spreadDelta) <= 1;
   if (!near) return { near: false, transform: null };
 
-  const x = pageOffset({ spreadDelta, slot, spreadLength, twoUp, pageWidth }) + dragOffset;
+  const x = pageOffset({ spreadDelta, slot, spreadLength, twoUp, pageWidth, singlePageWidth }) + dragOffset;
   return { near: true, transform: `translateX(${x}px)` };
 }
 

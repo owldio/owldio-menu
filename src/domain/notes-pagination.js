@@ -6,27 +6,17 @@ const PAGE_OPENERS = new Set(["note-banner", "contents-heading", "person-banner"
 function pageKindFor(atom) {
   return atom.kind.startsWith("contents-") ? "contents" : "note";
 }
-const MIN_LINES = 2;
-
-/**
- * A paragraph that would fit on a page of its own is only split when at least
- * this share of it, or at least MIN_SPLIT_LINES of it, fits where it stands.
- * Below both, the few lines left behind read as a fragment and the reader meets
- * a sentence broken across a turn. Above either, what stays is a passage — and
- * moving a long paragraph on whole would leave a hole at the foot of the page.
- */
-const MIN_SPLIT_SHARE = 0.5;
-const MIN_SPLIT_LINES = 4;
+const MIN_HEAD_LINES = 2;
+const MIN_TAIL_LINES = 1;
 
 function pageNoteSlug(atoms) {
   return atoms.find((atom) => atom.noteSlug)?.noteSlug ?? null;
 }
 
 /**
- * Cut a paragraph so that both halves keep at least MIN_LINES, shrinking the
- * budget until the tail is long enough — or until the measurer finds a cut it
- * will take, which a line less of room can give it. Returns null when no honest
- * cut exists.
+ * Cut a paragraph with at least two lines at the foot of the page. A short
+ * final line may continue on the next page: preserving the prose flow is more
+ * useful here than leaving several usable lines empty.
  */
 /**
  * The least height that still counts as `lines` whole lines. Browsers lay text
@@ -38,12 +28,13 @@ export function heightOfLines(lines, lineHeight) {
 }
 
 function splitWithGuards(atom, available, { lineHeight, measure, splitParagraph }) {
-  const minimum = heightOfLines(MIN_LINES, lineHeight);
-  if (available < minimum) return null;
+  const minimumHead = heightOfLines(MIN_HEAD_LINES, lineHeight);
+  const minimumTail = heightOfLines(MIN_TAIL_LINES, lineHeight);
+  if (available < minimumHead) return null;
 
   let budget = available;
 
-  for (let attempt = 0; attempt < 6 && budget >= minimum; attempt += 1) {
+  for (let attempt = 0; attempt < 6 && budget >= minimumHead; attempt += 1) {
     const split = splitParagraph(atom, budget);
     if (!split?.head || !split?.tail) {
       budget -= lineHeight;
@@ -53,13 +44,13 @@ function splitWithGuards(atom, available, { lineHeight, measure, splitParagraph 
     const headHeight = measure(split.head);
     const tailHeight = measure(split.tail);
 
-    if (headHeight > available || headHeight < minimum) {
+    if (headHeight > available || headHeight < minimumHead) {
       budget -= lineHeight;
       continue;
     }
 
-    if (tailHeight < minimum) {
-      budget -= minimum - tailHeight;
+    if (tailHeight < minimumTail) {
+      budget -= minimumTail - tailHeight;
       continue;
     }
 
@@ -126,16 +117,10 @@ export function packAtoms(atoms, { capacity, lineHeight, measure, splitParagraph
       continue;
     }
 
-    // A paragraph longer than a whole page has to be split wherever it falls.
-    // A heading alone on a page reads as a mistake: under a note's opening, any
-    // honest cut is worth making, so the note begins where it is announced.
-    const underOpening = current?.atoms.length === 1 && PAGE_OPENERS.has(current.atoms[0].kind);
-    const worthSplitting = height > capacity
-      || underOpening
-      || remaining >= height * MIN_SPLIT_SHARE
-      || remaining >= heightOfLines(MIN_SPLIT_LINES, lineHeight);
-
-    if (atom.splittable && worthSplitting) {
+    // Fill every whole line that remains. The two-line guard keeps a readable
+    // opening and tail, but paragraph length and punctuation never force an
+    // otherwise usable part of the page to stay empty.
+    if (atom.splittable) {
       const split = splitWithGuards(atom, remaining, { lineHeight, measure, splitParagraph });
       if (split) {
         place(split.head, measure(split.head));

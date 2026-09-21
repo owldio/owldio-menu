@@ -1,5 +1,6 @@
 import backCoverUrl from "../../assets/back-cover-shanghai-bank.webp?url";
-import coverUrl from "../../assets/cover-moonlight-promise.webp?url";
+import coverUrl from "../../assets/moonlight-promise-cover-v1.jpg?url";
+import coverWideUrl from "../../assets/moonlight-promise-cover-wide-v1.jpg?url";
 import chanChingChing from "../../assets/people/chan-ching-ching.webp?url";
 import chenWenWan from "../../assets/people/chen-wen-wan.webp?url";
 import huangYunYu from "../../assets/people/huang-yun-yu.webp?url";
@@ -92,16 +93,14 @@ export const moonlightPromisePeople = [
   },
 ];
 
-/**
- * The book opens on the printed cover panel, whole. Beside it runs the sheet's
- * own field — the same artwork the panel is printed on, carried on from where
- * the fold cut it and fading into the night at the outer edge — so the leaf
- * fills edge to edge and a page trims only that field.
- */
+/** The original portrait cover on phones, with its designed field extended on wide screens. */
 export const moonlightPromiseCoverArtwork = {
   url: coverUrl,
-  width: 1558,
-  height: 2022,
+  width: 790,
+  height: 1682,
+  wideUrl: coverWideUrl,
+  wideWidth: 1280,
+  wideHeight: 720,
   alt: "月光下的約定：2026 年 9 月 25 日（五）19:30，國家兩廳院演奏廳",
 };
 

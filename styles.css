@@ -7428,28 +7428,6 @@ html:has(.reader-shell[data-view="notes-book"]) body {
 }
 
 /*
- * A note that ends short closes its page rather than trailing off: the text is
- * held in the middle of what is left, below the banner when the page has one.
- */
-.note-page[data-closing="true"] .note-page__body {
-  display: flex;
-  flex-direction: column;
-}
-
-.note-page[data-closing="true"] .note-page__body > :first-child:not(.note-banner),
-.note-page[data-closing="true"] .note-banner + * {
-  margin-top: auto;
-}
-
-.note-page[data-closing="true"] .note-page__body > :last-child {
-  margin-bottom: auto;
-}
-
-.note-page[data-closing="true"] .note-page__endmark {
-  margin-top: 4em;
-}
-
-/*
  * Paragraphs follow one another as in a book: a first-line indent and no gap.
  * The measure is a whole number of characters (resolveLayout), so a line of
  * Chinese meets both margins as it stands; a line that ends on a Latin word is
@@ -7900,10 +7878,14 @@ html:has(.reader-shell[data-view="notes-book"]) body {
     calc(var(--page-pad-bottom) * -1);
 }
 
+.note-printed picture,
 .note-printed img {
   display: block;
   width: 100%;
   height: 100%;
+}
+
+.note-printed img {
   object-fit: contain;
   object-position: center;
 }
@@ -8131,6 +8113,26 @@ html:has(.reader-shell[data-view="notes-book"]) body {
 
 .note-page[data-compact="true"] .note-banner__title {
   margin-top: 0.35em;
+}
+
+/* Large reader text stays at the selected size. Compact pages tighten only
+   the card's rhythm, never its font size. */
+.note-page[data-compact="true"] .note-work {
+  margin-bottom: 0.55em;
+}
+
+.note-page[data-compact="true"] .note-work__heading h3 {
+  line-height: 1.35;
+}
+
+.note-page[data-compact="true"] .note-work__english {
+  margin-top: 0.15em;
+  line-height: 1.35;
+}
+
+.note-page[data-compact="true"] .note-work__detail {
+  margin-top: 0.35em;
+  line-height: 1.72;
 }
 
 /* On a short page the opening keeps its scoring, number, work and composer. */

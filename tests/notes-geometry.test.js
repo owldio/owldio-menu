@@ -155,6 +155,18 @@ describe("pageOffset", () => {
       .toBe((spreadWidth({ twoUp: true, pageWidth: 719 }) - 719) / 2);
   });
 
+  it("lets a wide cover occupy the complete opening spread", () => {
+    const width = spreadWidth({ twoUp: true, pageWidth: 719 });
+    expect(pageOffset({
+      spreadDelta: 0,
+      slot: 0,
+      spreadLength: 1,
+      twoUp: true,
+      pageWidth: 719,
+      singlePageWidth: width,
+    })).toBe(0);
+  });
+
   it("moves whole spreads by one spread and one gap", () => {
     expect(pageOffset({ spreadDelta: 1, slot: 0, spreadLength: 2, twoUp: true, pageWidth: 719 }))
       .toBe(spreadWidth({ twoUp: true, pageWidth: 719 }) + SPREAD_GAP);

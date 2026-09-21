@@ -420,13 +420,23 @@ function renderPersonBanner(payload) {
 /** A page that is a printed panel itself: the sheet's own artwork, whole. */
 function printedPage(image) {
   const node = createElement("section", "note-printed");
-  const picture = createElement("img");
-  picture.src = image.url;
-  picture.width = image.width;
-  picture.height = image.height;
-  picture.alt = image.alt || "";
-  picture.decoding = "async";
-  node.append(picture);
+  const artwork = createElement("img");
+  artwork.src = image.url;
+  artwork.width = image.width;
+  artwork.height = image.height;
+  artwork.alt = image.alt || "";
+  artwork.decoding = "async";
+
+  if (image.wideUrl) {
+    const picture = createElement("picture");
+    const wide = createElement("source");
+    wide.media = "(min-width: 900px) and (orientation: landscape)";
+    wide.srcset = image.wideUrl;
+    picture.append(wide, artwork);
+    node.append(picture);
+  } else {
+    node.append(artwork);
+  }
   return node;
 }
 

@@ -221,7 +221,7 @@ describe("packAtoms typographic guards", () => {
     expect(new Set(cardIds).size).toBe(3);
   });
 
-  it("leaves at least two lines on each side of a split paragraph", () => {
+  it("leaves at least two lines at the foot and a readable continuation", () => {
     const atoms = [
       paragraph("p1", repeat("甲", 45), "note-a"),
       paragraph("p2", repeat("乙", 200), "note-a"),
@@ -231,14 +231,15 @@ describe("packAtoms typographic guards", () => {
     const fragments = pages.flatMap((page) => page.atoms.filter((atom) => atom.id === "p2"));
 
     expect(fragments.length).toBeGreaterThan(1);
-    for (const fragment of fragments) {
-      expect(measure(fragment)).toBeGreaterThanOrEqual(LINE_HEIGHT * 2);
+    expect(measure(fragments[0])).toBeGreaterThanOrEqual(LINE_HEIGHT * 2);
+    for (const fragment of fragments.slice(1)) {
+      expect(measure(fragment)).toBeGreaterThanOrEqual(LINE_HEIGHT);
     }
   });
 
-  it("moves a paragraph whole rather than leave a sliver of it behind", () => {
-    // Three lines are left; the paragraph needs eight. Splitting would strand
-    // its opening lines at the foot of the page, so it starts the next page.
+  it("uses three remaining lines instead of moving a paragraph whole", () => {
+    // Three lines are left and the paragraph needs eight. They are usable
+    // reading space, so the paragraph continues across the turn.
     const atoms = [
       paragraph("p1", repeat("甲", 70), "note-a"),
       paragraph("p2", repeat("乙", 80), "note-a"),
@@ -246,7 +247,8 @@ describe("packAtoms typographic guards", () => {
 
     const pages = packAtoms(atoms, options);
 
-    expect(pages.map((page) => page.atoms.map((atom) => atom.id))).toEqual([["p1"], ["p2"]]);
+    expect(pages.map((page) => page.atoms.map((atom) => atom.id))).toEqual([["p1", "p2"], ["p2"]]);
+    expect(flatten(pages)).toEqual(atoms);
   });
 
   it("still splits a paragraph when most of it fits on the page", () => {

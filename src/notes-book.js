@@ -30,7 +30,6 @@ const ZOOMED = 1.01;
 const TWO_UP_MIN_WIDTH = 900;
 const RELAYOUT_DELAY = 180;
 const HEIGHT_TOLERANCE = 24;
-const CENTRE_THRESHOLD = 0.06;
 const FONT_TIMEOUT = 3500;
 const JUMP_FADE = 240;
 const MOUSE_WAKE_INTERVAL = 250;
@@ -38,9 +37,6 @@ const TEXT_SIZE_KEY = "owldio-notes-text-size";
 const THUMB_HEIGHT = 80;
 // A 40px arrow set 6px in from the edge, with a little air before the text.
 const TURN_BUTTON_ROOM = 52;
-// How far an unsplittable block may be scaled down to fit a page, and in how many tries.
-const MIN_FIT_SCALE = 0.75;
-const FIT_ATTEMPTS = 4;
 
 function storedTextSize() {
   try {
@@ -225,6 +221,9 @@ export function createNotesBook(root, { onError, onPageChange } = {}) {
         spreadLength: placement.length,
         twoUp,
         pageWidth: layout.width,
+        singlePageWidth: twoUp && element.dataset.pageKind === "cover"
+          ? bookWidth()
+          : layout.width,
         dragOffset: dragLocal,
       });
       const transitions = shouldTransitionPage({
@@ -353,15 +352,7 @@ export function createNotesBook(root, { onError, onPageChange } = {}) {
     });
   }
 
-  /**
-   * Books sit flush at the foot of the page. Pagination cannot land exactly on
-   * the last line, so the leftover is shared between the paragraph gaps — up to
-   * a cap, which keeps a page from being stretched open.
-   *
-   * The last page of a note usually ends short. It gets a little more air
-   * between paragraphs, and whatever is still left over is split above and
-   * below the text, so the page reads as composed rather than abandoned.
-   */
+  /** The exact stack height, including the margins the measurer counted. */
   function stackHeight(children) {
     return children.reduce((total, child) => {
       const style = window.getComputedStyle(child);
@@ -372,24 +363,6 @@ export function createNotesBook(root, { onError, onPageChange } = {}) {
     }, 0);
   }
 
-  /**
-   * A block that cannot be split and is taller than a whole page — a work card
-   * at the largest text size on a short screen — is set a little smaller on its
-   * own page, rather than run on under the page number and out of sight.
-   */
-  function fitOversizedBlock(body) {
-    const last = body.lastElementChild;
-    if (!last) return;
-
-    let scale = 1;
-    for (let attempt = 0; attempt < FIT_ATTEMPTS; attempt += 1) {
-      const needed = last.offsetTop + last.offsetHeight;
-      if (needed <= body.clientHeight + 1 || scale <= MIN_FIT_SCALE) return;
-      scale = Math.max(MIN_FIT_SCALE, (scale * body.clientHeight) / needed);
-      body.style.fontSize = `${scale.toFixed(3)}em`;
-    }
-  }
-
   function settleTextBlock(element) {
     if (element.dataset.pageKind !== "note") return;
 
@@ -398,29 +371,20 @@ export function createNotesBook(root, { onError, onPageChange } = {}) {
     // gives way rather than spill into the margin over the page number.
     const endMark = body.querySelector(".note-page__endmark");
     if (endMark && stackHeight([...body.children]) > body.clientHeight) endMark.remove();
-    fitOversizedBlock(body);
-
-    const children = [...body.children];
-    if (!children.length) return;
-
-    // Paragraphs follow one another without gaps, as in a book, so a page that
-    // ends short simply ends short — except a note's last, which is held in the
-    // middle of what is left so it reads as a close.
-    const slack = body.clientHeight - stackHeight(children);
-    if (element.dataset.endsNote === "true" && slack > body.clientHeight * CENTRE_THRESHOLD) {
-      element.dataset.closing = "true";
-    }
   }
 
   function renderPages() {
     book.replaceChildren();
     pageElements = pages.map((page, index) => {
       const noteTitle = page.noteSlug ? noteTitles.get(page.noteSlug) : null;
+      const pageLayout = twoUp && page.kind === "cover"
+        ? { ...layout, width: bookWidth() }
+        : layout;
       return renderPage(page, {
         total: pages.length,
         continuedLabel: noteTitle ?? null,
         endsNote: Boolean(page.noteSlug) && pages[index + 1]?.noteSlug !== page.noteSlug,
-        layout,
+        layout: pageLayout,
       });
     });
     for (const element of pageElements) book.append(element);
