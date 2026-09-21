@@ -22,7 +22,7 @@ function redirectedShell() {
   };
 }
 
-async function runCachedNavigation(shell) {
+async function runCachedNavigation(shell, { offline = false } = {}) {
   const listeners = new Map();
   const cache = {
     async match() {
@@ -56,9 +56,12 @@ async function runCachedNavigation(shell) {
   vm.runInNewContext(workerSource, {
     self,
     caches,
-    fetch: async () => new Response("<!doctype html><title>Fresh shell</title>", {
-      headers: { "content-type": "text/html; charset=utf-8" },
-    }),
+    fetch: async () => {
+      if (offline) throw new TypeError("Network unavailable");
+      return new Response("<!doctype html><title>Fresh shell</title>", {
+        headers: { "content-type": "text/html; charset=utf-8" },
+      });
+    },
     Request,
     Response,
     Headers,
@@ -82,8 +85,16 @@ async function runCachedNavigation(shell) {
 }
 
 describe("service worker navigation responses", () => {
-  it("does not return a redirected cached shell to Safari", async () => {
+  it("prefers the current network shell over a stale cached shell", async () => {
     const response = await runCachedNavigation(redirectedShell());
+
+    expect(response.redirected).toBe(false);
+    expect(response.status).toBe(200);
+    expect(await response.text()).toContain("Fresh shell");
+  });
+
+  it("does not return a redirected cached shell to Safari when offline", async () => {
+    const response = await runCachedNavigation(redirectedShell(), { offline: true });
 
     expect(response.redirected).toBe(false);
     expect(response.status).toBe(200);

@@ -92,19 +92,11 @@ self.addEventListener("message", (event) => {
     })));
 });
 
-async function refreshShell(request) {
-  try {
-    const response = await fetch(request);
-    if (!response.ok) return;
-    const shell = await withoutRedirectMetadata(response);
-    const names = (await caches.keys()).filter((name) => name.startsWith(CACHE_PREFIX));
-    await Promise.all(names.map(async (name) => {
-      const cache = await caches.open(name);
-      await cache.put(APP_SHELL_URL, shell.clone());
-    }));
-  } catch {
-    // A cached shell is expected to work when the venue network disappears.
-  }
+async function cachedNavigationShell(shellCache) {
+  const shell = await shellCache.match(APP_SHELL_URL)
+    || await caches.match(APP_SHELL_URL)
+    || await caches.match("/index.html");
+  return shell ? withoutRedirectMetadata(shell) : null;
 }
 
 self.addEventListener("fetch", (event) => {
@@ -122,17 +114,19 @@ self.addEventListener("fetch", (event) => {
   if (request.mode === "navigate") {
     event.respondWith((async () => {
       const cache = await caches.open(`${CACHE_PREFIX}shell`);
-      const shell = await caches.match(APP_SHELL_URL)
-        || await caches.match("/index.html");
-      if (shell) {
-        event.waitUntil(refreshShell(request));
-        return withoutRedirectMetadata(shell);
+      try {
+        const response = await fetch(request, { cache: "reload" });
+        if (response.ok) {
+          const safeResponse = await withoutRedirectMetadata(response);
+          await cache.put(APP_SHELL_URL, safeResponse.clone());
+          return safeResponse;
+        }
+        return await cachedNavigationShell(cache) || response;
+      } catch (error) {
+        const shell = await cachedNavigationShell(cache);
+        if (shell) return shell;
+        throw error;
       }
-      const response = await fetch(request);
-      if (!response.ok) return response;
-      const safeResponse = await withoutRedirectMetadata(response);
-      await cache.put(APP_SHELL_URL, safeResponse.clone());
-      return safeResponse;
     })());
     return;
   }
