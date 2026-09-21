@@ -15,10 +15,9 @@ if (route.kind === "admin") {
   await mountAdmin({ root: adminRoot, client: isBackendConfigured ? supabase : null });
 } else {
   adminRoot.hidden = true;
-  const offlinePreparation = route.kind === "programme" && route.programmeSlug === "moonlight-promise"
-    ? prepareOfflineReading()
-    : null;
   const repository = isBackendConfigured ? new ProgrammeRepository(supabase) : null;
   await mountReader({ root: readerRoot, repository, initialRoute: route });
-  await offlinePreparation;
+  if (route.kind === "programme" && route.programmeSlug === "moonlight-promise") {
+    void prepareOfflineReading();
+  }
 }

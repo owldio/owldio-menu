@@ -1,5 +1,5 @@
-const COMPLETION_HOLD_MS = 720;
-const FAILURE_HOLD_MS = 3600;
+const COMPLETION_HOLD_MS = 2400;
+const FAILURE_HOLD_MS = 5200;
 const PREPARATION_TIMEOUT_MS = 120000;
 
 export function offlinePercent(completed, total) {
@@ -12,20 +12,22 @@ function wait(ms) {
   return new Promise((resolve) => globalThis.setTimeout(resolve, ms));
 }
 
-function loaderElements(documentRef) {
+function statusElements(documentRef) {
   return {
-    html: documentRef.documentElement,
-    root: documentRef.querySelector("#offline-loading"),
-    title: documentRef.querySelector("#offline-progress-title"),
-    track: documentRef.querySelector("#offline-progress-track"),
-    detail: documentRef.querySelector("#offline-progress-detail"),
-    percent: documentRef.querySelector("#offline-progress-percent"),
-    skip: documentRef.querySelector("#offline-loading-skip"),
+    root: documentRef.querySelector("#offline-status"),
+    title: documentRef.querySelector("#offline-status-title"),
+    track: documentRef.querySelector("#offline-status-track"),
+    detail: documentRef.querySelector("#offline-status-detail"),
+    percent: documentRef.querySelector("#offline-status-percent"),
   };
 }
 
 function paintProgress(elements, { completed = 0, total = 0, title, detail, state = "loading" }) {
   const percent = offlinePercent(completed, total);
+  if (elements.root) {
+    elements.root.hidden = false;
+    elements.root.setAttribute("aria-hidden", "false");
+  }
   elements.root?.style.setProperty("--offline-progress", String(percent / 100));
   if (elements.root) elements.root.dataset.offlineState = state;
   if (elements.title && title) elements.title.textContent = title;
@@ -35,9 +37,10 @@ function paintProgress(elements, { completed = 0, total = 0, title, detail, stat
   elements.track?.setAttribute("aria-valuetext", detail || `${percent}%`);
 }
 
-function closeLoader(elements) {
-  elements.root?.setAttribute("aria-hidden", "true");
-  elements.html?.removeAttribute("data-offline-boot");
+function closeStatus(elements) {
+  if (!elements.root) return;
+  elements.root.setAttribute("aria-hidden", "true");
+  elements.root.hidden = true;
 }
 
 function activeWorker(registration) {
@@ -93,24 +96,16 @@ export async function prepareOfflineReading({
 } = {}) {
   if (!documentRef) return { status: "unavailable" };
 
-  const elements = loaderElements(documentRef);
-  elements.html?.setAttribute("data-offline-boot", "true");
-
-  let skipped = false;
-  const skip = () => {
-    skipped = true;
-    closeLoader(elements);
-  };
-  elements.skip?.addEventListener("click", skip, { once: true });
+  const elements = statusElements(documentRef);
 
   if (!import.meta.env.PROD || !navigatorRef?.serviceWorker || !globalThis.isSecureContext) {
-    closeLoader(elements);
+    closeStatus(elements);
     return { status: "unavailable" };
   }
 
   try {
     paintProgress(elements, {
-      title: "正在準備離線節目冊",
+      title: "正在準備離線閱讀",
       detail: "正在確認頁面與圖片",
     });
 
@@ -142,7 +137,7 @@ export async function prepareOfflineReading({
 
     navigatorRef.storage?.persist?.().catch(() => false);
     await wait(COMPLETION_HOLD_MS);
-    if (!skipped) closeLoader(elements);
+    closeStatus(elements);
     return { status: "ready", ...result };
   } catch (error) {
     paintProgress(elements, {
@@ -152,11 +147,8 @@ export async function prepareOfflineReading({
         : "可以先閱讀，連線恢復後重新整理即可續傳",
       state: "error",
     });
-    if (elements.skip) elements.skip.hidden = false;
     await wait(FAILURE_HOLD_MS);
-    if (!skipped) closeLoader(elements);
+    closeStatus(elements);
     return { status: "error", error };
-  } finally {
-    elements.skip?.removeEventListener("click", skip);
   }
 }
