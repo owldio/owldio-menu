@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs";
+import vm from "node:vm";
 
 import { describe, expect, it } from "vitest";
 
@@ -13,15 +14,50 @@ const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
 const main = readFileSync(new URL("../src/main.js", import.meta.url), "utf8");
 const styles = readFileSync(new URL("../styles.css", import.meta.url), "utf8");
 const worker = readFileSync(new URL("../public/sw.js", import.meta.url), "utf8");
+const bootScript = html.match(/<script>([\s\S]*?)<\/script>/u)?.[1] || "";
+
+function memoryStorage() {
+  const values = new Map();
+  return {
+    getItem(key) {
+      return values.get(key) ?? null;
+    },
+    setItem(key, value) {
+      values.set(key, String(value));
+    },
+  };
+}
+
+function runPublicationBoot(sessionStorage) {
+  const documentElement = { dataset: {} };
+  vm.runInNewContext(bootScript, {
+    document: {
+      documentElement,
+      querySelector() {
+        return { setAttribute() {} };
+      },
+    },
+    location: { pathname: "/moonlight-promise" },
+    sessionStorage,
+  });
+  return documentElement.dataset;
+}
 
 describe("Moonlight Promise offline preparation", () => {
   it("uses the OWLDIO animation only while the page itself is loading", () => {
     expect(html).toMatch(/owldio-offline-lockup\.webp/u);
     expect(html).toMatch(/頁面載入中/u);
-    expect(html).toMatch(/if \(isProgrammePath\) \{/u);
+    expect(html).toMatch(/if \(shouldShowPublicationBoot\) \{/u);
     expect(html).not.toMatch(/hashRoute/u);
     expect(html).not.toMatch(/dataset\.offlineBoot/u);
     expect(styles).not.toMatch(/html\[data-offline-boot="true"\]/u);
+  });
+
+  it("shows the branded loader only on the first programme load in a tab", () => {
+    const storage = memoryStorage();
+
+    expect(runPublicationBoot(storage).publicationBoot).toBe("true");
+    expect(runPublicationBoot(storage).publicationBoot).toBeUndefined();
   });
 
   it("renders the reader before starting the non-blocking offline download", () => {
@@ -62,7 +98,7 @@ describe("Moonlight Promise offline preparation", () => {
     expect(offlineAssetUrl("index.html")).toBe("/");
     expect(offlineAssetUrl("assets/index-hash.js")).toBe("/assets/index-hash.js");
     expect(shouldIncludeInOfflinePack("owldio-offline-lockup.webp")).toBe(true);
-    expect(shouldIncludeInOfflinePack("assets/moonlight-promise-cover-v3-hash.jpg")).toBe(true);
+    expect(shouldIncludeInOfflinePack("assets/moonlight-promise-cover-v4-hash.jpg")).toBe(true);
     expect(shouldIncludeInOfflinePack("assets/index-hash.js")).toBe(true);
     expect(shouldIncludeInOfflinePack("assets/rational-sensual-programme-sample-v1-hash.pdf")).toBe(false);
     expect(shouldIncludeInOfflinePack("_headers")).toBe(false);

@@ -5329,12 +5329,14 @@ body {
 .publication-rail__scrubber {
   position: relative;
   display: block;
-  height: 18px;
+  height: 44px;
+  touch-action: none;
+  user-select: none;
 }
 
 .publication-rail__scrubber::before {
   position: absolute;
-  top: 8px;
+  top: 21px;
   right: 0;
   left: 0;
   height: 2px;
@@ -5344,9 +5346,9 @@ body {
 
 .publication-rail__scrubber i {
   position: absolute;
-  top: 8px;
+  top: 21px;
   left: 0;
-  width: calc(var(--progress, 0) * 100%);
+  width: 0;
   height: 2px;
   background: var(--stage-red);
   pointer-events: none;
@@ -7483,6 +7485,10 @@ html:has(.reader-shell[data-view="notes-book"]) body {
 }
 
 .view--notes-book .publication-rail__scrubber:active i {
+  transition: none;
+}
+
+.view--notes-book .publication-rail__scrubber[data-scrubbing="true"] i {
   transition: none;
 }
 

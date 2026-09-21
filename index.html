@@ -11,7 +11,17 @@
         const isProgrammePath = location.pathname !== "/"
           && !location.pathname.startsWith("/admin")
           && !location.pathname.startsWith("/login");
-        if (isProgrammePath) {
+        let shouldShowPublicationBoot = isProgrammePath;
+        if (shouldShowPublicationBoot) {
+          try {
+            const bootKey = "owldio:publication-boot-shown";
+            shouldShowPublicationBoot = sessionStorage.getItem(bootKey) !== "true";
+            if (shouldShowPublicationBoot) sessionStorage.setItem(bootKey, "true");
+          } catch {
+            // Private browsing can deny storage; showing the loader is the safe fallback.
+          }
+        }
+        if (shouldShowPublicationBoot) {
           document.documentElement.dataset.publicationBoot = "true";
           const path = location.pathname.replace(/\/+$/, "");
           if (path === "/moonlight-promise") {

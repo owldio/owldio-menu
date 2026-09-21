@@ -14,9 +14,9 @@ const programmeSource = readFileSync(
 
 describe("printed cover artwork", () => {
   it("uses the colour-corrected cover artwork on regular and compact phones", () => {
-    expect(artworkSource).toMatch(/moonlight-promise-cover-v3\.jpg/u);
+    expect(artworkSource).toMatch(/moonlight-promise-cover-v4\.jpg/u);
     expect(artworkSource).toMatch(/moonlight-promise-cover-compact-v3\.jpg/u);
-    expect(programmeSource).toMatch(/moonlight-promise-cover-v3\.jpg/u);
+    expect(programmeSource).toMatch(/moonlight-promise-cover-v4\.jpg/u);
     expect(programmeSource).not.toMatch(/moonlight-promise-cover-v2\.jpg/u);
   });
 

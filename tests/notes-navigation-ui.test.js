@@ -21,7 +21,8 @@ describe("notes-book page navigation", () => {
     const progressRules = [...styles.matchAll(/\.publication-rail__scrubber i\s*\{([^}]*)\}/gu)];
     const handleRule = styles.match(/\.view--notes-book \.publication-rail__scrubber i::after\s*\{([^}]*)\}/u);
 
-    expect(progressRules.some((rule) => /width:\s*calc\(var\(--progress, 0\) \* 100%\)/u.test(rule[1]))).toBe(true);
+    expect(source).toMatch(/progress\.style\.width\s*=\s*`\$\{ratio \* 100\}%`/u);
+    expect(progressRules.some((rule) => /width:\s*0/u.test(rule[1]))).toBe(true);
     expect(handleRule).not.toBeNull();
     expect(handleRule[1]).toMatch(/border-radius:\s*50%/u);
     expect(handleRule[1]).toMatch(/background:\s*var\(--moon-gold\)/u);
@@ -31,5 +32,18 @@ describe("notes-book page navigation", () => {
     expect(source).toMatch(/progress\.dataset\.label\s*=\s*scrubberLabel/u);
     expect(styles).toMatch(/content:\s*attr\(data-label\)/u);
     expect(styles).toMatch(/\.publication-rail__scrubber:focus-within i::before/u);
+  });
+
+  it("uses the full track as a large direct-manipulation target", () => {
+    const hitAreaRule = styles.match(/\.publication-rail__scrubber\s*\{([^}]*)\}/u);
+
+    expect(hitAreaRule).not.toBeNull();
+    expect(hitAreaRule[1]).toMatch(/height:\s*44px/u);
+    expect(hitAreaRule[1]).toMatch(/touch-action:\s*none/u);
+    expect(source).toMatch(/scrubberValueAtClientX/u);
+    expect(source).toMatch(/addEventListener\("pointerdown"/u);
+    expect(source).toMatch(/addEventListener\("pointermove"/u);
+    expect(source).toMatch(/setPointerCapture/u);
+    expect(styles).toMatch(/\[data-scrubbing="true"\][^{]*i\s*\{[^}]*transition:\s*none/su);
   });
 });

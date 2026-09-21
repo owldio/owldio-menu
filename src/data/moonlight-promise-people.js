@@ -1,6 +1,6 @@
 import backCoverUrl from "../../assets/back-cover-shanghai-bank.webp?url";
 import harpCenterSponsorUrl from "../../assets/sponsor-taiwan-harp-center.webp?url";
-import coverUrl from "../../assets/moonlight-promise-cover-v3.jpg?url";
+import coverUrl from "../../assets/moonlight-promise-cover-v4.jpg?url";
 import coverCompactUrl from "../../assets/moonlight-promise-cover-compact-v3.jpg?url";
 import coverWideUrl from "../../assets/moonlight-promise-cover-wide-v1.jpg?url";
 import chanChingChing from "../../assets/people/chan-ching-ching.webp?url";

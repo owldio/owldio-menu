@@ -17,6 +17,7 @@ import {
   rubberBandZoom,
   settleZoom,
 } from "./domain/reader-gestures.js";
+import { scrubberValueAtClientX } from "./domain/scrubber.js";
 import { renderPage } from "./notes-book-render.js";
 import { createMeasurer } from "./notes-book-measure.js";
 import { bindNotesGestures } from "./notes-book-gestures.js";
@@ -270,7 +271,7 @@ export function createNotesBook(root, { onError, onPageChange } = {}) {
     }
     if (progress) {
       const ratio = spreads.length > 1 ? spreadIndex / (spreads.length - 1) : 1;
-      progress.style.setProperty("--progress", String(ratio));
+      progress.style.width = `${ratio * 100}%`;
       progress.dataset.label = scrubberLabel;
     }
     if (previousButton) previousButton.disabled = !canPrevious();
@@ -739,7 +740,45 @@ export function createNotesBook(root, { onError, onPageChange } = {}) {
 
   previousButton?.addEventListener("click", () => move(-1));
   nextButton?.addEventListener("click", () => move(1));
-  scrubber?.addEventListener("input", () => goToSpread(Number(scrubber.value) - 1, { animate: false }));
+  let scrubberPointerId = null;
+  const scrubberHitArea = scrubber?.closest(".publication-rail__scrubber");
+
+  function seekScrubber(event) {
+    if (!scrubber || !scrubberHitArea) return;
+    const value = scrubberValueAtClientX(
+      event.clientX,
+      scrubberHitArea.getBoundingClientRect(),
+      Number(scrubber.min),
+      Number(scrubber.max),
+    );
+    scrubber.value = String(value);
+    goToSpread(value - 1, { animate: false, reason: "scrub" });
+  }
+
+  scrubberHitArea?.addEventListener("pointerdown", (event) => {
+    if (event.pointerType === "mouse" && event.button !== 0) return;
+    scrubberPointerId = event.pointerId;
+    scrubberHitArea.dataset.scrubbing = "true";
+    scrubberHitArea.setPointerCapture?.(event.pointerId);
+    seekScrubber(event);
+    event.preventDefault();
+  });
+  scrubberHitArea?.addEventListener("pointermove", (event) => {
+    if (event.pointerId !== scrubberPointerId) return;
+    seekScrubber(event);
+    event.preventDefault();
+  });
+  const finishScrubbing = (event) => {
+    if (event.pointerId !== scrubberPointerId) return;
+    seekScrubber(event);
+    scrubberPointerId = null;
+    delete scrubberHitArea.dataset.scrubbing;
+  };
+  scrubberHitArea?.addEventListener("pointerup", finishScrubbing);
+  scrubberHitArea?.addEventListener("pointercancel", finishScrubbing);
+  scrubber?.addEventListener("input", () => {
+    if (scrubberPointerId === null) goToSpread(Number(scrubber.value) - 1, { animate: false });
+  });
 
   thumbnailsToggle?.addEventListener("click", () => setThumbnails(thumbnails.hidden));
   root.querySelector("#notes-thumbnails-mobile")?.addEventListener("click", () => setThumbnails(true));
