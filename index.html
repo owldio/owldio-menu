@@ -17,9 +17,11 @@
           const path = location.pathname.replace(/\/+$/, "");
           if (path === "/moonlight-promise") {
             document.documentElement.dataset.publicationBootTheme = "moonlight";
+            document.documentElement.dataset.offlineBoot = "true";
             document.querySelector('meta[name="theme-color"]')?.setAttribute("content", "#071624");
           } else if (path === "/moonlight-promise/copy") {
             document.documentElement.dataset.publicationBootTheme = "moonlight-paper";
+            document.documentElement.dataset.offlineBoot = "true";
             document.querySelector('meta[name="theme-color"]')?.setAttribute("content", "#efe8da");
           }
         }
@@ -38,12 +40,30 @@
   <body>
     <a class="skip-link" href="#main-content">跳至主要內容</a>
 
-    <div class="publication-boot" aria-live="polite" aria-label="正在開啟電子節目冊">
-      <div class="publication-placeholder publication-placeholder--boot" aria-hidden="true">
-        <span>OWLDIO MENU</span>
-        <strong>電子節目冊</strong>
-        <small>正在取得演出與節目資訊</small>
-        <i></i>
+    <div class="publication-boot" id="offline-loading" aria-live="polite" aria-label="正在準備離線節目冊">
+      <div class="offline-loader">
+        <div class="offline-loader__brand" aria-hidden="true">
+          <span class="offline-loader__halo"></span>
+          <img src="/owldio-offline-lockup.webp" alt="" width="1200" height="350" />
+        </div>
+        <p class="offline-loader__eyebrow">OWLDIO MENU</p>
+        <strong class="offline-loader__title" id="offline-progress-title">正在準備離線節目冊</strong>
+        <div
+          class="offline-loader__track"
+          id="offline-progress-track"
+          role="progressbar"
+          aria-labelledby="offline-progress-title"
+          aria-valuemin="0"
+          aria-valuemax="100"
+          aria-valuenow="0"
+        >
+          <i id="offline-progress-value"></i>
+        </div>
+        <div class="offline-loader__meta">
+          <span id="offline-progress-detail">正在確認頁面與圖片</span>
+          <output id="offline-progress-percent">0%</output>
+        </div>
+        <button class="offline-loader__skip" id="offline-loading-skip" type="button" hidden>先進入節目冊</button>
       </div>
     </div>
 

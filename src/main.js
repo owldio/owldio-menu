@@ -1,6 +1,7 @@
 import { mountAdmin } from "./admin.js";
 import { parseAppLocation } from "./domain/routing.js";
 import { isBackendConfigured, supabase } from "./lib/supabase.js";
+import { prepareOfflineReading } from "./offline-reading.js";
 import { mountReader } from "./reader.js";
 import { ProgrammeRepository } from "./services/programme-repository.js";
 
@@ -14,6 +15,10 @@ if (route.kind === "admin") {
   await mountAdmin({ root: adminRoot, client: isBackendConfigured ? supabase : null });
 } else {
   adminRoot.hidden = true;
+  const offlinePreparation = route.kind === "programme" && route.programmeSlug === "moonlight-promise"
+    ? prepareOfflineReading()
+    : null;
   const repository = isBackendConfigured ? new ProgrammeRepository(supabase) : null;
   await mountReader({ root: readerRoot, repository, initialRoute: route });
+  await offlinePreparation;
 }
