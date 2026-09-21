@@ -115,3 +115,13 @@ export function pageRenderPlacement({
   const x = pageOffset({ spreadDelta, slot, spreadLength, twoUp, pageWidth }) + dragOffset;
   return { near: true, transform: `translateX(${x}px)` };
 }
+
+/**
+ * A newly revealed standby leaf has no previous off-screen transform. If it is
+ * allowed to transition from `none`, it visibly travels from the centre toward
+ * its parking place — opposite to the page the reader just turned. Only leaves
+ * that were already in the three-spread window can take part in the turn.
+ */
+export function shouldTransitionPage({ animate, wasNear, isNear }) {
+  return Boolean(animate && wasNear && isNear);
+}

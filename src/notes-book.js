@@ -7,6 +7,7 @@ import {
   nextTextSize,
   pageRenderPlacement,
   resolveLayout,
+  shouldTransitionPage,
   spreadWidth,
 } from "./domain/notes-geometry.js";
 import {
@@ -216,6 +217,7 @@ export function createNotesBook(root, { onError, onPageChange } = {}) {
     pageElements.forEach((element, index) => {
       const placement = placements[index];
       if (!placement) return;
+      const wasNear = element.dataset.near === "true";
       const spreadDelta = placement.spread - spreadIndex;
       const rendered = pageRenderPlacement({
         spreadDelta,
@@ -225,11 +227,17 @@ export function createNotesBook(root, { onError, onPageChange } = {}) {
         pageWidth: layout.width,
         dragOffset: dragLocal,
       });
+      const transitions = shouldTransitionPage({
+        animate,
+        wasNear,
+        isNear: rendered.near,
+      });
 
       if (rendered.transform) element.style.transform = rendered.transform;
       else element.style.removeProperty("transform");
       element.dataset.slot = placement.length === 1 ? "single" : placement.slot === 0 ? "left" : "right";
       element.dataset.near = rendered.near ? "true" : "false";
+      element.dataset.turnMotion = transitions ? "true" : "false";
     });
   }
 

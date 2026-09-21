@@ -10,6 +10,7 @@ import {
   pageOffset,
   pageRenderPlacement,
   resolveLayout,
+  shouldTransitionPage,
   spreadWidth,
 } from "../src/domain/notes-geometry.js";
 
@@ -177,5 +178,17 @@ describe("pageRenderPlacement", () => {
 
     expect(placement.transform).toBe(`translateX(${390 + SPREAD_GAP + 12}px)`);
     expect(placement.transform).not.toContain("translate3d");
+  });
+});
+
+describe("shouldTransitionPage", () => {
+  it("does not animate a newly materialised neighbour in the opposite direction", () => {
+    expect(shouldTransitionPage({ animate: true, wasNear: false, isNear: true })).toBe(false);
+  });
+
+  it("animates only leaves that were already participating in the turn", () => {
+    expect(shouldTransitionPage({ animate: true, wasNear: true, isNear: true })).toBe(true);
+    expect(shouldTransitionPage({ animate: false, wasNear: true, isNear: true })).toBe(false);
+    expect(shouldTransitionPage({ animate: true, wasNear: true, isNear: false })).toBe(false);
   });
 });
