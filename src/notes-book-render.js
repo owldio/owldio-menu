@@ -427,12 +427,21 @@ function printedPage(image) {
   artwork.alt = image.alt || "";
   artwork.decoding = "async";
 
-  if (image.wideUrl) {
+  if (image.compactUrl || image.wideUrl) {
     const picture = createElement("picture");
-    const wide = createElement("source");
-    wide.media = "(min-width: 900px) and (orientation: landscape)";
-    wide.srcset = image.wideUrl;
-    picture.append(wide, artwork);
+    if (image.compactUrl) {
+      const compact = createElement("source");
+      compact.media = "(max-width: 899px) and (min-aspect-ratio: 1 / 2)";
+      compact.srcset = image.compactUrl;
+      picture.append(compact);
+    }
+    if (image.wideUrl) {
+      const wide = createElement("source");
+      wide.media = "(min-width: 900px) and (orientation: landscape)";
+      wide.srcset = image.wideUrl;
+      picture.append(wide);
+    }
+    picture.append(artwork);
     node.append(picture);
   } else {
     node.append(artwork);

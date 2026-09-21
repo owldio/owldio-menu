@@ -7892,16 +7892,17 @@ html:has(.reader-shell[data-view="notes-book"]) body {
 }
 
 /*
- * The cover's date, venue and credits are printed close to its lower edge.
- * Keep the whole artwork visible at every screen ratio; any spare strip is
- * the same midnight field, never an enlarged or mirrored copy of the cover.
+ * The cover has a short-screen crop with its date, venue and sponsor credits
+ * already lifted into a safe area. Fill the leaf and pin those credits to the
+ * bottom; any remaining crop then comes from top decoration, never the logos.
  */
 .note-page[data-page-kind="cover"] {
   background-color: #070d1c;
 }
 
 .note-page[data-page-kind="cover"] .note-printed img {
-  object-fit: contain;
+  object-fit: cover;
+  object-position: center bottom;
 }
 
 /* Contents: a heading, then one line per work, flowing on like any other text. */
