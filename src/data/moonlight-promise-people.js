@@ -17,16 +17,16 @@ export const moonlightPromisePeople = [
   {
     slug: "sai-ai-ling",
     role: "豎琴",
-    name: "彩愛玲",
+    name: "彩 愛玲",
     name_en: "Sai Ai Ling",
-    portrait: { url: saiAiLing, width: 640, height: 479 },
+    portrait: { url: saiAiLing, width: 640, height: 479, position: "64% 38%" },
     paragraphs: [
       "榮獲2025年首屆日本‒臺灣友好藝術家獎（第一回日本臺灣友好藝術家賞）。",
-      "彩愛玲出生於東京，自幼展現音樂天賦，畢業於國立音樂大學，並於東京藝術大學（東京藝大）別科修畢，並師從豎琴名家篠崎綾子。自幼受為音樂家的祖父母影響，開始學習古典音樂。作為豎琴獨奏家，她曾於日本、美國、法國、瑞典、韓國、臺灣等地演出。二十餘年來，她不僅活躍於音樂會舞臺，也跨足朗讀會、落語、時裝秀等多元藝術形式，展現跨界風貌。",
+      "彩 愛玲出生於東京，自幼展現音樂天賦，畢業於國立音樂大學，並於東京藝術大學（東京藝大）別科修畢，並師從豎琴名家篠崎綾子。自幼受為音樂家的祖父母影響，開始學習古典音樂。作為豎琴獨奏家，她曾於日本、美國、法國、瑞典、韓國、臺灣等地演出。二十餘年來，她不僅活躍於音樂會舞臺，也跨足朗讀會、落語、時裝秀等多元藝術形式，展現跨界風貌。",
       "在古典音樂領域，她曾與世界知名長笛演奏家工藤重典、薩克斯風演奏家須川展也等人合作演出。除古典領域外，她亦參與流行音樂的錄音及現場演出，合作對象包括Van Dyke Parks、細野晴臣等國際知名音樂人。",
       "2004年，她參與美國麻省理工學院出版之《Computer Music Journal》的演出。2007年發行首張專輯《花一輪》（King Records）正式出道。除古典音樂外，她亦活躍於跨界領域，與流行音樂藝人合作超過二十年，參與錄音及現場演出，其作品曾被選入臺灣紀錄片及NHK BS電視節目。",
-      "彩愛玲同時也是作曲家，其原創作品曾為多部臺灣紀錄片譜寫主題音樂，如《老兵挽歌》、《吳さんの包丁》與《心の故郷》（導演：林正幸/Creative 21）。",
-      "自2022年起，她開始教授即興豎琴音樂冥想課程，並以「ZENHARP」為主題，結合東方思想中的陰陽五行，開發全新即興教學與演奏方式，並發行專輯《Water Meditation》。為推廣豎琴作為療癒樂器，她除演出外，亦積極於日本與臺灣舉辦音樂冥想講座與示範活動。彩愛玲活躍於多元音樂風格，持續以獨特音色與創意打動國際樂壇。",
+      "彩 愛玲同時也是作曲家，其原創作品曾為多部臺灣紀錄片譜寫主題音樂，如《老兵挽歌》、《吳さんの包丁》與《心の故郷》（導演：林正幸/Creative 21）。",
+      "自2022年起，她開始教授即興豎琴音樂冥想課程，並以「ZENHARP」為主題，結合東方思想中的陰陽五行，開發全新即興教學與演奏方式，並發行專輯《Water Meditation》。為推廣豎琴作為療癒樂器，她除演出外，亦積極於日本與臺灣舉辦音樂冥想講座與示範活動。彩 愛玲活躍於多元音樂風格，持續以獨特音色與創意打動國際樂壇。",
     ],
   },
   {
@@ -34,7 +34,7 @@ export const moonlightPromisePeople = [
     role: "小提琴",
     name: "李季",
     name_en: null,
-    portrait: { url: liChi, width: 504, height: 632 },
+    portrait: { url: liChi, width: 504, height: 632, position: "50% 34%" },
     paragraphs: [
       "曾任國立臺南藝術大學音樂學系專任副教授。長榮交響樂團首席、國家交響樂團特約首席與法國阿爾薩斯省Strasbourg音樂院之小提琴教授。",
       "1982年獲法國政府公費獎學金赴法深造，取得巴黎師範音樂院室內樂演奏家、小提琴演奏家高等文憑。旅法期間，任職法國東部洛林省Nancy市交響樂團首席18年。除樂團演出外，演出足跡遍及歐、美、日本、臺灣、中美洲及非洲，並灌製多張CD，屢獲Le monde de la musique、Diapason等雜誌好評。演出曲目自巴洛克時期作品到現代樂。",
@@ -46,7 +46,7 @@ export const moonlightPromisePeople = [
     role: "小提琴",
     name: "詹青青",
     name_en: null,
-    portrait: { url: chanChingChing, width: 640, height: 426 },
+    portrait: { url: chanChingChing, width: 640, height: 426, position: "49% 39%" },
     paragraphs: [
       "小提琴家詹青青活躍於室內樂、管弦樂及跨領域藝術演出。",
       "2015年起持續參與〈緣　室內樂集〉鋼琴五重奏系列，2017年起積極探索多元室內樂編制，策劃二重奏、弦樂三重奏及雋永弦樂四重奏演出。",
@@ -59,7 +59,7 @@ export const moonlightPromisePeople = [
     role: "中提琴",
     name: "楊瑞瑟",
     name_en: null,
-    portrait: { url: yangJuiSe, width: 426, height: 640 },
+    portrait: { url: yangJuiSe, width: 426, height: 640, position: "52% 24%" },
     paragraphs: [
       "國立臺灣師範大學音樂系畢業後，獲得教育部公費留學獎學金負笈法國，並在巴黎師範音樂院榮獲高級演奏家文憑畢業。",
       "2015年起，已發行數張錄音專輯：《采歌》、《弦中之歌》、《對話6×6》、《楊瑞瑟：臺灣印象──音．畫》、《心聆I,II, III》等，專輯內容從中提琴的經典作品，乃至跨樂種與風格的創意性突破，兼具傳統與當代。2023年發行之《楊瑞瑟：臺灣印象──音．畫》榮獲第34屆金曲獎「最佳藝術音樂專輯」，並入圍最佳演奏獎項。",
@@ -71,7 +71,7 @@ export const moonlightPromisePeople = [
     role: "大提琴",
     name: "黃韻宇",
     name_en: null,
-    portrait: { url: huangYunYu, width: 445, height: 468 },
+    portrait: { url: huangYunYu, width: 445, height: 468, position: "50% 34%" },
     paragraphs: [
       "畢業於國立藝專音樂科，獲美國北德州大學大提琴演奏碩士，並赴加拿大卑詩大學博士班深造，現任教於文化大學音樂系。",
       "返臺後曾於國家演奏廳舉辦獨奏會，並活躍於室內樂舞台，參與名家鋼琴三重奏、台北大提琴重奏團及The Singhini Consort辛吉尼樂團等。2010年創立〈緣　室內樂集〉，巡演各地文化中心及國家演奏廳，持續策劃「理性與感性」鋼琴五重奏系列；2016年組成〈雋詠弦樂四重奏〉。",
@@ -83,7 +83,7 @@ export const moonlightPromisePeople = [
     role: "鋼琴",
     name: "陳文婉",
     name_en: null,
-    portrait: { url: chenWenWan, width: 428, height: 640 },
+    portrait: { url: chenWenWan, width: 428, height: 640, position: "50% 30%" },
     paragraphs: [
       "任職中原大學風雅頌音樂中心主任、通識中心專任教授、以及實踐大學音樂系鋼琴教授、臺灣室內樂推廣協會理事。",
       "畢業於臺北藝術大學音樂系與美國舊金山音樂院。畢業後隨即留在舊金山音樂院任職伴奏職務。",

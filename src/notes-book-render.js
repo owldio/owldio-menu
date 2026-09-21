@@ -383,8 +383,8 @@ function renderWorkCard(payload) {
 }
 
 /**
- * A performer's opening: the portrait in a band of fixed depth, so the page can
- * be measured before the picture arrives, then the instrument and the name.
+ * A performer's opening: a round portrait and an identity block share one row,
+ * so the biography begins immediately beneath them on every page size.
  */
 function renderPersonBanner(payload) {
   const node = createElement("header", "note-person");
@@ -397,18 +397,21 @@ function renderPersonBanner(payload) {
     image.height = payload.portrait.height;
     image.alt = payload.name ? `${payload.name}` : "";
     image.decoding = "async";
+    image.style.objectPosition = payload.portrait.position || "50% 35%";
     figure.append(image);
     node.append(figure);
   }
 
-  if (payload.role) node.append(createElement("p", "note-person__role", payload.role));
-  node.append(createElement("h2", "note-person__name", payload.name));
+  const identity = createElement("div", "note-person__identity");
+  if (payload.role) identity.append(createElement("p", "note-person__role", payload.role));
+  identity.append(createElement("h2", "note-person__name", payload.name));
   if (payload.nameEn) {
     const english = createElement("p", "note-person__english", payload.nameEn);
     english.lang = "en";
-    node.append(english);
+    identity.append(english);
   }
-  node.append(ornament("note-person__ornament"));
+  identity.append(ornament("note-person__ornament"));
+  node.append(identity);
 
   return node;
 }

@@ -275,7 +275,7 @@ export const moonlightPromiseProgramme = {
     panelLabels: [
       "封面",
       "曲目順序",
-      "彩愛玲",
+      "彩 愛玲",
       "音樂家介紹（小提琴一、二／中提琴）",
       "音樂家介紹（大提琴／鋼琴）",
       "贊助資訊",

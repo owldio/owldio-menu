@@ -13,7 +13,7 @@ describe("sample programme catalogue", () => {
       panelLabels: [
         "封面",
         "曲目順序",
-        "彩愛玲",
+        "彩 愛玲",
         "音樂家介紹（小提琴一、二／中提琴）",
         "音樂家介紹（大提琴／鋼琴）",
         "贊助資訊",
@@ -45,6 +45,16 @@ describe("sample programme catalogue", () => {
       "台灣豎琴中心",
     ]);
     expect(moonlightPromiseProgramme.supporters ?? []).toEqual([]);
+  });
+
+  it("keeps the Japanese harpist's spaced stage name across the programme", () => {
+    expect(moonlightPromiseProgramme.people[0]).toMatchObject({
+      slug: "sai-ai-ling",
+      role: "豎琴",
+      name: "彩 愛玲",
+      name_en: "Sai Ai Ling",
+    });
+    expect(JSON.stringify(moonlightPromiseProgramme)).not.toContain("彩愛玲");
   });
 
   it("publishes the seven Moonlight Promise notes as a paged book", () => {
@@ -123,7 +133,8 @@ describe("sample programme catalogue", () => {
     // The printed copy, with the corrections the presenter asked for: 加佛瑞 → 佛瑞,
     // 高野達幸 → 高野辰之 as the lyricist of 《朧月夜》, 飽受 → 飽含 in 《望春風》,
     // a stray 一 before 這首 in 《故郷》, Yu-Hsain → Yu-Hsien in 《碎心花》, and the
-    // names and formats of the printed tri-fold: Teng, "(arr. …)" and ／.
-    expect(sourceCopyHash).toBe("026f0c63badc752be6629d6c061bd51c268f3155ebbd43e4e7361771a0bc4c06");
+    // names and formats of the printed tri-fold: Teng, "(arr. …)" and ／; plus
+    // the presenter's requested spacing for the Japanese harpist, 彩 愛玲.
+    expect(sourceCopyHash).toBe("13d78a33c53ab55d76aa3b523fb3e1b18dd0f5c10866ee92f13ac4db375dbf63");
   });
 });
