@@ -82,6 +82,8 @@ describe("sample programme catalogue", () => {
 
     const publishedText = JSON.stringify(moonlightPromiseProgramme.chapters);
     expect(publishedText).toContain("如何讓豎琴「唱歌」");
+    expect(publishedText).toContain("《故鄉》");
+    expect(publishedText).not.toContain("《故郷》");
     expect(publishedText).toContain("最嚴謹的古典形式");
     expect(publishedText).toContain("整片夜色，只留下了那可以容納一切");
     expect(publishedText).toContain("岡野貞一 曲∕高野辰之 詞：《朧月夜》");
@@ -132,9 +134,9 @@ describe("sample programme catalogue", () => {
       .digest("hex");
     // The printed copy, with the corrections the presenter asked for: 加佛瑞 → 佛瑞,
     // 高野達幸 → 高野辰之 as the lyricist of 《朧月夜》, 飽受 → 飽含 in 《望春風》,
-    // a stray 一 before 這首 in 《故郷》, Yu-Hsain → Yu-Hsien in 《碎心花》, and the
+    // a stray 一 before 這首 in 《故鄉》, Yu-Hsain → Yu-Hsien in 《碎心花》, and the
     // names and formats of the printed tri-fold: Teng, "(arr. …)" and ／; plus
     // the presenter's requested spacing for the Japanese harpist, 彩 愛玲.
-    expect(sourceCopyHash).toBe("13d78a33c53ab55d76aa3b523fb3e1b18dd0f5c10866ee92f13ac4db375dbf63");
+    expect(sourceCopyHash).toBe("2e424c208ec63ff5a42dc2c72f6430f9accb75f0ce3c6437b6d6c29bb6adabdf");
   });
 });
