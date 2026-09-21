@@ -524,6 +524,12 @@ function endMark() {
   return node;
 }
 
+export function pageStartsSection(page) {
+  return page.atoms.some(
+    (atom) => atom.kind === "note-banner" || atom.kind === "person-banner",
+  );
+}
+
 export function renderPage(page, { total, continuedLabel, endsNote, layout }) {
   const { article, body } = createPageFrame({
     folioLabel: folioNumber(page.index),
@@ -544,8 +550,7 @@ export function renderPage(page, { total, continuedLabel, endsNote, layout }) {
 
   // A continuing page needs a head of its own. It lives in the page margin, so
   // it costs the text block nothing and the measured capacity stays honest.
-  const opensANote = page.atoms.some((atom) => atom.kind === "note-banner");
-  if (continuedLabel && !opensANote) {
+  if (continuedLabel && !pageStartsSection(page)) {
     const running = createElement("p", "note-page__running", continuedLabel);
     running.setAttribute("aria-hidden", "true");
     article.prepend(running);
