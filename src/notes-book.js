@@ -256,9 +256,10 @@ export function createNotesBook(root, { onError, onPageChange } = {}) {
   function updateChrome() {
     const spread = currentSpread();
     const last = folio(Math.max(0, pages.length - 1));
-    const label = spread.length > 1
-      ? `${folio(spread[0])}–${folio(spread.at(-1))} / ${last}`
-      : `${folio(spread[0] ?? 0)} / ${last}`;
+    const scrubberLabel = spread.length > 1
+      ? `${folio(spread[0])}–${folio(spread.at(-1))}`
+      : folio(spread[0] ?? 0);
+    const label = `${scrubberLabel} / ${last}`;
 
     if (pageLabel) pageLabel.textContent = label;
     if (status) status.textContent = `第 ${label} 頁`;
@@ -270,6 +271,7 @@ export function createNotesBook(root, { onError, onPageChange } = {}) {
     if (progress) {
       const ratio = spreads.length > 1 ? spreadIndex / (spreads.length - 1) : 1;
       progress.style.setProperty("--progress", String(ratio));
+      progress.dataset.label = scrubberLabel;
     }
     if (previousButton) previousButton.disabled = !canPrevious();
     if (nextButton) nextButton.disabled = !canNext();
@@ -277,6 +279,9 @@ export function createNotesBook(root, { onError, onPageChange } = {}) {
     for (const thumb of thumbnailRail?.children || []) {
       const index = Number(thumb.dataset.pageIndex);
       thumb.setAttribute("aria-current", spread.includes(index) ? "true" : "false");
+    }
+    if (thumbnails && !thumbnails.hidden) {
+      window.requestAnimationFrame(() => revealCurrentThumbnail({ behavior: "auto" }));
     }
   }
 
@@ -329,6 +334,17 @@ export function createNotesBook(root, { onError, onPageChange } = {}) {
 
   // ---- Pages ------------------------------------------------------------------
 
+  function revealCurrentThumbnail({ behavior = "smooth" } = {}) {
+    if (!thumbnailRail || thumbnails?.hidden) return;
+    const current = thumbnailRail.querySelector('[aria-current="true"]');
+    if (!current) return;
+    const left = current.offsetLeft - (thumbnailRail.clientWidth - current.offsetWidth) / 2;
+    thumbnailRail.scrollTo({
+      left: Math.max(0, left),
+      behavior: prefersReducedMotion() ? "auto" : behavior,
+    });
+  }
+
   function buildThumbnails() {
     if (!thumbnailRail) return;
     thumbnailsStale = false;
@@ -344,6 +360,7 @@ export function createNotesBook(root, { onError, onPageChange } = {}) {
       button.type = "button";
       button.dataset.pageIndex = String(index);
       button.setAttribute("aria-label", `前往第 ${index + 1} 頁`);
+      button.setAttribute("aria-current", currentSpread().includes(index) ? "true" : "false");
 
       const preview = createElement("span", "notes-thumb__preview");
       preview.setAttribute("aria-hidden", "true");
@@ -351,9 +368,12 @@ export function createNotesBook(root, { onError, onPageChange } = {}) {
       clone.removeAttribute("aria-label");
       clone.style.removeProperty("transform");
       delete clone.dataset.slot;
-      delete clone.dataset.near;
-      // A preview is 80px tall: pictures cost memory here and show nothing.
-      for (const picture of clone.querySelectorAll("img")) picture.remove();
+      clone.dataset.near = "true";
+      clone.dataset.turnMotion = "false";
+      for (const picture of clone.querySelectorAll("img")) {
+        picture.decoding = "async";
+        picture.loading = "lazy";
+      }
       preview.append(clone);
 
       button.append(preview, createElement("span", "notes-thumb__folio", folio(index)));
@@ -714,6 +734,7 @@ export function createNotesBook(root, { onError, onPageChange } = {}) {
     thumbnails.hidden = !open;
     thumbnailsToggle?.setAttribute("aria-expanded", open ? "true" : "false");
     chrome.pin(open);
+    if (open) window.requestAnimationFrame(() => revealCurrentThumbnail({ behavior: "auto" }));
   }
 
   previousButton?.addEventListener("click", () => move(-1));
