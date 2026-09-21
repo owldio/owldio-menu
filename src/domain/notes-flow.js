@@ -133,6 +133,11 @@ export function splitNoteTitle(title) {
 function noteAtoms(chapter, index) {
   const { composer, work } = splitNoteTitle(chapter.title);
   const english = splitNoteTitle(chapter.title_en);
+  const runningHead = chapter.running_head === "title"
+    || !english.composer
+    || !english.work
+    ? null
+    : { composer: english.composer, work: english.work };
   const atoms = [
     atom("note-banner", {
       id: `${chapter.slug}:banner`,
@@ -147,6 +152,7 @@ function noteAtoms(chapter, index) {
         work,
         composerEn: english.composer,
         workEn: english.work,
+        runningHead,
         author: chapter.author ?? null,
         ensemble: chapter.ensemble ?? null,
         performers: chapter.performers ?? [],

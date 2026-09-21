@@ -2,9 +2,11 @@ import { mountAdmin } from "./admin.js";
 import { parseAppLocation } from "./domain/routing.js";
 import { isBackendConfigured, supabase } from "./lib/supabase.js";
 import { prepareOfflineReading } from "./offline-reading.js";
+import { releasePageLoading } from "./page-loading.js";
 import { mountReader } from "./reader.js";
 import { ProgrammeRepository } from "./services/programme-repository.js";
 
+const pageLoadingStartedAt = performance.now();
 const route = parseAppLocation(window.location.pathname, window.location.hash);
 const readerRoot = document.querySelector("#reader-shell");
 const adminRoot = document.querySelector("#admin-app");
@@ -17,6 +19,7 @@ if (route.kind === "admin") {
   adminRoot.hidden = true;
   const repository = isBackendConfigured ? new ProgrammeRepository(supabase) : null;
   await mountReader({ root: readerRoot, repository, initialRoute: route });
+  await releasePageLoading({ startedAt: pageLoadingStartedAt });
   if (route.kind === "programme" && route.programmeSlug === "moonlight-promise") {
     void prepareOfflineReading();
   }

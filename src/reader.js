@@ -886,7 +886,6 @@ export async function mountReader({ root, repository, initialRoute }) {
     views.forEach((view, key) => {
       view.hidden = key !== nextRoute;
     });
-    document.documentElement.removeAttribute("data-publication-boot");
 
     shell.dataset.view = nextRoute;
     headerContext.textContent = routeMeta[nextRoute]?.context || routeMeta.shelf.context;

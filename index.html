@@ -11,8 +11,7 @@
         const isProgrammePath = location.pathname !== "/"
           && !location.pathname.startsWith("/admin")
           && !location.pathname.startsWith("/login");
-        const hashRoute = location.hash.slice(1).split("/")[0];
-        if (isProgrammePath && (!hashRoute || hashRoute === "pdf")) {
+        if (isProgrammePath) {
           document.documentElement.dataset.publicationBoot = "true";
           const path = location.pathname.replace(/\/+$/, "");
           if (path === "/moonlight-promise") {

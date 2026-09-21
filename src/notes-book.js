@@ -577,9 +577,9 @@ export function createNotesBook(root, { onError, onPageChange } = {}) {
           noteSlug,
           kind === "person-banner"
             ? [payload.role, payload.name].filter(Boolean).join("／")
-            : (payload.composer && payload.work
+            : (payload.runningHead ?? (payload.composer && payload.work
               ? `${payload.composer} · ${payload.work}`
-              : payload.title),
+              : payload.title)),
         ]),
     );
 

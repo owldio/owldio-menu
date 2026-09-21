@@ -96,8 +96,8 @@ const chapters = [
   {
     slug: "first-work",
     position: 1,
-    title: "第一首",
-    title_en: "First Work",
+    title: "作曲家：第一首",
+    title_en: "Composer: First Work",
     ensemble: "弦樂四重奏與豎琴",
     performers: [["豎琴", "甲"], ["小提琴 I", "乙"]],
     is_visible: true,
@@ -106,8 +106,9 @@ const chapters = [
   {
     slug: "second-work",
     position: 2,
-    title: "第二首",
-    title_en: "Second Work",
+    title: "作曲家：第二首",
+    title_en: "Composer: Second Work",
+    running_head: "title",
     is_visible: true,
     movements: [["I.", "不太快的快板", "Allegro non troppo"], ["II.", "行板", "Andante"]],
     blocks: [{ type: "prose", paragraphs: ["丙段落。"] }],
@@ -174,6 +175,18 @@ describe("buildNoteFlow", () => {
     expect(banners.map((atom) => atom.payload.number)).toEqual(["01", "02", "03"]);
   });
 
+  it("uses an English composer and work for continuation heads unless a note opts out", () => {
+    const atoms = buildNoteFlow({ programme, chapters });
+    const banners = atoms.filter((atom) => atom.kind === "note-banner");
+
+    expect(banners[0].payload.runningHead).toEqual({
+      composer: "Composer",
+      work: "First Work",
+    });
+    expect(banners[1].payload.runningHead).toBeNull();
+    expect(banners[2].payload.runningHead).toBeNull();
+  });
+
   it("carries the author onto the banner when a note has one", () => {
     const atoms = buildNoteFlow({ programme, chapters });
     const harp = atoms.find((atom) => atom.kind === "note-banner" && atom.noteSlug === "harp-solo");
@@ -233,8 +246,8 @@ describe("buildNoteFlow", () => {
     ]);
     expect(contents[1].payload).toEqual({
       number: "01",
-      title: "第一首",
-      titleEn: "First Work",
+      title: "作曲家：第一首",
+      titleEn: "Composer: First Work",
       slug: "first-work",
       ensemble: "弦樂四重奏與豎琴",
       performers: [["豎琴", "甲"], ["小提琴 I", "乙"]],

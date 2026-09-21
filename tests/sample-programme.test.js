@@ -78,7 +78,7 @@ describe("sample programme catalogue", () => {
     expect(moonlightPromiseProgramme.chapters.map(({ title }) => title)).toEqual([
       "格蘭查尼：古典風格的詠嘆調",
       "布拉姆斯：第三號 C 小調鋼琴四重奏，作品 60",
-      "豎琴獨奏：獻給月亮－心靈相通的歌聲",
+      "豎琴獨奏：獻給月亮——心靈相通的歌聲",
       "伊貝爾：《幕間曲》給小提琴與豎琴",
       "佛瑞：《搖籃》作品23，第 1 首",
       "德布西／馬修諾庭 改編：《月光》",
@@ -109,6 +109,18 @@ describe("sample programme catalogue", () => {
     // Names and formats follow the printed tri-fold: Teng, and "(arr. …)".
     expect(publishedText).toContain("Yu-Hsien Teng (arr. Che-Yi Lee)");
     expect(publishedText).toContain("Claude Debussy (arr. Matthew Naughtin)");
+    expect(publishedText).toContain("Jacques Ibert: Entr'acte for Violin and Harp");
+    expect(publishedText).not.toContain("Entr’acte");
+    expect(moonlightPromiseProgramme.chapters.map(({ title_en: titleEn }) => titleEn)).toEqual([
+      "Marcel Grandjany: Aria in Classic Style",
+      "Johannes Brahms: Piano Quartet No. 3 in C Minor, Op. 60",
+      null,
+      "Jacques Ibert: Entr'acte for Violin and Harp",
+      "Gabriel Fauré: Les Berceaux, Op. 23, No. 1",
+      "Claude Debussy (arr. Matthew Naughtin): Clair de Lune",
+      "Yu-Hsien Teng (arr. Che-Yi Lee): Broken Hearted Flower",
+    ]);
+    expect(moonlightPromiseProgramme.chapters[6].running_head).toBe("title");
     expect(publishedText).toContain("鄧雨賢／李哲藝 改編");
     expect(publishedText).not.toContain("Tung");
     expect(publishedText).not.toContain("∕李哲藝");
@@ -147,7 +159,8 @@ describe("sample programme catalogue", () => {
     // 高野達幸 → 高野辰之 as the lyricist of 《朧月夜》, 飽受 → 飽含 in 《望春風》,
     // a stray 一 before 這首 in 《故鄉》, Yu-Hsain → Yu-Hsien in 《碎心花》, and the
     // names and formats of the printed tri-fold: Teng, "(arr. …)" and ／; plus
-    // the presenter's requested spacing for the Japanese harpist, 彩 愛玲.
-    expect(sourceCopyHash).toBe("2e424c208ec63ff5a42dc2c72f6430f9accb75f0ce3c6437b6d6c29bb6adabdf");
+    // the presenter's requested spacing for the Japanese harpist, 彩 愛玲;
+    // plus the corrected em dash, ASCII apostrophe, and Fauré spelling.
+    expect(sourceCopyHash).toBe("57d1bc5f60862c833829797ad4a3a3bfc51ca067287cd8c2dbdf6f3196685453");
   });
 });

@@ -541,6 +541,19 @@ export function pageStartsSection(page) {
   );
 }
 
+function runningHeadNode(label) {
+  const node = createElement("p", "note-page__running");
+  if (typeof label === "string") {
+    node.textContent = label;
+  } else {
+    node.append(
+      createElement("span", "note-page__running-composer", label.composer),
+      createElement("em", "note-page__running-work", label.work),
+    );
+  }
+  return node;
+}
+
 export function renderPage(page, { total, continuedLabel, endsNote, layout }) {
   const { article, body } = createPageFrame({
     folioLabel: folioNumber(page.index),
@@ -562,7 +575,7 @@ export function renderPage(page, { total, continuedLabel, endsNote, layout }) {
   // A continuing page needs a head of its own. It lives in the page margin, so
   // it costs the text block nothing and the measured capacity stays honest.
   if (continuedLabel && !pageStartsSection(page)) {
-    const running = createElement("p", "note-page__running", continuedLabel);
+    const running = runningHeadNode(continuedLabel);
     running.setAttribute("aria-hidden", "true");
     article.prepend(running);
   }

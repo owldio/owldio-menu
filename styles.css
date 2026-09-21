@@ -7705,6 +7705,16 @@ html:has(.reader-shell[data-view="notes-book"]) body {
   white-space: nowrap;
 }
 
+.note-page__running-composer + .note-page__running-work {
+  margin-left: 0.75em;
+}
+
+.note-page__running-work {
+  font-family: var(--font-display);
+  font-style: italic;
+  letter-spacing: 0.08em;
+}
+
 .note-page__folio {
   position: absolute;
   right: var(--page-pad-x);

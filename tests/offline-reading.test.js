@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 
 import { describe, expect, it } from "vitest";
 
+import { MIN_PAGE_LOADING_MS, remainingPageLoadingMs } from "../src/page-loading.js";
 import { offlinePercent } from "../src/offline-reading.js";
 import { shouldIncludeInOfflinePack } from "../scripts/offline-pack-manifest.mjs";
 
@@ -14,16 +15,27 @@ describe("Moonlight Promise offline preparation", () => {
   it("uses the OWLDIO animation only while the page itself is loading", () => {
     expect(html).toMatch(/owldio-offline-lockup\.webp/u);
     expect(html).toMatch(/頁面載入中/u);
+    expect(html).toMatch(/if \(isProgrammePath\) \{/u);
+    expect(html).not.toMatch(/hashRoute/u);
     expect(html).not.toMatch(/dataset\.offlineBoot/u);
     expect(styles).not.toMatch(/html\[data-offline-boot="true"\]/u);
   });
 
   it("renders the reader before starting the non-blocking offline download", () => {
     const readerReady = main.indexOf("await mountReader");
+    const loadingReleased = main.indexOf("await releasePageLoading");
     const offlineStart = main.indexOf("void prepareOfflineReading()");
 
     expect(readerReady).toBeGreaterThan(-1);
-    expect(offlineStart).toBeGreaterThan(readerReady);
+    expect(loadingReleased).toBeGreaterThan(readerReady);
+    expect(offlineStart).toBeGreaterThan(loadingReleased);
+  });
+
+  it("keeps the branded page-loading advertisement visible for four seconds", () => {
+    expect(MIN_PAGE_LOADING_MS).toBe(4_000);
+    expect(remainingPageLoadingMs(1_000, 1_000)).toBe(4_000);
+    expect(remainingPageLoadingMs(1_000, 2_500)).toBe(2_500);
+    expect(remainingPageLoadingMs(1_000, 5_500)).toBe(0);
   });
 
   it("provides a compact accessible offline progress status", () => {
