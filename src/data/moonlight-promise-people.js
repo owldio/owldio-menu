@@ -109,7 +109,7 @@ export const moonlightPromiseCoverArtwork = {
 /** The sponsor's page closes the book, exactly as it closes the printed sheet. */
 export const moonlightPromiseBackCover = {
   url: backCoverUrl,
-  width: 936,
-  height: 2028,
+  width: 1420,
+  height: 1960,
   alt: "上海商業儲蓄銀行：科技領航、顧客為本、連繫國際",
 };

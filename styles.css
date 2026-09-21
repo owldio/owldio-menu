@@ -7445,10 +7445,10 @@ html:has(.reader-shell[data-view="notes-book"]) body {
   text-indent: 0;
 }
 
-/* The opening phrase changes colour only; it keeps the normal paragraph indent. */
+/* The opening phrase keeps the normal paragraph colour and indent. */
 
 .note-paragraph__lead {
-  color: var(--moon-gold);
+  color: inherit;
 }
 
 .note-page__sentinel {
@@ -7635,6 +7635,7 @@ html:has(.reader-shell[data-view="notes-book"]) body {
   margin: 0.55em 0 0;
   font-size: 0.95em;
   text-align: start;
+  text-indent: 2em;
   line-break: strict;
   hanging-punctuation: allow-end;
 }
@@ -7889,6 +7890,24 @@ html:has(.reader-shell[data-view="notes-book"]) body {
 .note-printed img {
   object-fit: contain;
   object-position: center;
+}
+
+/*
+ * The sponsor artwork is taller than a book leaf. Keep every bank mark in the
+ * picture, then continue its blue field and white logo strip to the page edge
+ * so the remaining space reads as part of the artwork instead of black bars.
+ */
+.note-page[data-page-kind="back-cover"] .note-printed {
+  background: linear-gradient(
+    180deg,
+    #1f6aa5 0%,
+    #2679a4 31%,
+    #4a98b4 55%,
+    #254e6d 76%,
+    #11263d 92.8%,
+    #f8f8f6 92.9%,
+    #f8f8f6 100%
+  );
 }
 
 /*

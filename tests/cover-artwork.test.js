@@ -21,4 +21,27 @@ describe("printed cover artwork", () => {
     expect(rule, "the work number rule must remain explicit").not.toBeNull();
     expect(rule[1]).toMatch(/font-style:\s*italic\s*;/u);
   });
+
+  it("keeps opening phrases the same colour as the paragraph", () => {
+    const rule = styles.match(/\.note-paragraph__lead\s*\{([^}]*)\}/u);
+
+    expect(rule, "the opening phrase rule must remain explicit").not.toBeNull();
+    expect(rule[1]).toMatch(/color:\s*inherit\s*;/u);
+  });
+
+  it("indents each harp-solo item description like a normal paragraph", () => {
+    const rule = styles.match(/\.note-work__detail\s*\{([^}]*)\}/u);
+
+    expect(rule, "the work description rule must remain explicit").not.toBeNull();
+    expect(rule[1]).toMatch(/text-indent:\s*2em\s*;/u);
+  });
+
+  it("extends the sponsor artwork with its own blue field instead of black bars", () => {
+    const rule = styles.match(
+      /\.note-page\[data-page-kind="back-cover"\]\s+\.note-printed\s*\{([^}]*)\}/u,
+    );
+
+    expect(rule, "the sponsor page extension must remain explicit").not.toBeNull();
+    expect(rule[1]).toMatch(/background:\s*linear-gradient\(/u);
+  });
 });
