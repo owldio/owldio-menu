@@ -5,7 +5,7 @@ import {
   TEXT_SIZES,
   defaultTextSize,
   nextTextSize,
-  pageOffset,
+  pageRenderPlacement,
   resolveLayout,
   spreadWidth,
 } from "./domain/notes-geometry.js";
@@ -217,17 +217,19 @@ export function createNotesBook(root, { onError, onPageChange } = {}) {
       const placement = placements[index];
       if (!placement) return;
       const spreadDelta = placement.spread - spreadIndex;
-      const x = pageOffset({
+      const rendered = pageRenderPlacement({
         spreadDelta,
         slot: placement.slot,
         spreadLength: placement.length,
         twoUp,
         pageWidth: layout.width,
-      }) + dragLocal;
+        dragOffset: dragLocal,
+      });
 
-      element.style.transform = `translate3d(${x}px, 0, 0)`;
+      if (rendered.transform) element.style.transform = rendered.transform;
+      else element.style.removeProperty("transform");
       element.dataset.slot = placement.length === 1 ? "single" : placement.slot === 0 ? "left" : "right";
-      element.dataset.near = Math.abs(spreadDelta) <= 1 ? "true" : "false";
+      element.dataset.near = rendered.near ? "true" : "false";
     });
   }
 
@@ -288,7 +290,8 @@ export function createNotesBook(root, { onError, onPageChange } = {}) {
   }
 
   function goToPage(pageIndex, { animate = false, reason = "turn" } = {}) {
-    const target = spreads.findIndex((spread) => spread.includes(pageIndex));
+    const safePage = clamp(pageIndex, 0, Math.max(0, pages.length - 1));
+    const target = spreads.findIndex((spread) => spread.includes(safePage));
     if (target >= 0) goToSpread(target, { animate, reason });
   }
 

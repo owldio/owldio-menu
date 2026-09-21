@@ -8,6 +8,7 @@ import {
   defaultTextSize,
   nextTextSize,
   pageOffset,
+  pageRenderPlacement,
   resolveLayout,
   spreadWidth,
 } from "../src/domain/notes-geometry.js";
@@ -155,5 +156,26 @@ describe("pageOffset", () => {
   it("moves whole spreads by one spread and one gap", () => {
     expect(pageOffset({ spreadDelta: 1, slot: 0, spreadLength: 2, twoUp: true, pageWidth: 719 }))
       .toBe(spreadWidth({ twoUp: true, pageWidth: 719 }) + SPREAD_GAP);
+  });
+});
+
+describe("pageRenderPlacement", () => {
+  const page = { slot: 0, spreadLength: 1, twoUp: false, pageWidth: 390 };
+
+  it("gives only the current and neighbouring spreads a transform", () => {
+    expect(pageRenderPlacement({ ...page, spreadDelta: -1, dragOffset: 0 }).near).toBe(true);
+    expect(pageRenderPlacement({ ...page, spreadDelta: 0, dragOffset: 0 }).near).toBe(true);
+    expect(pageRenderPlacement({ ...page, spreadDelta: 1, dragOffset: 0 }).near).toBe(true);
+    expect(pageRenderPlacement({ ...page, spreadDelta: 2, dragOffset: 0 })).toEqual({
+      near: false,
+      transform: null,
+    });
+  });
+
+  it("uses a two-dimensional transform so Safari does not promote every leaf", () => {
+    const placement = pageRenderPlacement({ ...page, spreadDelta: 1, dragOffset: 12 });
+
+    expect(placement.transform).toBe(`translateX(${390 + SPREAD_GAP + 12}px)`);
+    expect(placement.transform).not.toContain("translate3d");
   });
 });

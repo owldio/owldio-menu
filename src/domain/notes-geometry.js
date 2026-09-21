@@ -95,3 +95,23 @@ export function pageOffset({ spreadDelta, slot, spreadLength, twoUp, pageWidth }
   if (twoUp && spreadLength === 1) return base + (spread - pageWidth) / 2;
   return base + slot * (pageWidth + SPREAD_GUTTER);
 }
+
+/**
+ * Only the spread in hand and its two neighbours need a transform. Giving
+ * every leaf a 3D transform makes WebKit allocate backing layers for a whole
+ * book at once, which can exceed an iPhone WebContent process' memory limit.
+ */
+export function pageRenderPlacement({
+  spreadDelta,
+  slot,
+  spreadLength,
+  twoUp,
+  pageWidth,
+  dragOffset = 0,
+}) {
+  const near = Math.abs(spreadDelta) <= 1;
+  if (!near) return { near: false, transform: null };
+
+  const x = pageOffset({ spreadDelta, slot, spreadLength, twoUp, pageWidth }) + dragOffset;
+  return { near: true, transform: `translateX(${x}px)` };
+}
