@@ -1,4 +1,5 @@
 const CACHE_PREFIX = "owldio-moonlight-";
+const APP_SHELL_URL = "/";
 
 self.addEventListener("install", () => self.skipWaiting());
 
@@ -8,6 +9,21 @@ self.addEventListener("activate", (event) => {
 
 function reply(client, message) {
   client?.postMessage(message);
+}
+
+async function withoutRedirectMetadata(response) {
+  if (!response?.redirected) return response;
+
+  const headers = new Headers(response.headers);
+  headers.delete("content-encoding");
+  headers.delete("content-length");
+  headers.delete("transfer-encoding");
+
+  return new Response(await response.clone().arrayBuffer(), {
+    status: response.status,
+    statusText: response.statusText,
+    headers,
+  });
 }
 
 async function removeOlderPacks(currentCacheName) {
@@ -24,8 +40,9 @@ async function cacheOfflinePack(client, requestId, manifest) {
   let completed = 0;
 
   for (const asset of assets) {
-    const url = typeof asset === "string" ? asset : asset.url;
-    if (!url) continue;
+    const manifestUrl = typeof asset === "string" ? asset : asset.url;
+    if (!manifestUrl) continue;
+    const url = manifestUrl === "/index.html" ? APP_SHELL_URL : manifestUrl;
     const request = new Request(new URL(url, self.location.origin), {
       cache: "reload",
       credentials: "same-origin",
@@ -35,7 +52,10 @@ async function cacheOfflinePack(client, requestId, manifest) {
     if (!cached) {
       const response = await fetch(request);
       if (!response.ok) throw new Error(`下載失敗：${url}`);
-      await cache.put(request, response);
+      const cacheable = url === APP_SHELL_URL
+        ? await withoutRedirectMetadata(response)
+        : response;
+      await cache.put(request, cacheable);
     }
 
     completed += 1;
@@ -76,10 +96,11 @@ async function refreshShell(request) {
   try {
     const response = await fetch(request);
     if (!response.ok) return;
+    const shell = await withoutRedirectMetadata(response);
     const names = (await caches.keys()).filter((name) => name.startsWith(CACHE_PREFIX));
     await Promise.all(names.map(async (name) => {
       const cache = await caches.open(name);
-      await cache.put("/index.html", response.clone());
+      await cache.put(APP_SHELL_URL, shell.clone());
     }));
   } catch {
     // A cached shell is expected to work when the venue network disappears.
@@ -101,14 +122,17 @@ self.addEventListener("fetch", (event) => {
   if (request.mode === "navigate") {
     event.respondWith((async () => {
       const cache = await caches.open(`${CACHE_PREFIX}shell`);
-      const shell = await caches.match("/index.html");
+      const shell = await caches.match(APP_SHELL_URL)
+        || await caches.match("/index.html");
       if (shell) {
         event.waitUntil(refreshShell(request));
-        return shell;
+        return withoutRedirectMetadata(shell);
       }
       const response = await fetch(request);
-      if (response.ok) await cache.put("/index.html", response.clone());
-      return response;
+      if (!response.ok) return response;
+      const safeResponse = await withoutRedirectMetadata(response);
+      await cache.put(APP_SHELL_URL, safeResponse.clone());
+      return safeResponse;
     })());
     return;
   }

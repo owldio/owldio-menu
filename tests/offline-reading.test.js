@@ -4,7 +4,10 @@ import { describe, expect, it } from "vitest";
 
 import { MIN_PAGE_LOADING_MS, remainingPageLoadingMs } from "../src/page-loading.js";
 import { offlinePercent } from "../src/offline-reading.js";
-import { shouldIncludeInOfflinePack } from "../scripts/offline-pack-manifest.mjs";
+import {
+  offlineAssetUrl,
+  shouldIncludeInOfflinePack,
+} from "../scripts/offline-pack-manifest.mjs";
 
 const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
 const main = readFileSync(new URL("../src/main.js", import.meta.url), "utf8");
@@ -56,6 +59,8 @@ describe("Moonlight Promise offline preparation", () => {
 
   it("keeps the Moonlight reader offline without packaging the unrelated demo PDF", () => {
     expect(shouldIncludeInOfflinePack("index.html")).toBe(true);
+    expect(offlineAssetUrl("index.html")).toBe("/");
+    expect(offlineAssetUrl("assets/index-hash.js")).toBe("/assets/index-hash.js");
     expect(shouldIncludeInOfflinePack("owldio-offline-lockup.webp")).toBe(true);
     expect(shouldIncludeInOfflinePack("assets/moonlight-promise-cover-v3-hash.jpg")).toBe(true);
     expect(shouldIncludeInOfflinePack("assets/index-hash.js")).toBe(true);
@@ -69,6 +74,7 @@ describe("Moonlight Promise offline preparation", () => {
     expect(worker).toMatch(/OFFLINE_READY/u);
     expect(worker).toMatch(/OFFLINE_ERROR/u);
     expect(worker).toMatch(/request\.mode === "navigate"/u);
-    expect(worker).toMatch(/caches\.match\("\/index\.html"\)/u);
+    expect(worker).toMatch(/withoutRedirectMetadata/u);
+    expect(worker).toMatch(/caches\.match\(APP_SHELL_URL\)/u);
   });
 });

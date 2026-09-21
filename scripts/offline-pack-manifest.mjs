@@ -13,6 +13,11 @@ export function shouldIncludeInOfflinePack(relativePath) {
   return !path.posix.basename(file).startsWith("rational-sensual-");
 }
 
+export function offlineAssetUrl(relativePath) {
+  const file = normalized(relativePath);
+  return file === "index.html" ? "/" : `/${file}`;
+}
+
 async function walk(directory, root = directory) {
   const entries = await readdir(directory, { withFileTypes: true });
   const files = await Promise.all(entries.map(async (entry) => {
@@ -36,7 +41,7 @@ export async function writeOfflineManifest(distDirectory) {
     const [contents, info] = await Promise.all([readFile(fullPath), stat(fullPath)]);
     hash.update(relativePath);
     hash.update(contents);
-    assets.push({ url: `/${relativePath}`, bytes: info.size });
+    assets.push({ url: offlineAssetUrl(relativePath), bytes: info.size });
   }
 
   const manifest = {
