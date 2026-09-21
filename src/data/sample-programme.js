@@ -2,7 +2,7 @@ import samplePdfUrl from "../../assets/rational-sensual-programme-sample-v1.pdf?
 import sampleCoverUrl from "../../assets/rational-sensual-page-1-v1.png?url";
 import samplePreviewUrl from "../../assets/rational-sensual-preview-v2.webp?url";
 import moonlightPromisePdfUrl from "../../assets/moonlight-promise-programme-v1.pdf?url";
-import moonlightPromiseCoverUrl from "../../assets/moonlight-promise-cover-v2.jpg?url";
+import moonlightPromiseCoverUrl from "../../assets/moonlight-promise-cover-v3.jpg?url";
 import moonlightPromisePreviewUrl from "../../assets/moonlight-promise-preview-v2.webp?url";
 import { moonlightPromiseChapters } from "./moonlight-promise-notes.js";
 import {

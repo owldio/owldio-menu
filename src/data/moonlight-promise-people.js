@@ -1,7 +1,7 @@
 import backCoverUrl from "../../assets/back-cover-shanghai-bank.webp?url";
 import harpCenterSponsorUrl from "../../assets/sponsor-taiwan-harp-center.webp?url";
-import coverUrl from "../../assets/moonlight-promise-cover-v2.jpg?url";
-import coverCompactUrl from "../../assets/moonlight-promise-cover-compact-v2.jpg?url";
+import coverUrl from "../../assets/moonlight-promise-cover-v3.jpg?url";
+import coverCompactUrl from "../../assets/moonlight-promise-cover-compact-v3.jpg?url";
 import coverWideUrl from "../../assets/moonlight-promise-cover-wide-v1.jpg?url";
 import chanChingChing from "../../assets/people/chan-ching-ching.webp?url";
 import chenWenWan from "../../assets/people/chen-wen-wan.webp?url";
@@ -95,7 +95,7 @@ export const moonlightPromisePeople = [
   },
 ];
 
-/** The corrected print cover, with a shorter mobile crop that keeps its credits above browser chrome. */
+/** The colour-corrected print cover, with a shorter mobile crop that keeps its credits above browser chrome. */
 export const moonlightPromiseCoverArtwork = {
   url: coverUrl,
   width: 1202,

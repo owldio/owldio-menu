@@ -3,8 +3,23 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 const styles = readFileSync(new URL("../styles.css", import.meta.url), "utf8");
+const artworkSource = readFileSync(
+  new URL("../src/data/moonlight-promise-people.js", import.meta.url),
+  "utf8",
+);
+const programmeSource = readFileSync(
+  new URL("../src/data/sample-programme.js", import.meta.url),
+  "utf8",
+);
 
 describe("printed cover artwork", () => {
+  it("uses the colour-corrected cover artwork on regular and compact phones", () => {
+    expect(artworkSource).toMatch(/moonlight-promise-cover-v3\.jpg/u);
+    expect(artworkSource).toMatch(/moonlight-promise-cover-compact-v3\.jpg/u);
+    expect(programmeSource).toMatch(/moonlight-promise-cover-v3\.jpg/u);
+    expect(programmeSource).not.toMatch(/moonlight-promise-cover-v2\.jpg/u);
+  });
+
   it("fills the mobile cover while anchoring its credits to the bottom edge", () => {
     const rule = styles.match(
       /\.note-page\[data-page-kind="cover"\]\s+\.note-printed img\s*\{([^}]*)\}/u,
