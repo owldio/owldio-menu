@@ -32,6 +32,7 @@ const FACES = [
 // Every character in these files may be set in the book's face.
 const WHOLE_FILES = [
   "src/data/moonlight-promise-notes.js",
+  "src/data/moonlight-promise-people.js",
   "src/domain/notes-flow.js",
   "src/domain/datetime.js",
   "src/notes-book-render.js",
