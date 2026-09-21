@@ -57,6 +57,17 @@ describe("sample programme catalogue", () => {
     expect(JSON.stringify(moonlightPromiseProgramme)).not.toContain("彩愛玲");
   });
 
+  it("orders performers as harp, violins and viola, then cello and piano", () => {
+    expect(moonlightPromiseProgramme.people.map(({ role, name }) => [role, name])).toEqual([
+      ["豎琴", "彩 愛玲"],
+      ["小提琴", "李季"],
+      ["小提琴", "詹青青"],
+      ["中提琴", "楊瑞瑟"],
+      ["大提琴", "黃韻宇"],
+      ["鋼琴", "陳文婉"],
+    ]);
+  });
+
   it("publishes the seven Moonlight Promise notes as a paged book", () => {
     expect(moonlightPromiseProgramme).toMatchObject({
       default_reader_view: "notes-book",

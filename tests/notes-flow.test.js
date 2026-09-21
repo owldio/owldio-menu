@@ -375,7 +375,7 @@ describe("buildNoteFlow", () => {
     expect(new Set(ids).size).toBe(ids.length);
   });
 
-  it("introduces each performer after the notes, on a page of their own", () => {
+  it("introduces each performer after the programme list and before the notes", () => {
     const atoms = buildNoteFlow({
       programme: {
         ...programme,
@@ -402,7 +402,10 @@ describe("buildNoteFlow", () => {
     expect(person[1].payload.lede).toBe(true);
     expect(person[2].payload.lede).toBe(false);
     expect(atoms.indexOf(person[0])).toBeGreaterThan(
-      atoms.map((atom) => atom.kind).lastIndexOf("note-banner"),
+      atoms.map((atom) => atom.kind).lastIndexOf("contents-entry"),
+    );
+    expect(atoms.indexOf(person.at(-1))).toBeLessThan(
+      atoms.findIndex((atom) => atom.kind === "note-banner"),
     );
   });
 

@@ -235,6 +235,7 @@ export function cutParagraph(paragraph, cut) {
 /**
  * A performer's pages: the portrait and the name, then the biography as it is
  * printed. The first paragraph is a lede, as a note's first paragraph is.
+ * The programme places this whole section before the programme notes.
  */
 function personAtoms(person) {
   return [
@@ -279,8 +280,8 @@ export function buildNoteFlow({ programme, chapters }) {
       },
     }),
     ...contentsAtoms(programme, notes),
-    ...notes.flatMap((chapter, index) => noteAtoms(chapter, index)),
     ...(programme?.people ?? []).flatMap(personAtoms),
+    ...notes.flatMap((chapter, index) => noteAtoms(chapter, index)),
     ...(programme?.back_cover
       ? [atom("back-cover", { id: "back-cover", payload: { ...programme.back_cover } })]
       : []),
