@@ -150,9 +150,9 @@ describe("followsLink", () => {
     expect(followsLink({ zone: "menu", interactive: true })).toBe(true);
   });
 
-  it("turns the page when a link is tapped where the page turns", () => {
-    expect(followsLink({ zone: "previous", interactive: true })).toBe(false);
-    expect(followsLink({ zone: "next", interactive: true })).toBe(false);
+  it("follows an interactive control even when it sits in a page-turn zone", () => {
+    expect(followsLink({ zone: "previous", interactive: true })).toBe(true);
+    expect(followsLink({ zone: "next", interactive: true })).toBe(true);
   });
 
   it("follows nothing when the tap is on the page itself", () => {

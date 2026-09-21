@@ -115,13 +115,8 @@ export function bindNotesGestures(stage, controller) {
     // A drag does not always produce a click, so a leftover guard must not eat the next one.
     if (!pointers.size) suppressClick = false;
 
-    if (!pointers.size && isInteractive(event.target)) {
-      const rect = stageRect();
-      const zone = tapZone(event.clientX - rect.left, rect.width);
-      // In the middle the link is what the reader means; at the edges the leaf is.
-      if (followsLink({ zone, interactive: true })) return;
-      suppressClick = true;
-    }
+    // Buttons and links always keep their own action; only bare page space turns a leaf.
+    if (!pointers.size && followsLink({ interactive: isInteractive(event.target) })) return;
 
     pointers.set(event.pointerId, event);
 

@@ -27,13 +27,9 @@ export function tapZone(x, width) {
   return "menu";
 }
 
-/**
- * A tap on a link follows it only in the middle of the page. The edges are
- * where a reader turns pages, and a page of links — the programme list — covers
- * nearly all of one, so an edge tap there should still turn the leaf.
- */
-export function followsLink({ zone, interactive }) {
-  return Boolean(interactive) && zone === "menu";
+/** Interactive controls always win over the page's edge-turn zones. */
+export function followsLink({ interactive }) {
+  return Boolean(interactive);
 }
 
 export function isDoubleTap(first, second) {
