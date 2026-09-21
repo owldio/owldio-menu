@@ -7891,15 +7891,16 @@ html:has(.reader-shell[data-view="notes-book"]) body {
 }
 
 /*
- * The cover carries its own field around the printed panel, so it fills the
- * leaf and a page edge only ever trims that field.
+ * The cover's date, venue and credits are printed close to its lower edge.
+ * Keep the whole artwork visible at every screen ratio; any spare strip is
+ * the same midnight field, never an enlarged or mirrored copy of the cover.
  */
 .note-page[data-page-kind="cover"] {
   background-color: #070d1c;
 }
 
 .note-page[data-page-kind="cover"] .note-printed img {
-  object-fit: cover;
+  object-fit: contain;
 }
 
 /* Contents: a heading, then one line per work, flowing on like any other text. */
