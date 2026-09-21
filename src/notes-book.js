@@ -10,7 +10,7 @@ import {
   shouldTransitionPage,
   spreadWidth,
 } from "./domain/notes-geometry.js";
-import { pageHoldingAnchor, readingAnchorForPage } from "./domain/notes-position.js";
+import { pageHoldingAnchor, pageIndexForNote, readingAnchorForPage } from "./domain/notes-position.js";
 import {
   resistEdge,
   resolveSwipe,
@@ -319,9 +319,7 @@ export function createNotesBook(root, { onError, onPageChange } = {}) {
    * before this one.
    */
   function goToNote(slug) {
-    const target = pages.findIndex((page) =>
-      page.atoms.some((atom) => atom.kind === "note-banner" && atom.noteSlug === slug),
-    );
+    const target = pageIndexForNote(pages, slug);
     if (target >= 0) goToPage(target, { reason: "jump" });
   }
 

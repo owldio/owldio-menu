@@ -282,6 +282,12 @@ export function buildNoteFlow({ programme, chapters }) {
     ...contentsAtoms(programme, notes),
     ...(programme?.people ?? []).flatMap(personAtoms),
     ...notes.flatMap((chapter, index) => noteAtoms(chapter, index)),
+    ...(programme?.sponsor_pages ?? [])
+      .filter((page) => page?.url)
+      .map((page, index) => atom("sponsor-page", {
+        id: `sponsor-page:${page.id ?? index + 1}`,
+        payload: { ...page },
+      })),
     ...(programme?.back_cover
       ? [atom("back-cover", { id: "back-cover", payload: { ...programme.back_cover } })]
       : []),

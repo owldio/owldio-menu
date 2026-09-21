@@ -9,6 +9,7 @@ import {
   moonlightPromiseBackCover,
   moonlightPromiseCoverArtwork,
   moonlightPromisePeople,
+  moonlightPromiseSponsorPages,
 } from "./moonlight-promise-people.js";
 
 export const sampleProgramme = {
@@ -303,6 +304,7 @@ export const moonlightPromiseProgramme = {
   chapters: moonlightPromiseChapters,
   people: moonlightPromisePeople,
   cover_artwork: moonlightPromiseCoverArtwork,
+  sponsor_pages: moonlightPromiseSponsorPages,
   back_cover: moonlightPromiseBackCover,
 };
 

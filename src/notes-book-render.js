@@ -476,6 +476,8 @@ export function renderAtom(atom) {
       return renderWorkCard(atom.payload);
     case "person-banner":
       return renderPersonBanner(atom.payload);
+    case "sponsor-page":
+      return printedPage(atom.payload);
     case "back-cover":
       return renderBackCover(atom.payload);
     default:

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  pageIndexForNote,
   pageHoldingAnchor,
   readingAnchorForPage,
   readingAnchorFromHistory,
@@ -15,6 +16,16 @@ function fragment(start, end) {
 }
 
 describe("notes reading position", () => {
+  it("resolves a contents link from the current pagination instead of a fixed page number", () => {
+    const banner = { kind: "note-banner", noteSlug: "harp-solo" };
+    const compactPages = [{ atoms: [] }, { atoms: [banner] }];
+    const enlargedPages = [{ atoms: [] }, { atoms: [] }, { atoms: [] }, { atoms: [banner] }];
+
+    expect(pageIndexForNote(compactPages, "harp-solo")).toBe(1);
+    expect(pageIndexForNote(enlargedPages, "harp-solo")).toBe(3);
+    expect(pageIndexForNote(enlargedPages, "missing")).toBe(-1);
+  });
+
   it("records the absolute character offset of a continued paragraph", () => {
     expect(readingAnchorForPage({ atoms: [fragment(60, 100)] })).toEqual({
       atomId: "note:p1",

@@ -1,4 +1,4 @@
-const FULL_PAGE_KINDS = new Set(["cover", "back-cover"]);
+const FULL_PAGE_KINDS = new Set(["cover", "sponsor-page", "back-cover"]);
 
 /** A note, or the contents, always starts on a page of its own. */
 const PAGE_OPENERS = new Set(["note-banner", "contents-heading", "person-banner"]);

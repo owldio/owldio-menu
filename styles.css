@@ -7365,6 +7365,7 @@ html:has(.reader-shell[data-view="notes-book"]) body {
  * page's own artwork never shows beside the panel it frames.
  */
 .note-page[data-page-kind="cover"],
+.note-page[data-page-kind="sponsor-page"],
 .note-page[data-page-kind="back-cover"] {
   background-image: none;
 }
@@ -7893,21 +7894,16 @@ html:has(.reader-shell[data-view="notes-book"]) body {
 }
 
 /*
- * The sponsor artwork is taller than a book leaf. Keep every bank mark in the
- * picture, then continue its blue field and white logo strip to the page edge
- * so the remaining space reads as part of the artwork instead of black bars.
+ * Keep every bank mark in the picture, then continue the artwork's own blue
+ * through the remaining leaf and folio instead of adding a white footer.
  */
 .note-page[data-page-kind="back-cover"] .note-printed {
-  background: linear-gradient(
-    180deg,
-    #1f6aa5 0%,
-    #2679a4 31%,
-    #4a98b4 55%,
-    #254e6d 76%,
-    #11263d 92.8%,
-    #f8f8f6 92.9%,
-    #f8f8f6 100%
-  );
+  background: #1f6aa5;
+}
+
+/* Preserve the harp-centre artwork without cropping its text or side panels. */
+.note-page[data-page-kind="sponsor-page"] .note-printed {
+  background: #f4efe3;
 }
 
 /*

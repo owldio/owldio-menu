@@ -3,7 +3,7 @@ import { lineBreak } from "./domain/text-breaks.js";
 import { createPageFrame, renderAtom } from "./notes-book-render.js";
 import { createElement } from "./lib/dom.js";
 
-const FULL_PAGE_KINDS = new Set(["cover", "back-cover"]);
+const FULL_PAGE_KINDS = new Set(["cover", "sponsor-page", "back-cover"]);
 const MINIMUM_SPLIT_LENGTH = 8;
 
 /**

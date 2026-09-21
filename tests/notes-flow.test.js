@@ -430,6 +430,22 @@ describe("buildNoteFlow", () => {
     });
   });
 
+  it("places full-page sponsor advertisements immediately before the back cover", () => {
+    const atoms = buildNoteFlow({
+      programme: {
+        ...programme,
+        sponsor_pages: [{ id: "harp-centre", url: "harp.webp", width: 906, height: 1280, alt: "豎琴中心" }],
+        back_cover: { url: "bank.webp", width: 1420, height: 1960, alt: "上海商銀" },
+      },
+      chapters,
+    });
+
+    expect(atoms.slice(-2)).toMatchObject([
+      { kind: "sponsor-page", id: "sponsor-page:harp-centre", payload: { url: "harp.webp" } },
+      { kind: "back-cover", id: "back-cover", payload: { url: "bank.webp" } },
+    ]);
+  });
+
   it("returns the cover and an empty programme list when no chapter is visible", () => {
     const atoms = buildNoteFlow({ programme, chapters: [] });
 

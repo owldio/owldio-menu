@@ -36,12 +36,22 @@ describe("printed cover artwork", () => {
     expect(rule[1]).toMatch(/text-indent:\s*2em\s*;/u);
   });
 
-  it("extends the sponsor artwork with its own blue field instead of black bars", () => {
+  it("extends the bank artwork with blue through the folio instead of ending in white", () => {
     const rule = styles.match(
       /\.note-page\[data-page-kind="back-cover"\]\s+\.note-printed\s*\{([^}]*)\}/u,
     );
 
     expect(rule, "the sponsor page extension must remain explicit").not.toBeNull();
-    expect(rule[1]).toMatch(/background:\s*linear-gradient\(/u);
+    expect(rule[1]).toMatch(/background:\s*#1f6aa5\s*;/u);
+    expect(rule[1]).not.toMatch(/#f8f8f6/u);
+  });
+
+  it("extends the harp-centre advertisement with its own ivory field", () => {
+    const rule = styles.match(
+      /\.note-page\[data-page-kind="sponsor-page"\]\s+\.note-printed\s*\{([^}]*)\}/u,
+    );
+
+    expect(rule, "the harp sponsor page extension must remain explicit").not.toBeNull();
+    expect(rule[1]).toMatch(/background:\s*#f4efe3\s*;/u);
   });
 });

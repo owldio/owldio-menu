@@ -1,4 +1,5 @@
 import backCoverUrl from "../../assets/back-cover-shanghai-bank.webp?url";
+import harpCenterSponsorUrl from "../../assets/sponsor-taiwan-harp-center.webp?url";
 import coverUrl from "../../assets/moonlight-promise-cover-v2.jpg?url";
 import coverCompactUrl from "../../assets/moonlight-promise-cover-compact-v2.jpg?url";
 import coverWideUrl from "../../assets/moonlight-promise-cover-wide-v1.jpg?url";
@@ -113,3 +114,12 @@ export const moonlightPromiseBackCover = {
   height: 1960,
   alt: "上海商業儲蓄銀行：科技領航、顧客為本、連繫國際",
 };
+
+/** Full-page advertisements that appear after the programme and before the back cover. */
+export const moonlightPromiseSponsorPages = [{
+  id: "taiwan-harp-center",
+  url: harpCenterSponsorUrl,
+  width: 905,
+  height: 1280,
+  alt: "CAMAC Harps France 與台灣豎琴中心廣告",
+}];

@@ -7,7 +7,7 @@ const LINE_HEIGHT = 30;
 const CAPACITY = 300;
 const CHARS_PER_LINE = 10;
 
-const FULL_PAGE_KINDS = new Set(["cover", "back-cover"]);
+const FULL_PAGE_KINDS = new Set(["cover", "sponsor-page", "back-cover"]);
 
 function measure(atom) {
   if (FULL_PAGE_KINDS.has(atom.kind)) return CAPACITY;
@@ -104,22 +104,24 @@ function usedHeight(page) {
 }
 
 describe("packAtoms page composition", () => {
-  it("gives the cover and the back cover a page each, and opens the contents on its own", () => {
+  it("gives every printed artwork its own page and keeps sponsor pages together", () => {
     const atoms = [
       fullPage("cover"),
       contentsHeading(),
       contentsEntry("c1"),
       banner("note-a"),
       paragraph("p1", repeat("甲", 20)),
+      fullPage("sponsor-page"),
       fullPage("back-cover"),
     ];
 
     const pages = packAtoms(atoms, options);
 
-    expect(pages.map((page) => page.kind)).toEqual(["cover", "contents", "note", "back-cover"]);
+    expect(pages.map((page) => page.kind)).toEqual(["cover", "contents", "note", "sponsor-page", "back-cover"]);
     expect(pages[0].atoms).toHaveLength(1);
     expect(pages[1].atoms.map((atom) => atom.id)).toEqual(["contents", "c1"]);
     expect(pages[3].atoms).toHaveLength(1);
+    expect(pages[4].atoms).toHaveLength(1);
   });
 
   it("runs a long contents onto a second contents page", () => {

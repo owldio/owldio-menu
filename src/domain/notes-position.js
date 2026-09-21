@@ -6,6 +6,13 @@ function textRange(atom) {
   return { start, end };
 }
 
+/** Resolve a contents link against the pages produced by the latest reflow. */
+export function pageIndexForNote(pages, slug) {
+  return (pages || []).findIndex((page) =>
+    (page?.atoms || []).some((atom) => atom.kind === "note-banner" && atom.noteSlug === slug),
+  );
+}
+
 /** The semantic reading position survives page-size and font-metric changes. */
 export function readingAnchorForPage(page) {
   const atom = page?.atoms?.[0];
