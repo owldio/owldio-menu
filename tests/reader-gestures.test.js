@@ -8,6 +8,7 @@ import {
   rubberBandZoom,
   settleZoom,
   swipeVelocity,
+  tapAction,
   tapZone,
 } from "../src/domain/reader-gestures.js";
 
@@ -25,6 +26,28 @@ describe("tapZone", () => {
 
   it("treats an unmeasured stage as a menu tap rather than a turn", () => {
     expect(tapZone(10, 0)).toBe("menu");
+  });
+});
+
+describe("tapAction", () => {
+  it("closes the page thumbnails from a tap in the middle of the page", () => {
+    expect(tapAction({ zone: "menu", zoomed: false, panelOpen: true })).toBe("close-panel");
+  });
+
+  it("still turns pages from the edges while the thumbnails are open", () => {
+    expect(tapAction({ zone: "previous", zoomed: false, panelOpen: true })).toBe("previous");
+    expect(tapAction({ zone: "next", zoomed: false, panelOpen: true })).toBe("next");
+  });
+
+  it("closes the thumbnails from any tap while zoomed in", () => {
+    expect(tapAction({ zone: "next", zoomed: true, panelOpen: true })).toBe("close-panel");
+  });
+
+  it("keeps the usual reading taps when no panel is open", () => {
+    expect(tapAction({ zone: "menu", zoomed: false, panelOpen: false })).toBe("toggle-chrome");
+    expect(tapAction({ zone: "previous", zoomed: false, panelOpen: false })).toBe("previous");
+    expect(tapAction({ zone: "next", zoomed: false, panelOpen: false })).toBe("next");
+    expect(tapAction({ zone: "next", zoomed: true, panelOpen: false })).toBe("toggle-chrome");
   });
 });
 

@@ -16,6 +16,7 @@ import {
   resolveSwipe,
   rubberBandZoom,
   settleZoom,
+  tapAction,
 } from "./domain/reader-gestures.js";
 import { scrubberValueAtClientX } from "./domain/scrubber.js";
 import { renderPage } from "./notes-book-render.js";
@@ -615,13 +616,20 @@ export function createNotesBook(root, { onError, onPageChange } = {}) {
 
     onTap(zone) {
       if (overlays.dismissHint()) return;
-      if (zoom > ZOOMED) {
-        chrome.toggle();
+      const action = tapAction({
+        zone,
+        zoomed: zoom > ZOOMED,
+        panelOpen: Boolean(thumbnails && !thumbnails.hidden),
+      });
+      if (action === "close-panel") {
+        // Put the whole page back in front of the audience: panel and bars both go.
+        setThumbnails(false);
+        chrome.hide();
         return;
       }
-      if (zone === "previous" || zone === "next") {
+      if (action === "previous" || action === "next") {
         chrome.hide();
-        move(zone === "next" ? 1 : -1);
+        move(action === "next" ? 1 : -1);
         return;
       }
       chrome.toggle();

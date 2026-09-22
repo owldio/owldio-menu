@@ -27,6 +27,21 @@ export function tapZone(x, width) {
   return "menu";
 }
 
+/**
+ * What a single tap on the page does. An open panel, such as the page
+ * thumbnails, gives way to a tap in the middle so the programme is back in
+ * full view; the edges keep turning pages unless the page is zoomed in.
+ *
+ * @param {{ zone: "previous" | "next" | "menu", zoomed: boolean, panelOpen: boolean }} tap
+ * @returns {"close-panel" | "toggle-chrome" | "previous" | "next"}
+ */
+export function tapAction({ zone, zoomed, panelOpen }) {
+  if (panelOpen && (zoomed || zone === "menu")) return "close-panel";
+  if (zoomed) return "toggle-chrome";
+  if (zone === "previous" || zone === "next") return zone;
+  return "toggle-chrome";
+}
+
 /** Interactive controls always win over the page's edge-turn zones. */
 export function followsLink({ interactive }) {
   return Boolean(interactive);
