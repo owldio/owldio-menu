@@ -13,6 +13,20 @@
       ],
       "port": 5199,
       "url": "http://127.0.0.1:5199"
+    },
+    {
+      "name": "menu-preview",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "preview",
+        "--",
+        "--port",
+        "4199",
+        "--strictPort"
+      ],
+      "port": 4199,
+      "url": "http://127.0.0.1:4199"
     }
   ]
 }

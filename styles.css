@@ -1465,28 +1465,73 @@ html[data-publication-boot-theme="moonlight-paper"] .offline-loader__brand img {
   letter-spacing: 0.04em;
 }
 
+/*
+ * A floating one-line pill: owl, short state, percent. The longer detail stays
+ * in the live region for screen readers only, and the progress bar is a
+ * hairline on the pill's lower edge. offline-status-float.js moves it through
+ * --offline-x / --offline-y (top-left by default) when the reader drags it.
+ */
 .offline-status {
   --offline-progress: 0;
   --offline-status-accent: #d5b169;
+  --offline-status-shift: 0px;
+  --offline-x: 8px;
+  --offline-y: 8px;
   position: fixed;
-  top: max(10px, env(safe-area-inset-top));
-  left: 50%;
+  top: 0;
+  left: 0;
   z-index: 990;
-  display: grid;
-  width: min(calc(100vw - 24px), 370px);
-  grid-template-columns: 30px minmax(0, 1fr) auto;
+  display: flex;
+  max-width: calc(100vw - 16px);
+  height: 24px;
   align-items: center;
-  gap: 10px;
-  padding: 9px 12px;
-  border: 1px solid rgb(213 177 105 / 0.32);
-  border-radius: 12px;
-  background: rgb(5 20 34 / 0.9);
-  box-shadow: 0 10px 28px rgb(0 0 0 / 0.3);
+  gap: 5px;
+  padding: 0 9px 0 6px;
+  border: 1px solid rgb(213 177 105 / 0.26);
+  border-radius: 999px;
+  background: rgb(5 20 34 / 0.78);
+  box-shadow: 0 6px 18px rgb(0 0 0 / 0.28);
   color: #f3ead5;
-  pointer-events: none;
-  transform: translateX(-50%);
-  animation: offline-status-in 240ms ease-out both;
-  backdrop-filter: blur(14px);
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  transform: translate3d(var(--offline-x), var(--offline-y), 0);
+  translate: 0 var(--offline-status-shift);
+  transition: translate 220ms ease, scale 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
+  animation: offline-status-in 240ms ease-out backwards;
+  backdrop-filter: blur(10px);
+}
+
+.offline-status[data-dragging="true"] {
+  border-color: rgb(213 177 105 / 0.55);
+  box-shadow: 0 12px 28px rgb(0 0 0 / 0.42);
+  cursor: grabbing;
+  scale: 1.05;
+}
+
+/*
+ * While the reader toolbar or progress rail is out, a pill parked under it
+ * steps just clear of it instead of covering its buttons. Dragged elsewhere,
+ * it stays put.
+ */
+body:has(.view--notes-book:not([hidden]):not([data-chrome="hidden"])) .offline-status[data-offline-dock="top"] {
+  --offline-status-shift: calc(66px - var(--offline-y));
+}
+
+body:has(.view--notes-book:not([hidden]):not([data-chrome="hidden"])) .offline-status[data-offline-dock="bottom"] {
+  --offline-status-shift: -60px;
+}
+
+@media (max-width: 880px) {
+  body:has(.view--notes-book:not([hidden]):not([data-chrome="hidden"])) .offline-status[data-offline-dock="top"] {
+    --offline-status-shift: calc(56px - var(--offline-y));
+  }
+
+  body:has(.view--notes-book:not([hidden]):not([data-chrome="hidden"])) .offline-status[data-offline-dock="bottom"] {
+    --offline-status-shift: -52px;
+  }
 }
 
 .offline-status[hidden] {
@@ -1495,42 +1540,45 @@ html[data-publication-boot-theme="moonlight-paper"] .offline-loader__brand img {
 
 .offline-status > img {
   display: block;
-  width: 30px;
-  height: 30px;
+  flex: none;
+  width: 14px;
+  height: 14px;
   filter: brightness(0) saturate(100%) invert(78%) sepia(25%) saturate(645%) hue-rotate(3deg) brightness(92%) contrast(87%);
 }
 
 .offline-status__copy {
-  display: grid;
+  display: block;
   min-width: 0;
-  gap: 2px;
 }
 
-.offline-status__copy strong,
-.offline-status__copy span {
+.offline-status__copy strong {
+  display: block;
   overflow: hidden;
+  color: #fff9eb;
+  font: 500 11px/1 var(--font-sans);
+  letter-spacing: 0.04em;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.offline-status__copy strong {
-  color: #fff9eb;
-  font: 500 12px/1.25 var(--font-sans);
-  letter-spacing: 0.05em;
-}
-
 .offline-status__copy span {
-  color: rgb(243 234 213 / 0.72);
-  font: 10px/1.25 var(--font-sans);
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
 .offline-status__track {
-  position: relative;
-  height: 2px;
-  margin-top: 4px;
+  position: absolute;
+  right: 12px;
+  bottom: 0;
+  left: 12px;
+  height: 1.5px;
   overflow: hidden;
   border-radius: 999px;
-  background: rgb(213 177 105 / 0.18);
+  background: rgb(213 177 105 / 0.14);
 }
 
 .offline-status__track i {
@@ -1539,13 +1587,14 @@ html[data-publication-boot-theme="moonlight-paper"] .offline-loader__brand img {
   width: calc(var(--offline-progress) * 100%);
   border-radius: inherit;
   background: var(--offline-status-accent);
-  box-shadow: 0 0 9px rgb(213 177 105 / 0.55);
+  box-shadow: 0 0 6px rgb(213 177 105 / 0.5);
   transition: width 220ms ease;
 }
 
 .offline-status output {
+  flex: none;
   color: var(--offline-status-accent);
-  font: 500 11px/1 var(--font-sans);
+  font: 500 10px/1 var(--font-sans);
   font-variant-numeric: tabular-nums;
 }
 
@@ -1559,6 +1608,63 @@ html[data-publication-boot-theme="moonlight-paper"] .offline-loader__brand img {
   border-color: rgb(225 161 170 / 0.38);
 }
 
+/* After a failed download the percent gives way to a retry button beside the message. */
+.offline-status__retry {
+  position: relative;
+  display: none;
+  flex: none;
+  width: 18px;
+  height: 18px;
+  margin-right: -5px;
+  place-items: center;
+  padding: 0;
+  border: 1px solid rgb(225 161 170 / 0.42);
+  border-radius: 50%;
+  background: rgb(225 161 170 / 0.12);
+  color: var(--offline-status-accent);
+  cursor: pointer;
+  transition: background-color 160ms ease, scale 120ms ease;
+}
+
+/* A fingertip-sized hit area around the small icon. */
+.offline-status__retry::after {
+  position: absolute;
+  inset: -10px;
+  content: "";
+}
+
+.offline-status__retry svg {
+  display: block;
+  width: 11px;
+  height: 11px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}
+
+.offline-status__retry:hover {
+  background: rgb(225 161 170 / 0.24);
+}
+
+.offline-status__retry:active {
+  scale: 0.9;
+}
+
+.offline-status__retry:focus-visible {
+  outline: 2px solid var(--offline-status-accent);
+  outline-offset: 2px;
+}
+
+.offline-status[data-offline-state="error"] .offline-status__retry {
+  display: grid;
+}
+
+.offline-status[data-offline-state="error"] output {
+  display: none;
+}
+
 @keyframes page-load-signal {
   0% { opacity: 0.35; transform: translateX(-105%); }
   50% { opacity: 1; }
@@ -1566,8 +1672,7 @@ html[data-publication-boot-theme="moonlight-paper"] .offline-loader__brand img {
 }
 
 @keyframes offline-status-in {
-  from { opacity: 0; transform: translate(-50%, -8px); }
-  to { opacity: 1; transform: translate(-50%, 0); }
+  from { opacity: 0; scale: 0.9; }
 }
 
 @keyframes owldio-brand-breathe {

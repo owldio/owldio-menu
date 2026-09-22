@@ -1,5 +1,6 @@
+import { attachFloatingStatus } from "./offline-status-float.js";
+
 const COMPLETION_HOLD_MS = 2400;
-const FAILURE_HOLD_MS = 5200;
 const PREPARATION_TIMEOUT_MS = 120000;
 
 export function offlinePercent(completed, total) {
@@ -19,6 +20,7 @@ function statusElements(documentRef) {
     track: documentRef.querySelector("#offline-status-track"),
     detail: documentRef.querySelector("#offline-status-detail"),
     percent: documentRef.querySelector("#offline-status-percent"),
+    retry: documentRef.querySelector("#offline-status-retry"),
   };
 }
 
@@ -35,12 +37,20 @@ function paintProgress(elements, { completed = 0, total = 0, title, detail, stat
   if (elements.percent) elements.percent.textContent = `${percent}%`;
   elements.track?.setAttribute("aria-valuenow", String(percent));
   elements.track?.setAttribute("aria-valuetext", detail || `${percent}%`);
+  elements.floating?.refresh();
 }
 
-function closeStatus(elements) {
-  if (!elements.root) return;
-  elements.root.setAttribute("aria-hidden", "true");
-  elements.root.hidden = true;
+/** Hides the pill, unless the reader is holding it or a newer state replaced this one. */
+function closeStatus(elements, expectedState) {
+  const { root, floating } = elements;
+  if (!root) return;
+  if (floating?.isDragging()) {
+    floating.whenIdle(() => closeStatus(elements, expectedState));
+    return;
+  }
+  if (expectedState && root.dataset.offlineState !== expectedState) return;
+  root.setAttribute("aria-hidden", "true");
+  root.hidden = true;
 }
 
 function activeWorker(registration) {
@@ -85,27 +95,10 @@ function requestOfflinePack(serviceWorker, worker, manifest, elements) {
   });
 }
 
-/**
- * Downloads the Moonlight Promise reading pack on the first online visit. The
- * worker reports each cached file, so the branded progress bar is truthful.
- */
-export async function prepareOfflineReading({
-  documentRef = globalThis.document,
-  navigatorRef = globalThis.navigator,
-  fetchImpl = globalThis.fetch,
-} = {}) {
-  if (!documentRef) return { status: "unavailable" };
-
-  const elements = statusElements(documentRef);
-
-  if (!import.meta.env.PROD || !navigatorRef?.serviceWorker || !globalThis.isSecureContext) {
-    closeStatus(elements);
-    return { status: "unavailable" };
-  }
-
+async function runPreparation(elements, { navigatorRef, fetchImpl }) {
   try {
     paintProgress(elements, {
-      title: "正在準備離線閱讀",
+      title: "準備離線閱讀",
       detail: "正在確認頁面與圖片",
     });
 
@@ -137,18 +130,56 @@ export async function prepareOfflineReading({
 
     navigatorRef.storage?.persist?.().catch(() => false);
     await wait(COMPLETION_HOLD_MS);
-    closeStatus(elements);
+    closeStatus(elements, "ready");
     return { status: "ready", ...result };
   } catch (error) {
+    // Stays on screen with its retry button; the reader can drag it aside.
     paintProgress(elements, {
-      title: "離線下載尚未完成",
+      title: "離線下載未完成",
       detail: navigatorRef?.onLine === false
-        ? "目前沒有網路；已下載的內容仍可使用"
-        : "可以先閱讀，連線恢復後重新整理即可續傳",
+        ? "目前沒有網路；已下載的內容仍可使用，連上網路後按重試"
+        : "可以先閱讀，按重試會從中斷處繼續下載",
       state: "error",
     });
-    await wait(FAILURE_HOLD_MS);
-    closeStatus(elements);
     return { status: "error", error };
   }
+}
+
+/**
+ * Downloads the Moonlight Promise reading pack on the first online visit. The
+ * worker reports each cached file, so the branded progress bar is truthful,
+ * and a retry resumes from the files already stored.
+ */
+export async function prepareOfflineReading({
+  documentRef = globalThis.document,
+  navigatorRef = globalThis.navigator,
+  fetchImpl = globalThis.fetch,
+} = {}) {
+  if (!documentRef) return { status: "unavailable" };
+
+  const baseElements = statusElements(documentRef);
+
+  if (!import.meta.env.PROD || !navigatorRef?.serviceWorker || !globalThis.isSecureContext) {
+    closeStatus(baseElements);
+    return { status: "unavailable" };
+  }
+
+  const elements = {
+    ...baseElements,
+    floating: baseElements.root ? attachFloatingStatus(baseElements.root, { documentRef }) : null,
+  };
+
+  let running = null;
+  const run = () => {
+    running ??= runPreparation(elements, { navigatorRef, fetchImpl }).finally(() => {
+      running = null;
+    });
+    return running;
+  };
+
+  elements.retry?.addEventListener("click", () => {
+    void run();
+  });
+
+  return run();
 }

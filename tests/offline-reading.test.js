@@ -85,6 +85,21 @@ describe("Moonlight Promise offline preparation", () => {
     expect(styles).toMatch(/\.offline-status\s*\{[^}]*position:\s*fixed;/su);
   });
 
+  it("keeps the offline status a small pill that stays clear of the reader toolbar", () => {
+    const pill = styles.match(/\.offline-status\s*\{([^}]*)\}/su)?.[1] || "";
+
+    expect(pill).toMatch(/height:\s*24px;/u);
+    expect(pill).toMatch(/border-radius:\s*999px;/u);
+    expect(pill).not.toMatch(/width:\s*min\(/u);
+    expect(styles).toMatch(/\.offline-status__copy span\s*\{[^}]*clip-path:\s*inset\(50%\);/su);
+    expect(styles).toMatch(
+      /:has\(\.view--notes-book:not\(\[hidden\]\):not\(\[data-chrome="hidden"\]\)\)\s*\.offline-status\[data-offline-dock="top"\]\s*\{[^}]*--offline-status-shift:/su,
+    );
+    expect(styles).toMatch(
+      /:has\(\.view--notes-book:not\(\[hidden\]\):not\(\[data-chrome="hidden"\]\)\)\s*\.offline-status\[data-offline-dock="bottom"\]\s*\{[^}]*--offline-status-shift:\s*-/su,
+    );
+  });
+
   it("reports bounded download progress", () => {
     expect(offlinePercent(0, 20)).toBe(0);
     expect(offlinePercent(5, 20)).toBe(25);

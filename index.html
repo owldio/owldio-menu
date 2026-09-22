@@ -65,7 +65,7 @@
     <div class="offline-status" id="offline-status" role="status" aria-live="polite" aria-hidden="true" hidden>
       <img src="./assets/owldio-owl-reader-mark-v1.svg" alt="" width="32" height="32" aria-hidden="true" />
       <div class="offline-status__copy">
-        <strong id="offline-status-title">正在準備離線閱讀</strong>
+        <strong id="offline-status-title">準備離線閱讀</strong>
         <span id="offline-status-detail">正在確認頁面與圖片</span>
         <div
           class="offline-status__track"
@@ -80,6 +80,12 @@
         </div>
       </div>
       <output id="offline-status-percent">0%</output>
+      <button class="offline-status__retry" id="offline-status-retry" type="button" aria-label="重新下載離線內容">
+        <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+          <path d="M13.2 8.6a5.3 5.3 0 1 1-1.5-4.3" />
+          <path d="M12.2 1.6v3.1H9.1" />
+        </svg>
+      </button>
     </div>
 
     <div class="reader-shell" id="reader-shell" data-view="shelf">
