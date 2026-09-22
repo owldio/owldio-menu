@@ -126,7 +126,9 @@ export function shouldTransitionPage({ animate, wasNear, isNear }) {
   return Boolean(animate && wasNear && isNear);
 }
 
-/** The cover counts as the first physical leaf but carries no printed folio. */
+/** Leaves that count toward the numbering but carry no printed folio: the cover and the sponsors' full-page advertisements. */
+const UNNUMBERED_PAGE_KINDS = new Set(["cover", "sponsor-page", "back-cover"]);
+
 export function shouldShowFolio(pageKind) {
-  return pageKind !== "cover";
+  return !UNNUMBERED_PAGE_KINDS.has(pageKind);
 }

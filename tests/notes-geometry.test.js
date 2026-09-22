@@ -211,6 +211,10 @@ describe("shouldShowFolio", () => {
     expect(shouldShowFolio("cover")).toBe(false);
     expect(shouldShowFolio("contents")).toBe(true);
     expect(shouldShowFolio("note")).toBe(true);
-    expect(shouldShowFolio("back-cover")).toBe(true);
+  });
+
+  it("leaves the full-page sponsor advertisements unnumbered", () => {
+    expect(shouldShowFolio("sponsor-page")).toBe(false);
+    expect(shouldShowFolio("back-cover")).toBe(false);
   });
 });

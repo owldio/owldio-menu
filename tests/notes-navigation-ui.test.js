@@ -47,3 +47,15 @@ describe("notes-book page navigation", () => {
     expect(styles).toMatch(/\[data-scrubbing="true"\][^{]*i\s*\{[^}]*transition:\s*none/su);
   });
 });
+
+describe("note page running head", () => {
+  const styles = readFileSync(new URL("../styles.css", import.meta.url), "utf8");
+
+  it("sets the running head with modest tracking so names read as words", () => {
+    const rule = styles.match(/\.note-page__running\s*\{([^}]*)\}/su)?.[1] || "";
+    const tracking = Number(rule.match(/letter-spacing:\s*([\d.]+)em;/u)?.[1]);
+
+    expect(tracking).toBeGreaterThan(0);
+    expect(tracking).toBeLessThanOrEqual(0.12);
+  });
+});
