@@ -28,6 +28,42 @@ function lastBreakBefore(text, limit, pattern) {
   return 0;
 }
 
+const CJK_MARK = /[。！？；：，、「」『』（）《》〈〉【】“”‘’…—–·]/u;
+const GUARDED_CHARACTER = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}〇々]/u;
+const GUARDED_LENGTH = 2;
+const MINIMUM_GUARDED_TEXT = 12;
+
+/**
+ * Where a paragraph's closing run begins: its last two characters and every
+ * mark among and after them (「《碎心花》等。」 keeps 「花》等。」), which the
+ * page holds on one line so a paragraph never ends on a lone character. -1 for
+ * a paragraph too short to strand one, or one ending on a Latin word or a
+ * number, which the browser already keeps whole.
+ */
+export function orphanGuardStart(text) {
+  const value = typeof text === "string" ? text : "";
+  if (value.length < MINIMUM_GUARDED_TEXT) return -1;
+
+  let index = value.length;
+  let guarded = 0;
+  while (index > 0 && guarded < GUARDED_LENGTH) {
+    const character = value[index - 1];
+    if (GUARDED_CHARACTER.test(character)) guarded += 1;
+    else if (!CJK_MARK.test(character)) return -1;
+    index -= 1;
+  }
+  return guarded === GUARDED_LENGTH ? index : -1;
+}
+
+/**
+ * Chinese alone is set justified, so a line that gave a character to the next
+ * still meets the margin; a Latin word would be pulled apart, so a paragraph
+ * with one stays ragged.
+ */
+export function setsJustified(text) {
+  return !/[A-Za-z]/u.test(String(text ?? ""));
+}
+
 export function sentenceBreak(text, limit) {
   return lastBreakBefore(text, limit, SENTENCE_END);
 }

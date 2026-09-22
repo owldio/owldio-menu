@@ -71,6 +71,16 @@ describe("cutParagraph", () => {
     expect(head.payload.lede).toBe(false);
   });
 
+  it("marks the part that runs onto the next page, and only that part", () => {
+    const { head, tail } = cutParagraph(lede, 4);
+    const { head: middle, tail: last } = cutParagraph(tail, 2);
+
+    expect(head.payload.runsOn).toBe(true);
+    expect(middle.payload.runsOn).toBe(true);
+    expect(last.payload.runsOn).toBeFalsy();
+    expect(lede.payload.runsOn).toBeUndefined();
+  });
+
   it("keeps absolute text offsets when a paragraph is split more than once", () => {
     const { head: first, tail: remainder } = cutParagraph(lede, 2);
     const { head: middle, tail: last } = cutParagraph(remainder, 3);

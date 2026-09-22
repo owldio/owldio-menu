@@ -1,6 +1,60 @@
 import { describe, expect, it } from "vitest";
 
-import { chooseCut, clauseBreak, leadPhraseLength, lineBreak, sentenceBreak } from "../src/domain/text-breaks.js";
+import {
+  chooseCut,
+  clauseBreak,
+  leadPhraseLength,
+  lineBreak,
+  orphanGuardStart,
+  sentenceBreak,
+  setsJustified,
+} from "../src/domain/text-breaks.js";
+
+describe("orphanGuardStart", () => {
+  it("keeps the last two characters and the closing full stop together", () => {
+    const text = "清新悅耳的旋律，飽含對春天的期盼和對他人溫柔的思念。";
+
+    expect(text.slice(orphanGuardStart(text))).toBe("思念。");
+  });
+
+  it("carries every closing mark along with the last two characters", () => {
+    const text = "這一段話最後以引號收尾，作為測試用的句子「願心靈相連。」";
+
+    expect(text.slice(orphanGuardStart(text))).toBe("相連。」");
+  });
+
+  it("carries a closing mark that falls between the last two characters", () => {
+    const text = "創作了許多時代巨作，如《月夜愁》、《雨夜花》和《碎心花》等。";
+
+    expect(text.slice(orphanGuardStart(text))).toBe("花》等。");
+  });
+
+  it("guards the last two characters of a paragraph that ends without punctuation", () => {
+    const text = "這是一段沒有句號結尾的中文段落文字";
+
+    expect(text.slice(orphanGuardStart(text))).toBe("文字");
+  });
+
+  it("leaves a short paragraph alone, since it cannot strand a character", () => {
+    expect(orphanGuardStart("短句。")).toBe(-1);
+  });
+
+  it("leaves a paragraph that ends on a Latin word or a number to the browser", () => {
+    expect(orphanGuardStart("這首歌的英文名稱是 Furusato (Hometown)")).toBe(-1);
+    expect(orphanGuardStart("這首作品最後於西元年完成並出版於 1875")).toBe(-1);
+  });
+});
+
+describe("setsJustified", () => {
+  it("justifies a paragraph of Chinese alone", () => {
+    expect(setsJustified("臺灣代表性歌曲，歌頌少女被春風輕拂時的感受。")).toBe(true);
+    expect(setsJustified("於1930 年代日治時期發表。")).toBe(true);
+  });
+
+  it("leaves a paragraph with Latin words ragged, so no line is pulled apart", () => {
+    expect(setsJustified("布拉姆斯（Johannes Brahms，1833－1897）對這種編制尤其具有獨特的掌握能力。")).toBe(false);
+  });
+});
 
 describe("leadPhraseLength", () => {
   function leadOf(text) {

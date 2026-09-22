@@ -254,6 +254,8 @@ export function cutParagraph(paragraph, cut) {
         ...paragraph.payload,
         text: text.slice(0, cut),
         leadIn: Math.min(leadIn, cut),
+        // Its last line is the page's last line, full to the margin.
+        runsOn: true,
         sourceStart,
         sourceEnd: sourceCut,
       },

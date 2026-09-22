@@ -7864,6 +7864,22 @@ html:has(.reader-shell[data-view="notes-book"]) body {
   text-indent: 0;
 }
 
+/*
+ * No paragraph ends on a lone character: its last two characters travel
+ * together (orphanGuardStart), and a Chinese paragraph is justified so the
+ * line that gave one up still meets the margin. A paragraph with Latin words
+ * stays ragged, since justifying it would pull its lines apart.
+ */
+.note-nowrap {
+  white-space: nowrap;
+}
+
+.note-paragraph[data-justify="true"],
+.note-work__detail[data-justify="true"] {
+  text-align: justify;
+  text-justify: inter-character;
+}
+
 /* The opening phrase keeps the normal paragraph colour and indent. */
 
 .note-paragraph__lead {

@@ -1,5 +1,6 @@
 import { programmeDateParts } from "./domain/datetime.js";
 import { shouldShowFolio } from "./domain/notes-geometry.js";
+import { orphanGuardStart, setsJustified } from "./domain/text-breaks.js";
 import { createElement } from "./lib/dom.js";
 
 const SVG_NS = "http://www.w3.org/2000/svg";
@@ -371,15 +372,28 @@ function renderBanner(payload) {
   return node;
 }
 
+/**
+ * Copy from `from` on, its closing run (orphanGuardStart) kept on one line so
+ * the paragraph never ends on a lone character. A part that runs onto the next
+ * page is left alone: its last line is the page's, full to the margin.
+ */
+function appendCopy(node, text, { from = 0, guard = true } = {}) {
+  const start = guard ? orphanGuardStart(text) : -1;
+  if (start < from) {
+    node.append(text.slice(from));
+    return;
+  }
+  node.append(text.slice(from, start), createElement("span", "note-nowrap", text.slice(start)));
+}
+
 function renderParagraph(atom) {
-  const { text, lede, leadIn = 0, continues } = atom.payload;
+  const { text, lede, leadIn = 0, continues, runsOn } = atom.payload;
   const node = createElement("p", "note-paragraph");
   // A lede leads with its first phrase in gold (leadPhraseLength); only the colour changes, never the measure.
-  if (lede && leadIn > 0) {
-    node.append(createElement("span", "note-paragraph__lead", text.slice(0, leadIn)), text.slice(leadIn));
-  } else {
-    node.textContent = text;
-  }
+  const lead = lede && leadIn > 0 ? leadIn : 0;
+  if (lead) node.append(createElement("span", "note-paragraph__lead", text.slice(0, lead)));
+  appendCopy(node, text, { from: lead, guard: !runsOn });
+  if (setsJustified(text)) node.dataset.justify = "true";
   if (continues) node.dataset.continues = "true";
   if (lede) node.dataset.lede = "true";
   return node;
@@ -412,7 +426,10 @@ function renderWorkCard(payload) {
     node.append(createElement("p", "note-work__english", payload.titleEn));
   }
   for (const detail of payload.details) {
-    node.append(createElement("p", "note-work__detail", detail));
+    const paragraph = createElement("p", "note-work__detail");
+    appendCopy(paragraph, detail);
+    if (setsJustified(detail)) paragraph.dataset.justify = "true";
+    node.append(paragraph);
   }
 
   return node;

@@ -75,3 +75,23 @@ describe("programme without running numbers", () => {
     expect(rule).not.toMatch(/font-style:\s*italic/u);
   });
 });
+
+describe("no stranded last character", () => {
+  const styles = readFileSync(new URL("../styles.css", import.meta.url), "utf8");
+  const render = readFileSync(new URL("../src/notes-book-render.js", import.meta.url), "utf8");
+
+  it("keeps the guarded tail of a paragraph on one line", () => {
+    expect(styles).toMatch(/\.note-nowrap\s*\{[^}]*white-space:\s*nowrap;/su);
+    expect(render).toMatch(/orphanGuardStart/u);
+  });
+
+  it("justifies Chinese paragraphs so a line that gave up a character still meets the margin", () => {
+    expect(styles).toMatch(
+      /\.note-paragraph\[data-justify="true"\],\s*\.note-work__detail\[data-justify="true"\]\s*\{[^}]*text-align:\s*justify;/su,
+    );
+  });
+
+  it("leaves a paragraph that runs onto the next page full to its last line", () => {
+    expect(render).toMatch(/runsOn/u);
+  });
+});
