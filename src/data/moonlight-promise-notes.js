@@ -202,6 +202,7 @@ export const moonlightPromiseChapters = [
     eyebrow: "樂曲解說 / PROGRAMME NOTE",
     title: "德布西／馬修諾庭 改編：《月光》",
     title_en: "Claude Debussy (arr. Matthew Naughtin): Clair de Lune",
+    running_head: "Debussy (arr. Naughtin) Clair de Lune",
     ensemble: "弦樂四重奏與豎琴",
     performers: [
       ["豎琴", "彩 愛玲"],

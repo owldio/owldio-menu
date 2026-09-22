@@ -133,11 +133,17 @@ export function splitNoteTitle(title) {
 function noteAtoms(chapter, index) {
   const { composer, work } = splitNoteTitle(chapter.title);
   const english = splitNoteTitle(chapter.title_en);
-  const runningHead = chapter.running_head === "title"
-    || !english.composer
-    || !english.work
-    ? null
-    : { composer: english.composer, work: english.work };
+  const customRunningHead = typeof chapter.running_head === "string"
+    && chapter.running_head !== "title"
+    ? chapter.running_head.trim()
+    : null;
+  const runningHead = customRunningHead || (
+    chapter.running_head === "title"
+      || !english.composer
+      || !english.work
+      ? null
+      : { composer: english.composer, work: english.work }
+  );
   const atoms = [
     atom("note-banner", {
       id: `${chapter.slug}:banner`,

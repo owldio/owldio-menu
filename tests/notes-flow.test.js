@@ -187,6 +187,21 @@ describe("buildNoteFlow", () => {
     expect(banners[2].payload.runningHead).toBeNull();
   });
 
+  it("accepts a compact continuation head without changing the opening title", () => {
+    const [chapter] = chapters;
+    const atoms = buildNoteFlow({
+      programme,
+      chapters: [{
+        ...chapter,
+        running_head: "Debussy (arr. Naughtin) Clair de Lune",
+      }],
+    });
+    const banner = atoms.find((atom) => atom.kind === "note-banner");
+
+    expect(banner.payload.titleEn).toBe("Composer: First Work");
+    expect(banner.payload.runningHead).toBe("Debussy (arr. Naughtin) Clair de Lune");
+  });
+
   it("carries the author onto the banner when a note has one", () => {
     const atoms = buildNoteFlow({ programme, chapters });
     const harp = atoms.find((atom) => atom.kind === "note-banner" && atom.noteSlug === "harp-solo");
