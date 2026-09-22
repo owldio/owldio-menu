@@ -95,3 +95,13 @@ describe("no stranded last character", () => {
     expect(render).toMatch(/runsOn/u);
   });
 });
+
+describe("titles never end on a lone character", () => {
+  const render = readFileSync(new URL("../src/notes-book-render.js", import.meta.url), "utf8");
+
+  it("guards programme titles, song lines and note headings like the paragraphs", () => {
+    expect(render).toMatch(/const link = createElement\("strong", "note-contents__title-link"\);\s*appendCopy\(link, payload\.title\);/u);
+    expect(render).toMatch(/const titleText = createElement\("span"\);\s*appendCopy\(titleText, payload\.title\);/u);
+    expect(render).toMatch(/const title = createElement\("h2", "note-banner__title"\);\s*appendCopy\(title, payload\.work \|\| payload\.title\);/u);
+  });
+});

@@ -248,7 +248,9 @@ function renderContentsSub(payload, variant) {
   }
 
   const copy = createElement("span", "note-contents__sub-copy");
-  copy.append(createElement("span", null, payload.title));
+  const titleText = createElement("span");
+  appendCopy(titleText, payload.title);
+  copy.append(titleText);
   if (payload.english) copy.append(groupEnglish(payload.english));
   else if (payload.titleEn) copy.append(createElement("small", null, payload.titleEn));
 
@@ -282,7 +284,9 @@ function renderContentsEntry(payload) {
   }
   // Only the work's own title follows the link, and only as far as its own
   // letters reach: everything else on the page is page, and turns the leaf.
-  copy.append(createElement("strong", "note-contents__title-link", payload.title));
+  const link = createElement("strong", "note-contents__title-link");
+  appendCopy(link, payload.title);
+  copy.append(link);
   if (payload.titleEn) copy.append(createElement("small", null, payload.titleEn));
 
   button.append(copy);
@@ -335,7 +339,8 @@ function renderBanner(payload) {
   // label only fills in when a note has no scoring of its own.
   const scoring = payload.ensemble || payload.eyebrow || "樂曲解說";
 
-  const title = createElement("h2", "note-banner__title", payload.work || payload.title);
+  const title = createElement("h2", "note-banner__title");
+  appendCopy(title, payload.work || payload.title);
   // However it is set, the heading is heard as the whole title.
   if (payload.work && payload.work !== payload.title) title.setAttribute("aria-label", payload.title);
 
@@ -374,8 +379,8 @@ function renderBanner(payload) {
 
 /**
  * Copy from `from` on, its closing run (orphanGuardStart) kept on one line so
- * the paragraph never ends on a lone character. A part that runs onto the next
- * page is left alone: its last line is the page's, full to the margin.
+ * a paragraph or a title never ends on a lone character. A part that runs onto
+ * the next page is left alone: its last line is the page's, full to the margin.
  */
 function appendCopy(node, text, { from = 0, guard = true } = {}) {
   const start = guard ? orphanGuardStart(text) : -1;
