@@ -30,11 +30,12 @@ describe("printed cover artwork", () => {
     expect(rule[1]).toMatch(/object-position:\s*center bottom\s*;/u);
   });
 
-  it("sets harp-solo item numbers apart in italic", () => {
-    const rule = styles.match(/\.note-work__number\s*\{([^}]*)\}/u);
+  it("sets the harp-solo songs upright and unnumbered", () => {
+    const heading = styles.match(/\.note-work__heading :is\(h3, h4\)\s*\{([^}]*)\}/u);
 
-    expect(rule, "the work number rule must remain explicit").not.toBeNull();
-    expect(rule[1]).toMatch(/font-style:\s*italic\s*;/u);
+    expect(styles).not.toMatch(/\.note-work__number/u);
+    expect(heading, "the song heading rule must remain explicit").not.toBeNull();
+    expect(heading[1]).not.toMatch(/font-style:\s*italic/u);
   });
 
   it("keeps opening phrases the same colour as the paragraph", () => {

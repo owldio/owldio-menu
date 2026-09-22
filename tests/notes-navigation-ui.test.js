@@ -59,3 +59,19 @@ describe("note page running head", () => {
     expect(tracking).toBeLessThanOrEqual(0.12);
   });
 });
+
+describe("programme without running numbers", () => {
+  const render = readFileSync(new URL("../src/notes-book-render.js", import.meta.url), "utf8");
+  const styles = readFileSync(new URL("../styles.css", import.meta.url), "utf8");
+
+  it("prints no number beside a programme entry, a note's opening, or a harp-solo song", () => {
+    expect(render).not.toMatch(/note-contents__number/u);
+    expect(render).not.toMatch(/note-banner__number/u);
+    expect(render).not.toMatch(/note-work__number/u);
+  });
+
+  it("sets the harp-solo songs upright in the programme list", () => {
+    const rule = styles.match(/\.note-contents__sub--work\s*\{([^}]*)\}/su)?.[1] || "";
+    expect(rule).not.toMatch(/font-style:\s*italic/u);
+  });
+});

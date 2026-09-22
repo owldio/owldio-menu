@@ -88,7 +88,7 @@ describe("sample programme catalogue", () => {
     moonlightPromiseProgramme.chapters.forEach((chapter) => {
       expect(chapter.is_visible).toBe(true);
       expect(chapter.reading_minutes).toBeUndefined();
-      expect(chapter.blocks.every(({ type }) => ["prose", "programme-list"].includes(type))).toBe(true);
+      expect(chapter.blocks.every(({ type }) => ["prose", "programme-list", "song-groups"].includes(type))).toBe(true);
     });
 
     const publishedText = JSON.stringify(moonlightPromiseProgramme.chapters);
@@ -97,11 +97,12 @@ describe("sample programme catalogue", () => {
     expect(publishedText).not.toContain("《故郷》");
     expect(publishedText).toContain("最嚴謹的古典形式");
     expect(publishedText).toContain("整片夜色，只留下了那可以容納一切");
-    expect(publishedText).toContain("岡野貞一 曲∕高野辰之 詞：《朧月夜》");
+    expect(publishedText).toContain('"composer":"岡野貞一"');
+    expect(publishedText).toContain('"title":"《朧月夜》","title_en":"Oborozukiyo (Misty Moonlit Night)","lyricist":"高野辰之"');
     expect(publishedText).not.toContain("高野達幸");
     expect(publishedText).toContain("飽含對春天的期盼");
     expect(publishedText).not.toContain("飽受");
-    expect(publishedText).toContain("Furusato (Hometown)\\n這首著名的日本歌曲");
+    expect(publishedText).toContain('"title_en":"Furusato (Hometown)","lyricist":"高野辰之","text":"這首著名的日本歌曲');
     expect(publishedText).not.toContain("一這首");
     expect(publishedText).toContain("法國作曲家佛瑞（Gabriel Fauré");
     expect(publishedText).not.toContain("加佛瑞");
@@ -145,12 +146,14 @@ describe("sample programme catalogue", () => {
       title,
       title_en: titleEn,
       author,
-      blocks: blocks.map((block) => block.type === "prose"
-        ? { type: block.type, paragraphs: block.paragraphs }
-        : {
+      blocks: blocks.map((block) => {
+        if (block.type === "prose") return { type: block.type, paragraphs: block.paragraphs };
+        if (block.type === "song-groups") return { type: block.type, groups: block.groups };
+        return {
           type: block.type,
           items: block.items.map(([, itemTitle, detail]) => [itemTitle, detail]),
-        }),
+        };
+      }),
     }));
     const sourceCopyHash = createHash("sha256")
       .update(JSON.stringify(sourceCopy))
@@ -160,7 +163,8 @@ describe("sample programme catalogue", () => {
     // a stray 一 before 這首 in 《故鄉》, Yu-Hsain → Yu-Hsien in 《碎心花》, and the
     // names and formats of the printed tri-fold: Teng, "(arr. …)" and ／; plus
     // the presenter's requested spacing for the Japanese harpist, 彩 愛玲;
-    // plus the corrected em dash, ASCII apostrophe, and Fauré spelling.
-    expect(sourceCopyHash).toBe("57d1bc5f60862c833829797ad4a3a3bfc51ca067287cd8c2dbdf6f3196685453");
+    // plus the corrected em dash, ASCII apostrophe, and Fauré spelling;
+    // plus the harp-solo songs regrouped by composer, their copy unchanged.
+    expect(sourceCopyHash).toBe("72083116f30d1018c715bb7787ec52ebef6cb32fe7be5aaffff147e3e9cbcdb9");
   });
 });

@@ -239,14 +239,34 @@ function scoringLine(performers) {
  */
 function renderContentsSub(payload, variant) {
   const line = createElement("p", `note-contents__sub note-contents__sub--${variant}`);
-  line.append(createElement("span", "note-contents__sub-mark", payload.mark));
+  // A movement keeps its I., II.; the harp-solo songs carry no running number.
+  if (payload.mark) {
+    line.append(createElement("span", "note-contents__sub-mark", payload.mark));
+  } else {
+    line.dataset.unmarked = "true";
+  }
 
   const copy = createElement("span", "note-contents__sub-copy");
   copy.append(createElement("span", null, payload.title));
-  if (payload.titleEn) copy.append(createElement("small", null, payload.titleEn));
+  if (payload.english) copy.append(groupEnglish(payload.english));
+  else if (payload.titleEn) copy.append(createElement("small", null, payload.titleEn));
 
   line.append(copy);
   return line;
+}
+
+/**
+ * "Yu-Hsien Teng: Torment of a Flower" with the next title set beneath the
+ * first, clear of the composer, as the printed sheet stacks them.
+ */
+function groupEnglish({ lead, works }) {
+  const english = createElement("small", "note-contents__sub-english");
+  english.lang = "en";
+  if (lead) english.append(createElement("span", "note-contents__sub-english-lead", lead));
+  const titles = createElement("span", "note-contents__sub-english-works");
+  for (const work of works) titles.append(createElement("span", null, work));
+  english.append(titles);
+  return english;
 }
 
 function renderContentsEntry(payload) {
@@ -264,7 +284,7 @@ function renderContentsEntry(payload) {
   copy.append(createElement("strong", "note-contents__title-link", payload.title));
   if (payload.titleEn) copy.append(createElement("small", null, payload.titleEn));
 
-  button.append(createElement("span", "note-contents__number", payload.number), copy);
+  button.append(copy);
   return button;
 }
 
@@ -304,9 +324,9 @@ function ornament(className) {
 }
 
 /**
- * A note opens like a page of the printed programme: scoring, number, the work
- * set large, its English beneath, then the composer, an ornament and the
- * players, all on the centre line.
+ * A note opens like a page of the printed programme: scoring, the work set
+ * large, its English beneath, then the composer, an ornament and the players,
+ * all on the centre line.
  */
 function renderBanner(payload) {
   const node = createElement("header", "note-banner");
@@ -321,7 +341,6 @@ function renderBanner(payload) {
   node.append(
     moonDisc("note-banner__moon"),
     createElement("p", "note-banner__eyebrow", scoring),
-    createElement("span", "note-banner__number", payload.number),
     title,
   );
 
@@ -330,7 +349,9 @@ function renderBanner(payload) {
 
   // A "composer" that only repeats the scoring (豎琴獨奏) is left out.
   if (payload.composer && payload.composer !== scoring) {
-    const composer = createElement("p", "note-banner__composer", payload.composer);
+    const composer = createElement("p", "note-banner__composer");
+    // The Chinese credit stays whole (「改編」 never splits); only the Latin may wrap below it.
+    composer.append(createElement("span", "note-banner__composer-zh", payload.composer));
     if (payload.composerEn) {
       const latin = createElement("span", "note-banner__composer-en", payload.composerEn);
       latin.lang = "en";
@@ -364,13 +385,27 @@ function renderParagraph(atom) {
   return node;
 }
 
+/**
+ * A piece within a note. The first song of a composer's group opens under the
+ * composer's name; each song then gives its title, its lyricist and its note.
+ */
 function renderWorkCard(payload) {
   const node = createElement("section", "note-work");
+  if (payload.group) {
+    node.dataset.opensGroup = "true";
+    const group = createElement("header", "note-work__group");
+    group.append(createElement("h3", "note-work__composer", payload.group.title));
+    if (payload.group.titleEn) {
+      const latin = createElement("p", "note-work__composer-en", payload.group.titleEn);
+      latin.lang = "en";
+      group.append(latin);
+    }
+    node.append(group);
+  }
+
   const heading = createElement("header", "note-work__heading");
-  heading.append(
-    createElement("span", "note-work__number", payload.number),
-    createElement("h3", null, payload.title),
-  );
+  heading.append(createElement(payload.group === undefined ? "h3" : "h4", null, payload.title));
+  if (payload.byline) heading.append(createElement("span", "note-work__byline", payload.byline));
   node.append(heading);
 
   if (payload.titleEn) {

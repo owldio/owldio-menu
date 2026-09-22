@@ -7921,18 +7921,8 @@ html:has(.reader-shell[data-view="notes-book"]) body {
   letter-spacing: 0.32em;
 }
 
-.note-banner__number {
-  margin-top: 0.39em;
-  color: var(--moon-gold);
-  font-family: var(--font-display);
-  font-size: 2.7em;
-  font-weight: 400;
-  line-height: 1;
-  letter-spacing: 0.02em;
-}
-
 .note-banner__title {
-  margin: 0.69em 0 0;
+  margin: 0.62em 0 0;
   color: var(--moon-ivory);
   font-size: 1.53em;
   font-weight: 600;
@@ -7958,6 +7948,10 @@ html:has(.reader-shell[data-view="notes-book"]) body {
   line-height: 1.5;
   letter-spacing: 0.14em;
   text-wrap: balance;
+}
+
+.note-banner__composer-zh {
+  white-space: nowrap;
 }
 
 .note-banner__composer-en {
@@ -8020,25 +8014,58 @@ html:has(.reader-shell[data-view="notes-book"]) body {
   margin: 0 0 1.2em;
 }
 
+/* A composer's group opens on the composer's name, in gold, with the Latin beside it. */
+.note-work[data-opens-group="true"]:not(:first-child) {
+  margin-top: 1.9em;
+}
+
+.note-work__group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.1em 0.75em;
+  margin: 0 0 0.45em;
+  padding-bottom: 0.35em;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--moon-gold) 38%, transparent), transparent 72%) left bottom / 100% 1px no-repeat;
+}
+
+.note-work__composer {
+  margin: 0;
+  color: var(--moon-gold);
+  font-size: 0.86em;
+  font-weight: 600;
+  line-height: 1.5;
+  letter-spacing: 0.14em;
+}
+
+.note-work__composer-en {
+  margin: 0;
+  color: var(--moon-muted);
+  font-family: var(--font-display);
+  font-size: 0.74em;
+  line-height: 1.5;
+  letter-spacing: 0.04em;
+}
+
 .note-work__heading {
   display: flex;
+  flex-wrap: wrap;
   align-items: baseline;
-  gap: 0.7em;
+  gap: 0 0.7em;
 }
 
-.note-work__number {
-  color: var(--moon-gold);
-  font-family: var(--font-display);
-  font-size: 1.05em;
-  font-style: italic;
-}
-
-.note-work__heading h3 {
+.note-work__heading :is(h3, h4) {
   margin: 0;
   color: var(--moon-ivory);
   font-size: 1.08em;
   font-weight: 600;
   line-height: 1.5;
+}
+
+.note-work__byline {
+  color: var(--moon-muted);
+  font-size: 0.72em;
+  letter-spacing: 0.12em;
 }
 
 .note-work__english {
@@ -8365,8 +8392,7 @@ html:has(.reader-shell[data-view="notes-book"]) body {
 
 .note-contents__link {
   display: grid;
-  grid-template-columns: 1.9em minmax(0, 1fr);
-  gap: 0.6em;
+  grid-template-columns: minmax(0, 1fr);
   align-items: start;
   width: 100%;
   padding: 0.7em 0.2em 0.7em 0;
@@ -8411,13 +8437,6 @@ html:has(.reader-shell[data-view="notes-book"]) body {
   background:
     var(--fade-rule) center bottom / 100% 1px no-repeat,
     linear-gradient(90deg, rgb(213 177 105 / 0.22), transparent 76%);
-}
-
-.note-contents__number {
-  color: var(--moon-gold);
-  font-family: var(--font-display);
-  font-size: 1.15em;
-  line-height: 1;
 }
 
 .note-contents__copy {
@@ -8476,10 +8495,16 @@ html:has(.reader-shell[data-view="notes-book"]) body {
   grid-template-columns: 2.4em minmax(0, 1fr);
   gap: 0.05em 0.5em;
   margin: 0;
-  padding: 0.22em 0.2em 0.22em 2.5em;
+  padding: 0.22em 0.2em 0.22em 1.2em;
   color: var(--moon-muted);
   font-size: 0.84em;
   line-height: 1.5;
+}
+
+/* The harp-solo songs have no mark column: the title sits on the indent. */
+.note-contents__sub[data-unmarked="true"] {
+  grid-template-columns: minmax(0, 1fr);
+  padding-block: 0.34em;
 }
 
 .note-contents__sub-mark {
@@ -8502,9 +8527,29 @@ html:has(.reader-shell[data-view="notes-book"]) body {
   opacity: 0.8;
 }
 
-/* The five harp-solo pieces are subworks, distinct from the large programme blocks. */
+/*
+ * The harp-solo songs, upright in the book's face at its regular weight, the
+ * same weight as the works above them, so they read as part of the programme.
+ */
 .note-contents__sub--work {
-  font-style: italic;
+  color: color-mix(in srgb, var(--moon-ivory) 86%, transparent);
+  font-weight: 400;
+}
+
+/* English under a song line: the composer, then each title stacked beside it. */
+.note-contents__sub-english {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  column-gap: 0.35em;
+  color: var(--moon-muted);
+  font-family: var(--font-display);
+  font-size: 0.84em;
+  letter-spacing: 0.02em;
+  opacity: 0.8;
+}
+
+.note-contents__sub-english-works {
+  display: grid;
 }
 
 /* An entry that leads into its pieces closes on them, not on its own rule. */
@@ -8542,11 +8587,6 @@ html:has(.reader-shell[data-view="notes-book"]) body {
   margin: 0 0 1em;
 }
 
-.note-page[data-compact="true"] .note-banner__number {
-  margin-top: 0.2em;
-  font-size: 1.6em;
-}
-
 .note-page[data-compact="true"] .note-banner__title {
   margin-top: 0.35em;
 }
@@ -8557,7 +8597,7 @@ html:has(.reader-shell[data-view="notes-book"]) body {
   margin-bottom: 0.55em;
 }
 
-.note-page[data-compact="true"] .note-work__heading h3 {
+.note-page[data-compact="true"] .note-work__heading :is(h3, h4) {
   line-height: 1.35;
 }
 
@@ -8571,7 +8611,7 @@ html:has(.reader-shell[data-view="notes-book"]) body {
   line-height: 1.72;
 }
 
-/* On a short page the opening keeps its scoring, number, work and composer. */
+/* On a short page the opening keeps its scoring, work and composer. */
 .note-page[data-compact="true"] .note-banner__english,
 .note-page[data-compact="true"] .note-banner__composer-en,
 .note-page[data-compact="true"] .note-banner__ornament {

@@ -172,7 +172,8 @@ describe("buildNoteFlow", () => {
       "second-work",
       "harp-solo",
     ]);
-    expect(banners.map((atom) => atom.payload.number)).toEqual(["01", "02", "03"]);
+    // The book prints no running numbers: a work is known by its title.
+    expect(banners.some((atom) => "number" in atom.payload)).toBe(false);
   });
 
   it("uses an English composer and work for continuation heads unless a note opts out", () => {
@@ -260,7 +261,6 @@ describe("buildNoteFlow", () => {
       "contents-work",
     ]);
     expect(contents[1].payload).toEqual({
-      number: "01",
       title: "作曲家：第一首",
       titleEn: "Composer: First Work",
       slug: "first-work",
@@ -478,5 +478,84 @@ describe("buildNoteFlow", () => {
     const atoms = buildNoteFlow({ programme, chapters: [] });
 
     expect(kindsOf(atoms)).toEqual(["cover", "contents-heading"]);
+  });
+});
+
+describe("song groups", () => {
+  const harpSolo = {
+    slug: "harp-solo",
+    position: 1,
+    title: "豎琴獨奏",
+    is_visible: true,
+    blocks: [
+      {
+        type: "song-groups",
+        groups: [
+          {
+            composer: "日本古謠",
+            composer_en: "Japanese Traditional Song",
+            songs: [{ title: "《櫻》", title_en: "Sakura", text: "說明櫻。" }],
+          },
+          {
+            composer: "鄧雨賢",
+            composer_en: "Yu-Hsien Teng",
+            songs: [
+              { title: "《雨夜花》", title_en: "Torment of a Flower", lyricist: "周添旺", text: "說明一。" },
+              { title: "《望春風》", title_en: "Longing for the Spring Breeze", lyricist: "李臨秋", text: "說明二。" },
+            ],
+          },
+        ],
+      },
+    ],
+  };
+
+  it("lists each composer's songs together as one line of the programme", () => {
+    const atoms = buildNoteFlow({ programme: {}, chapters: [harpSolo] });
+
+    expect(atoms.filter((atom) => atom.kind === "contents-work").map((atom) => atom.payload)).toEqual([
+      {
+        mark: null,
+        title: "日本古謠：《櫻》",
+        titleEn: "Japanese Traditional Song: Sakura",
+        english: { lead: "Japanese Traditional Song:", works: ["Sakura"] },
+        slug: "harp-solo",
+      },
+      {
+        mark: null,
+        title: "鄧雨賢：《雨夜花》、《望春風》",
+        titleEn: "Yu-Hsien Teng: Torment of a Flower, Longing for the Spring Breeze",
+        english: { lead: "Yu-Hsien Teng:", works: ["Torment of a Flower", "Longing for the Spring Breeze"] },
+        slug: "harp-solo",
+      },
+    ]);
+  });
+
+  it("sets one card per song in the note, the composer heading only the first of a group", () => {
+    const atoms = buildNoteFlow({ programme: {}, chapters: [harpSolo] });
+    const cards = atoms.filter((atom) => atom.kind === "work-card").map((atom) => atom.payload);
+
+    expect(cards).toEqual([
+      {
+        group: { title: "日本古謠", titleEn: "Japanese Traditional Song" },
+        title: "《櫻》",
+        byline: null,
+        titleEn: "Sakura",
+        details: ["說明櫻。"],
+      },
+      {
+        group: { title: "鄧雨賢", titleEn: "Yu-Hsien Teng" },
+        title: "《雨夜花》",
+        byline: "周添旺 詞",
+        titleEn: "Torment of a Flower",
+        details: ["說明一。"],
+      },
+      {
+        group: null,
+        title: "《望春風》",
+        byline: "李臨秋 詞",
+        titleEn: "Longing for the Spring Breeze",
+        details: ["說明二。"],
+      },
+    ]);
   });
 });

@@ -9,10 +9,6 @@ function visibleChapters(chapters) {
   return (chapters || []).filter((chapter) => chapter?.is_visible !== false);
 }
 
-function noteNumber(index) {
-  return String(index + 1).padStart(2, "0");
-}
-
 function atom(kind, { id, noteSlug = null, noteIndex = null, payload = {} }) {
   return {
     id,
@@ -35,20 +31,52 @@ function subEntryAtoms(chapter) {
     payload: { mark, title, titleEn: titleEn ?? null, slug: chapter.slug },
   }));
 
-  const works = (chapter.blocks ?? [])
-    .filter((block) => block.type === "programme-list")
-    .flatMap((block) => block.items ?? [])
-    .map(([mark, title, detail], index) => atom("contents-work", {
-      id: `contents:${chapter.slug}:w${index + 1}`,
-      payload: {
+  const works = (chapter.blocks ?? []).flatMap((block) => {
+    if (block.type === "programme-list") {
+      return (block.items ?? []).map(([mark, title, detail]) => ({
         mark,
         title,
         titleEn: String(detail || "").split("\n")[0] || null,
-        slug: chapter.slug,
-      },
-    }));
+      }));
+    }
+    if (block.type === "song-groups") return (block.groups ?? []).map(songGroupLine);
+    return [];
+  }).map((work, index) => atom("contents-work", {
+    id: `contents:${chapter.slug}:w${index + 1}`,
+    payload: { ...work, slug: chapter.slug },
+  }));
 
   return [...movements, ...works];
+}
+
+/**
+ * One composer's songs on one programme line, as the printed sheet sets them:
+ * 「鄧雨賢：《雨夜花》、《望春風》」 over "Yu-Hsien Teng: Torment of a Flower",
+ * the second English title aligned beneath the first.
+ */
+function songGroupLine(group) {
+  const songs = group.songs ?? [];
+  const lead = group.composer_en ? `${group.composer_en}:` : null;
+  const works = songs.map((song) => song.title_en).filter(Boolean);
+  return {
+    mark: null,
+    title: `${group.composer}：${songs.map((song) => song.title).join("、")}`,
+    titleEn: works.length ? [lead, works.join(", ")].filter(Boolean).join(" ") : null,
+    english: works.length ? { lead, works } : null,
+  };
+}
+
+/** A song of a group as a note card; the first of a group carries its composer. */
+function songCardPayloads(group) {
+  return (group.songs ?? []).map((song, index) => ({
+    group: index === 0
+      ? { title: group.composer, titleEn: group.composer_en ?? null }
+      : null,
+    title: song.title,
+    byline: song.lyricist ? `${song.lyricist} 詞` : null,
+    titleEn: song.title_en ?? null,
+    details: [song.text].filter(Boolean),
+  }));
 }
 
 /**
@@ -77,7 +105,6 @@ function contentsAtoms(programme, notes) {
       atom("contents-entry", {
         id: `contents:${chapter.slug}`,
         payload: {
-          number: noteNumber(index),
           title: chapter.title,
           titleEn: chapter.title_en ?? null,
           slug: chapter.slug,
@@ -150,7 +177,6 @@ function noteAtoms(chapter, index) {
       noteSlug: chapter.slug,
       noteIndex: index,
       payload: {
-        number: noteNumber(index),
         eyebrow: chapter.eyebrow || null,
         title: chapter.title,
         titleEn: chapter.title_en ?? null,
@@ -186,18 +212,21 @@ function noteAtoms(chapter, index) {
       }
     }
 
-    if (block.type === "programme-list") {
-      for (const item of block.items || []) {
-        cardCount += 1;
-        atoms.push(
-          atom("work-card", {
-            id: `${chapter.slug}:w${cardCount}`,
-            noteSlug: chapter.slug,
-            noteIndex: index,
-            payload: workCardPayload(item),
-          }),
-        );
-      }
+    const cards = block.type === "programme-list"
+      ? (block.items || []).map(workCardPayload)
+      : block.type === "song-groups"
+        ? (block.groups || []).flatMap(songCardPayloads)
+        : [];
+    for (const payload of cards) {
+      cardCount += 1;
+      atoms.push(
+        atom("work-card", {
+          id: `${chapter.slug}:w${cardCount}`,
+          noteSlug: chapter.slug,
+          noteIndex: index,
+          payload,
+        }),
+      );
     }
   }
 
