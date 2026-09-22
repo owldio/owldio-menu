@@ -271,10 +271,10 @@ describe("buildNoteFlow", () => {
     expect(contents[6].payload.titleEn).toBeNull();
   });
 
-  it("names the list 曲序 so 節目單 refers to the whole publication", () => {
+  it("names the list 曲目 so 節目單 refers to the whole publication", () => {
     const atoms = buildNoteFlow({ programme, chapters });
 
-    expect(atoms.find((atom) => atom.kind === "contents-heading").payload).toEqual({ title: "曲序" });
+    expect(atoms.find((atom) => atom.kind === "contents-heading").payload).toEqual({ title: "曲目" });
   });
 
   it("states a scoring once per block, and restates it after the intermission", () => {
