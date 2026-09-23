@@ -1,4 +1,5 @@
 import {
+  backDestination,
   buildProgrammePath,
   buildProgrammeReaderPath,
   buildProgrammeViewUrl,
@@ -990,7 +991,8 @@ export async function mountReader({ root, repository, initialRoute }) {
       const target = control.dataset.route;
 
       if (target === "shelf") {
-        window.location.assign("/");
+        // While the shelf is unwritten the way back is the programme's own cover.
+        window.location.assign(backDestination(currentProgramme?.slug));
         return;
       }
 

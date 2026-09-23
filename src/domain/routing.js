@@ -131,6 +131,19 @@ export function buildProgrammeReaderPath(programmeSlug) {
   return buildProgrammePath(programmeSlug);
 }
 
+/** The shelf at / is not written yet. Set to true to give the reader its way out. */
+export const SHELF_PUBLISHED = false;
+
+/**
+ * Where the reader's back control goes. Until the shelf is published the way
+ * back stops at the programme the reader already has open, rather than an
+ * empty index.
+ */
+export function backDestination(programmeSlug, { shelfPublished = SHELF_PUBLISHED } = {}) {
+  if (shelfPublished || !programmeSlug) return "/";
+  return buildProgrammePath(programmeSlug);
+}
+
 export function isProgrammeReaderHash(hash) {
   const value = String(hash || "").replace(/^#/, "");
   if (!value) return true;

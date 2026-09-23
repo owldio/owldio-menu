@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  SHELF_PUBLISHED,
+  backDestination,
   buildProgrammeViewUrl,
   buildProgrammePath,
   buildProgrammeReaderPath,
@@ -241,5 +243,25 @@ describe("notes book deep links", () => {
     expect(isProgrammeReaderHash("#notes-book")).toBe(true);
     expect(isProgrammeReaderHash("#page/3")).toBe(true);
     expect(isProgrammeReaderHash("#note/debussy-clair-de-lune")).toBe(true);
+  });
+});
+
+describe("backDestination", () => {
+  it("stops at the programme itself while the shelf is unpublished", () => {
+    expect(backDestination("moonlight-promise", { shelfPublished: false })).toBe("/moonlight-promise");
+  });
+
+  it("returns to the shelf once it is published", () => {
+    expect(backDestination("moonlight-promise", { shelfPublished: true })).toBe("/");
+  });
+
+  it("falls back to the shelf when no programme is open", () => {
+    expect(backDestination(null, { shelfPublished: false })).toBe("/");
+    expect(backDestination("", { shelfPublished: false })).toBe("/");
+  });
+
+  it("keeps the shelf unpublished for now, so the reader never lands on an empty page", () => {
+    expect(SHELF_PUBLISHED).toBe(false);
+    expect(backDestination("moonlight-promise")).toBe("/moonlight-promise");
   });
 });
