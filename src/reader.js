@@ -986,6 +986,11 @@ export async function mountReader({ root, repository, initialRoute }) {
   }
 
   document.querySelectorAll("[data-route]").forEach((control) => {
+    // A link says where it goes before it is clicked, so keep its href honest.
+    if (control.dataset.route === "shelf" && control instanceof HTMLAnchorElement) {
+      control.href = backDestination(currentProgramme?.slug);
+    }
+
     control.addEventListener("click", (event) => {
       event.preventDefault();
       const target = control.dataset.route;

@@ -134,14 +134,17 @@ export function buildProgrammeReaderPath(programmeSlug) {
 /** The shelf at / is not written yet. Set to true to give the reader its way out. */
 export const SHELF_PUBLISHED = false;
 
+/** The one published programme, which stands in for the shelf until it exists. */
+export const FALLBACK_PROGRAMME_SLUG = "moonlight-promise";
+
 /**
- * Where the reader's back control goes. Until the shelf is published the way
- * back stops at the programme the reader already has open, rather than an
- * empty index.
+ * Where a way-back control goes. Until the shelf is published it stops at the
+ * programme the reader already has open — or, with none open, at the published
+ * programme — rather than at an empty index.
  */
 export function backDestination(programmeSlug, { shelfPublished = SHELF_PUBLISHED } = {}) {
-  if (shelfPublished || !programmeSlug) return "/";
-  return buildProgrammePath(programmeSlug);
+  if (shelfPublished) return "/";
+  return buildProgrammePath(programmeSlug || FALLBACK_PROGRAMME_SLUG);
 }
 
 export function isProgrammeReaderHash(hash) {

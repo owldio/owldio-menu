@@ -90,7 +90,7 @@
 
     <div class="reader-shell" id="reader-shell" data-view="shelf">
       <header class="site-header">
-        <button class="brand" type="button" data-route="shelf" aria-label="回到作品索引">
+        <button class="brand" type="button" data-route="shelf" aria-label="回到節目冊封面">
           <span class="brand__mark" aria-hidden="true"></span>
           <span class="brand__wordmark" aria-hidden="true">
             <span class="brand__name">OWLDIO</span>
@@ -161,7 +161,7 @@
         <section class="view view--entrance" id="entrance-view" aria-labelledby="entrance-title" hidden>
           <div class="entrance-edition page-gutter">
             <div class="eyebrow-row eyebrow-row--navy">
-              <button type="button" data-route="shelf">← 作品索引</button>
+              <button type="button" data-route="shelf">← 封面</button>
               <span>演出入口 / 01</span>
             </div>
 
@@ -421,7 +421,8 @@
             <p class="kicker">404 / PROGRAMME NOT FOUND</p>
             <h1>找不到這份節目冊</h1>
             <p>網址可能尚未發布、已封存，或輸入有誤。</p>
-            <a class="button button--primary" href="/">回到作品索引 <span>→</span></a>
+            <!-- Points at the published programme while SHELF_PUBLISHED is false; the reader rewrites the href. -->
+            <a class="button button--primary" data-route="shelf" href="/moonlight-promise">回到節目冊 <span>→</span></a>
           </div>
         </section>
       </main>

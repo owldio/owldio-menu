@@ -255,9 +255,13 @@ describe("backDestination", () => {
     expect(backDestination("moonlight-promise", { shelfPublished: true })).toBe("/");
   });
 
-  it("falls back to the shelf when no programme is open", () => {
-    expect(backDestination(null, { shelfPublished: false })).toBe("/");
-    expect(backDestination("", { shelfPublished: false })).toBe("/");
+  it("falls back to the published programme when none is open, as the 404 page does", () => {
+    expect(backDestination(null, { shelfPublished: false })).toBe("/moonlight-promise");
+    expect(backDestination("", { shelfPublished: false })).toBe("/moonlight-promise");
+  });
+
+  it("returns to the shelf from anywhere once it is published", () => {
+    expect(backDestination(null, { shelfPublished: true })).toBe("/");
   });
 
   it("keeps the shelf unpublished for now, so the reader never lands on an empty page", () => {
